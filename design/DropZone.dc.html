@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #0078d4; } a:hover { color: #005a9e; }
+    .app {
+      --bg: #f3f3f3; --layer: #ffffff; --layer-2: #fafafa; --line: #e5e5e5;
+      --text: #1b1b1b; --dim: #5d5d5d; --faint: #8a8a8a;
+      --accent: #0f6cbd; --ok: #0f7b0f; --warn: #9d5d00; --bad: #c42b1c; --hover: #f5f5f5;
+      font-family: 'Inter Tight', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+    }
+    .app.dark {
+      --bg: #202020; --layer: #2b2b2b; --layer-2: #272727; --line: #3a3a3a;
+      --text: #ffffff; --dim: #c5c5c5; --faint: #8a8a8a;
+      --accent: #60cdff; --ok: #6ccb5f; --warn: #fce100; --bad: #ff99a4; --hover: #333333;
+    }
+    .app * { box-sizing: border-box; }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px; height: 36px;
+      padding: 0 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--layer);
+      color: var(--text); font-size: 13.5px; font-family: inherit; cursor: pointer;
+    }
+    .btn:hover { background: var(--hover); }
+    .btn.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 500; }
+    .app.dark .btn.primary { color: #003354; }
+    .card { transition: border-color 120ms; }
+    .card:hover { border-color: var(--faint); }
+    .zone { transition: border-color 120ms, background 120ms; }
+    .zone:hover { border-color: var(--accent); }
+  </style>
+</helmet>
+
+<div class="app {{themeClass}}" style="background: var(--bg); color: var(--text); height: 720px; display: flex; flex-direction: column; position: relative;">
+
+  <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; gap: 8px; border-bottom: 1px solid var(--line); background: var(--layer-2); flex-shrink: 0;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M10 9l5 3-5 3z"/></svg>
+    <div style="font-size: 12px; color: var(--dim);">MonsieurVerite</div>
+    <div style="flex-grow: 1;"></div>
+    <button class="btn" style="height: 26px; padding: 0 10px; border-radius: 13px;" onClick="{{toggleOpts}}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+    </button>
+  </div>
+
+  <sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 48px;">
+      <div class="zone" onClick="{{addFiles}}" style="width: 100%; height: 100%; border: 2px dashed var(--line); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer;">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        <div style="font-size: 16px; color: var(--dim);">Drop .usm files or folders here</div>
+        <div style="font-size: 12.5px; color: var(--faint);">Availability is checked automatically as they land</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{hasFiles}}" hint-placeholder-val="{{true}}">
+    <div style="flex-grow: 1; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <div style="font-size: 21px; font-weight: 600;">{{headline}}</div>
+        <div style="font-size: 13px; color: var(--faint);">{{subline}}</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="6">
+          <div class="card" style="border: 1px solid var(--line); border-radius: 10px; background: var(--layer); padding: 14px; display: flex; align-items: center; gap: 13px;">
+            <div style="position: relative; width: 42px; height: 42px; flex-shrink: 0;">
+              <svg width="42" height="42" viewBox="0 0 42 42">
+                <circle cx="21" cy="21" r="17" fill="none" stroke="var(--line)" stroke-width="3.5"/>
+                <circle cx="21" cy="21" r="17" fill="none" stroke="{{c.ring}}" stroke-width="3.5" stroke-linecap="round"
+                        stroke-dasharray="{{c.dash}}" stroke-dashoffset="0" transform="rotate(-90 21 21)"/>
+              </svg>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10.5px; color: var(--dim);">{{c.badge}}</div>
+            </div>
+            <div style="min-width: 0; flex-grow: 1;">
+              <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{c.short}}</div>
+              <div style="font-size: 11px; color: {{c.noteColor}}; margin-top: 3px;">{{c.note}}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="btn" onClick="{{addFiles}}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add more
+        </button>
+        <button class="btn" onClick="{{clear}}">Clear</button>
+        <div style="flex-grow: 1;"></div>
+        <sc-if value="{{idle}}" hint-placeholder-val="{{true}}">
+          <button class="btn primary" style="padding: 0 26px;" onClick="{{start}}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>
+            Convert {{readyCount}}
+          </button>
+        </sc-if>
+        <sc-if value="{{running}}" hint-placeholder-val="{{false}}">
+          <button class="btn" style="padding: 0 26px;" onClick="{{stop}}">Cancel</button>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{optsOpen}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; top: 40px; right: 12px; width: 260px; border: 1px solid var(--line); border-radius: 10px; background: var(--layer); padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.24);">
+      <div style="font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em;">OPTIONS</div>
+      <sc-for list="{{toggles}}" as="t" hint-placeholder-count="4">
+        <div onClick="{{t.flip}}" style="display: flex; align-items: center; gap: 9px; cursor: pointer;">
+          <div style="width: 16px; height: 16px; border-radius: 3px; border: 1px solid {{t.boxBorder}}; background: {{t.boxBg}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <sc-if value="{{t.on}}" hint-placeholder-val="{{true}}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="{{t.tick}}" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </sc-if>
+          </div>
+          <div style="font-size: 13px;">{{t.label}}</div>
+        </div>
+      </sc-for>
+      <div style="height: 1px; background: var(--line);"></div>
+      <div style="font-size: 11px; color: var(--faint); line-height: 1.5;">Everything else — output folder, default tracks, engine path — lives in Settings.</div>
+    </div>
+  </sc-if>
+
+  <div style="height: 28px; border-top: 1px solid var(--line); background: var(--layer-2); display: flex; align-items: center; padding: 0 12px; font-size: 11.5px; color: var(--faint); flex-shrink: 0;">
+    <div>{{status}}</div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":true,"section":"Theme"},"$preview":{"width":1100,"height":720}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      running: false,
+      optsOpen: false,
+      cursor: -1,
+      opts: { noCleanup: false, vapourSynth: false, skipExisting: true, opus: false },
+      files: [
+        { name: 'Cs_NodKrai_AQ60161901_BSHMO_Boy.usm', key: true,  status: 'Ready', pct: 0 },
+        { name: 'Cs_EQHDJ005_HaiDengJie_Boy.usm',      key: true,  status: 'Ready', pct: 0 },
+        { name: 'Cs_ShieldingResources_02.usm',        key: false, status: 'No key', pct: 0 },
+        { name: 'Cs_LiYue_AQ30401801_Fungus_Boy.usm',  key: true,  status: 'Ready', pct: 0 },
+        { name: 'Cs_Inazuma_EQ21072103_Kimono.usm',    key: true,  status: 'Ready', pct: 0 },
+        { name: 'Cs_Fontaine_AQ50801_Aquabus.usm',     key: true,  status: 'Ready', pct: 0 },
+      ],
+    };
+  }
+
+  componentWillUnmount() { this.halt(); }
+  halt() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+
+  start = () => {
+    if (this.state.running) return;
+    this.setState((s) => ({
+      running: true, cursor: -1, optsOpen: false,
+      files: s.files.map((f) => ({ ...f, pct: 0, status: f.key ? 'Queued' : 'No key' })),
+    }));
+    this.advance();
+    this.timer = setInterval(() => this.tick(), 100);
+  };
+
+  advance() {
+    this.setState((s) => {
+      let next = s.cursor + 1;
+      while (next < s.files.length && !s.files[next].key) next += 1;
+      if (next >= s.files.length) return { cursor: next, running: false };
+      return { cursor: next, files: s.files.map((f, i) => (i === next ? { ...f, status: 'Converting' } : f)) };
+    });
+  }
+
+  tick() {
+    const { cursor, files } = this.state;
+    if (cursor < 0 || cursor >= files.length) { this.halt(); return; }
+    const pct = Math.min(100, files[cursor].pct + 7);
+
+    if (pct >= 100) {
+      this.setState((s) => ({ files: s.files.map((f, i) => (i === cursor ? { ...f, pct: 100, status: 'Done' } : f)) }));
+      if (!files.slice(cursor + 1).some((f) => f.key)) {
+        this.halt();
+        this.setState({ running: false, cursor: files.length });
+        return;
+      }
+      this.advance();
+      return;
+    }
+    this.setState((s) => ({ files: s.files.map((f, i) => (i === cursor ? { ...f, pct } : f)) }));
+  }
+
+  stop = () => {
+    this.halt();
+    this.setState((s) => ({
+      running: false,
+      files: s.files.map((f) => (f.status === 'Converting' ? { ...f, status: 'Cancelled' } : f)),
+    }));
+  };
+
+  addFiles = () => {
+    this.setState((s) => ({
+      files: [...s.files, {
+        name: `Cs_Natlan_AQ${52000 + s.files.length * 91}_Ochkanatlan.usm`,
+        key: true, status: 'Ready', pct: 0,
+      }],
+    }));
+  };
+
+  clear = () => { this.halt(); this.setState({ files: [], running: false, cursor: -1 }); };
+
+  toggleOpts = () => this.setState((s) => ({ optsOpen: !s.optsOpen }));
+
+  renderVals() {
+    const s = this.state;
+    const dark = this.props.dark ?? true;
+    const done = s.files.filter((f) => f.status === 'Done').length;
+    const ready = s.files.filter((f) => f.key).length;
+    const noKey = s.files.length - ready;
+    const circumference = 2 * Math.PI * 17;
+
+    return {
+      themeClass: dark ? 'dark' : '',
+      empty: s.files.length === 0,
+      hasFiles: s.files.length > 0,
+      running: s.running,
+      idle: !s.running,
+      optsOpen: s.optsOpen,
+      readyCount: `${ready}`,
+      headline: s.running ? 'Converting…' : done > 0 ? `${done} converted` : `${s.files.length} files ready`,
+      subline: noKey > 0 ? `${noKey} without a key will be skipped` : 'all keys present',
+      status: s.running ? `${done} of ${ready} complete` : 'Idle',
+
+      cards: s.files.map((f) => {
+        const filled = f.key ? f.pct : 0;
+        const ring = f.status === 'Done' ? 'var(--ok)' : !f.key ? 'var(--warn)' : 'var(--accent)';
+        return {
+          short: f.name.replace(/^Cs_/, '').replace(/\.usm$/, ''),
+          note: f.status,
+          noteColor: f.status === 'Done' ? 'var(--ok)' : !f.key ? 'var(--warn)' : 'var(--faint)',
+          ring,
+          dash: `${(circumference * filled) / 100} ${circumference}`,
+          badge: !f.key ? '—' : f.status === 'Done' ? '✓' : `${f.pct}`,
+        };
+      }),
+
+      toggles: [
+        { id: 'noCleanup', label: 'Keep intermediates' },
+        { id: 'vapourSynth', label: 'VapourSynth filter' },
+        { id: 'skipExisting', label: 'Skip existing' },
+        { id: 'opus', label: 'Opus instead of FLAC' },
+      ].map((t) => {
+        const on = s.opts[t.id];
+        return {
+          ...t, on,
+          boxBg: on ? 'var(--accent)' : 'transparent',
+          boxBorder: on ? 'transparent' : 'var(--faint)',
+          tick: dark ? '#003354' : '#ffffff',
+          flip: () => this.setState((p) => ({ opts: { ...p.opts, [t.id]: !p.opts[t.id] } })),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

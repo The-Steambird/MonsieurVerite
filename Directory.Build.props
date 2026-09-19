@@ -1,0 +1,44 @@
+<Project>
+
+    <!-- Shared MSBuild config for every project in the repo — the pyproject.toml analogue.
+         Per-project files carry only what is genuinely per-project (OutputType, UseWPF). -->
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- EnforceCodeStyleInBuild is the non-obvious one: without it the IDE#### style rules
+             run only in the IDE and never at build or in CI. -->
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+        <!-- IDE0005 (unused usings — the ruff F401 analogue) silently does nothing unless the
+             XML doc file is generated. CS1591 is the "missing XML comment" noise that turning it
+             on would otherwise produce, which TreatWarningsAsErrors would make fatal. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+        <!-- ThemeMode (the Fluent theme switch) is [Experimental] and is an error without this.
+             App.xaml.cs sets it from C# precisely so this NoWarn covers it: the same attribute in
+             App.xaml is flagged instead by ReSharper's XAML engine, which NoWarn cannot reach. -->
+        <NoWarn>$(NoWarn);WPF0001</NoWarn>
+
+        <!-- packages.lock.json, the uv.lock analogue. Opt-in in NuGet, unlike uv. -->
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- The WindowsDesktop SDK's implicit usings do not cover this one.
+             Deliberately NOT adding System.IO: the WPF SDK props do <Using Remove="System.IO" />
+             because System.IO.Path collides with System.Windows.Shapes.Path, and those props are
+             imported after this file, so an Include here is silently overridden. Files needing
+             it carry an explicit `using System.IO;` instead. -->
+        <Using Include="System.Diagnostics" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,34 @@
+<Window x:Class="MonsieurVerite.KeyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set key" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        UseLayoutRounding="True"
+        FocusManager.FocusedElement="{Binding ElementName=KeyBox}">
+
+    <StackPanel x:Name="Root" Margin="24,20,24,20">
+        <StackPanel.RenderTransform>
+            <TranslateTransform x:Name="Slide" />
+        </StackPanel.RenderTransform>
+        <StackPanel.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard Storyboard="{StaticResource DialogEnter}" />
+            </EventTrigger>
+        </StackPanel.Triggers>
+
+        <TextBlock Style="{StaticResource DialogTitle}" Text="Decryption key" />
+        <TextBlock x:Name="Caption" Style="{StaticResource DialogBody}" Margin="0,0,0,12" />
+        <TextBox x:Name="KeyBox" Style="{StaticResource OptionField}"
+                 FontFamily="Cascadia Mono, Consolas" FontSize="13" MinHeight="32"
+                 Margin="0,0,0,8" TextChanged="KeyBox_TextChanged" />
+        <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20"
+                   Text="The videoKey as it appears in keys.json — a decimal integer. The same number Recover key reports." />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="OkButton" Content="Convert"
+                    Style="{StaticResource DialogPrimaryButton}"
+                    IsDefault="True" IsEnabled="False" Click="Ok_Click" />
+            <Button Content="Cancel" Style="{StaticResource DialogButton}" IsCancel="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

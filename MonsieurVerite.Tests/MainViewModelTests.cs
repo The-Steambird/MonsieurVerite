@@ -1,0 +1,453 @@
+using System.IO;
+
+using MonsieurVerite.Engine;
+using MonsieurVerite.ViewModels;
+
+namespace MonsieurVerite.Tests;
+
+/// <summary>
+/// Every view model here is given no SynchronizationContext, so engine events are applied on
+/// the thread that read them and every assertion can follow the call directly. (xUnit does
+/// install a context of its own on the test thread; capturing it would post the events to the
+/// thread pool and race the assertions.)
+/// </summary>
+public class MainViewModelTests
+{
+    // Recovered keys go to a throwaway file, never the real one under %AppData%.
+    private static string ScratchKeysPath() =>
+        Path.Combine(Path.GetTempPath(), "MonsieurVerite.Tests", Path.GetRandomFileName(), "recovered_keys.json");
+
+    private static MainViewModel NewViewModel(EngineLaunchProfile? engine) =>
+        new(engine, new Settings(), uiContext: null) { RecoveredKeysPath = ScratchKeysPath() };
+
+    private static MainViewModel NewViewModel() => NewViewModel(EngineLaunchProfile.Dev(Path.GetTempPath()));
+
+    /// <summary>No engine at all, so the load and add paths can be exercised without a process.</summary>
+    private static MainViewModel NewEnginelessViewModel() => NewViewModel(null);
+
+    private static QueueItem Add(MainViewModel viewModel, string name)
+    {
+        var item = new QueueItem(Path.Combine(@"C:\usm", name));
+        viewModel.Items.Add(item);
+        return item;
+    }
+
+    [Fact]
+    public void ProbeFillsKeyAndSubtitleAvailability()
+    {
+        var viewModel = NewViewModel();
+        var keyed = Add(viewModel, "a.usm");
+        var keyless = Add(viewModel, "b.usm");
+
+        viewModel.Apply(new ProbeEvent { File = "a.usm", Key = true, Version = "5.3", Subtitles = ["EN", "JP"], VsScript = "vs/a.py" });
+        viewModel.Apply(new ProbeEvent { File = "b.usm", Key = false, Subtitles = [], VsScript = null });
+
+        Assert.Equal(KeyState.Present, keyed.Key);
+        Assert.Equal("5.3", keyed.Version);
+        Assert.True(keyed.HasSubtitles);
+        Assert.True(keyed.HasVsScript);
+
+        Assert.Equal(KeyState.Missing, keyless.Key);
+        Assert.Null(keyless.Version);
+        Assert.False(keyless.HasSubtitles);
+        Assert.False(keyless.HasVsScript);
+    }
+
+    [Fact]
+    public void ARunDrivesTheRowFromQueuedToDone()
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+        Assert.Equal(ItemStatus.Pending, item.Status);
+
+        viewModel.Apply(new JobStartEvent { File = "a.usm" });
+        Assert.Equal(ItemStatus.Running, item.Status);
+
+        // Progress and stage events name no file; they belong to the job that started last.
+        viewModel.Apply(new StageEvent { Stage = "demux", Status = "start" });
+        Assert.Equal("demux", item.Detail);
+
+        viewModel.Apply(new ProgressEvent { Stage = "demux", Current = 5, Total = 10 });
+        Assert.Equal(50, item.Progress);
+        // No run position: runTotal is only set by a real run, and this test feeds events directly.
+        Assert.Equal("demux · 50%", viewModel.StageText);
+
+        viewModel.Apply(new ResultEvent { File = "a.usm", Output = @"C:\out\a\a.mkv" });
+        Assert.Equal(ItemStatus.Done, item.Status);
+        Assert.Equal(100, item.Progress);
+        // Kept verbatim: it is what "open output folder" reveals, whatever the Flat toggle says now.
+        Assert.Equal(@"C:\out\a\a.mkv", item.OutputPath);
+    }
+
+    [Fact]
+    public void CancelMarksTheQueuedRemainderNotTheUntouchedRows()
+    {
+        var viewModel = NewViewModel();
+        var running = Add(viewModel, "a.usm");
+        var queued = Add(viewModel, "b.usm");
+        var untouched = Add(viewModel, "c.usm");
+        running.Status = ItemStatus.Running;
+        queued.Status = ItemStatus.Queued;
+
+        // The engine names only the file it was on when it stopped.
+        viewModel.Apply(new CancelledEvent { File = "a.usm" });
+
+        Assert.Equal(ItemStatus.Cancelled, running.Status);
+        Assert.Equal(ItemStatus.Cancelled, queued.Status);
+        Assert.Equal(ItemStatus.Pending, untouched.Status);
+    }
+
+    [Fact]
+    public void RecoveryMidRunFlipsTheKeyColumn()
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+        item.Key = KeyState.Missing;
+
+        viewModel.Apply(new CrackEvent { File = "a.usm", Stem = "a", VideoKey = 7, Reason = "" });
+
+        Assert.Equal(KeyState.Recovered, item.Key);
+        Assert.Equal(7UL, item.VideoKey);
+        Assert.Contains(viewModel.Log, line => line.Contains("videoKey=7", StringComparison.Ordinal));
+
+        // And it lands in the recovered-keys file, under the stem as keys.json wants it.
+        Assert.Contains("\"a\"", File.ReadAllText(viewModel.RecoveredKeysPath), StringComparison.Ordinal);
+        Directory.Delete(Path.GetDirectoryName(viewModel.RecoveredKeysPath)!, recursive: true);
+    }
+
+    [Fact]
+    public void UpdateCheckIsRememberedAndLogged()
+    {
+        var viewModel = NewViewModel();
+
+        viewModel.Apply(new UpdateEvent { Current = "1.0", Latest = "1.1", Available = true });
+
+        // CheckForUpdates reads this once the engine has exited, then asks the view whether to install.
+        Assert.NotNull(viewModel.LatestUpdate);
+        Assert.Equal("1.1", viewModel.LatestUpdate.Latest);
+        Assert.Contains(viewModel.Log, line => line.Contains("1.1 is available", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SetKeyNeedsExactlyOneCheckedRow()
+    {
+        var viewModel = NewViewModel();
+        var first = Add(viewModel, "a.usm");
+        var second = Add(viewModel, "b.usm");
+        Assert.False(viewModel.CanSetKey);
+
+        first.IsChecked = true;
+        Assert.True(viewModel.CanSetKey);
+        Assert.Same(first, viewModel.SingleChecked);
+
+        second.IsChecked = true;
+        Assert.False(viewModel.CanSetKey);
+        Assert.Null(viewModel.SingleChecked);
+    }
+
+    [Fact]
+    public void FailedRecoveryStaysMissingAndSaysWhy()
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+
+        viewModel.Apply(new CrackEvent { File = "a.usm", Stem = "a", VideoKey = null, Reason = "single distinct payload" });
+
+        Assert.Equal(KeyState.Missing, item.Key);
+        Assert.Contains(viewModel.Log, line => line.Contains("single distinct payload", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("exists", "already exists")]
+    [InlineData("no_key", "no key")]
+    public void SkipReasonsBecomeReadableDetail(string reason, string expected)
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+
+        viewModel.Apply(new JobSkippedEvent { File = "a.usm", Reason = reason });
+
+        Assert.Equal(ItemStatus.Skipped, item.Status);
+        Assert.Equal(expected, item.Detail);
+    }
+
+    [Fact]
+    public void QuestionsGoThroughTheViewsDelegate()
+    {
+        var viewModel = NewViewModel();
+        string? asked = null;
+        viewModel.ConfirmKeyOverwrite = prompt => { asked = prompt; return true; };
+
+        viewModel.Apply(new QuestionEvent { Id = "q0", Prompt = "Overwrite keys.json?", Default = false });
+
+        Assert.Equal("Overwrite keys.json?", asked);
+    }
+
+    [Fact]
+    public void UnknownKindsAreLoggedNotDropped()
+    {
+        var viewModel = NewViewModel();
+
+        viewModel.Apply(new UnknownEvent { Type = "something_new" });
+
+        Assert.Contains(viewModel.Log, line => line.Contains("something_new", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SummaryCountsDoneAndMissing()
+    {
+        var viewModel = NewViewModel();
+        Add(viewModel, "a.usm").Status = ItemStatus.Done;
+        Add(viewModel, "b.usm").Key = KeyState.Missing;
+        Add(viewModel, "c.usm");
+
+        viewModel.Apply(new LogEvent { Level = "info", Message = "tick" });
+
+        Assert.Equal("3 files · 1 done · 1 needing key recovery", viewModel.Summary);
+    }
+
+    [Fact]
+    public void ToggleAllChecksEverythingThenNothing()
+    {
+        var viewModel = NewViewModel();
+        Add(viewModel, "a.usm");
+        Add(viewModel, "b.usm");
+
+        viewModel.ToggleAllCommand.Execute(null);
+        Assert.True(viewModel.AllChecked);
+
+        viewModel.ToggleAllCommand.Execute(null);
+        Assert.False(viewModel.AllChecked);
+        Assert.All(viewModel.Items, item => Assert.False(item.IsChecked));
+    }
+
+    [Fact]
+    public void StartLabelSaysWhenOnlyCheckedRowsWillRun()
+    {
+        var viewModel = NewViewModel();
+        var first = Add(viewModel, "a.usm");
+        var second = Add(viewModel, "b.usm");
+        Assert.Equal("Start", viewModel.StartLabel);
+
+        first.IsChecked = true;
+        Assert.Equal("Start (1 checked)", viewModel.StartLabel);
+
+        // Everything checked is the same run as nothing checked, so no qualifier.
+        second.IsChecked = true;
+        Assert.Equal("Start", viewModel.StartLabel);
+    }
+
+    [Fact]
+    public void WithoutAnEngineTheEngineBackedCommandsAreDisabled()
+    {
+        var viewModel = NewEnginelessViewModel();
+        Add(viewModel, "a.usm").IsChecked = true;
+
+        Assert.False(viewModel.HasEngine);
+        Assert.False(viewModel.StartCommand.CanExecute(null));
+        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
+        Assert.False(viewModel.CheckForUpdatesCommand.CanExecute(null));
+        Assert.True(viewModel.RemoveCheckedCommand.CanExecute(null));
+        Assert.Contains(viewModel.Log, line => line.Contains("No engine", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void RunningDisablesEverythingThatWouldChangeTheQueue()
+    {
+        var viewModel = NewViewModel();
+        Add(viewModel, "a.usm").IsChecked = true;
+
+        viewModel.IsRunning = true;
+
+        Assert.False(viewModel.IsIdle);
+        Assert.False(viewModel.StartCommand.CanExecute(null));
+        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
+        Assert.False(viewModel.RemoveCheckedCommand.CanExecute(null));
+        Assert.True(viewModel.CancelCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task LoadingIsRefusedWhileRunning()
+    {
+        var viewModel = NewEnginelessViewModel();
+        var kept = Add(viewModel, "a.usm");
+        viewModel.IsRunning = true;
+
+        await viewModel.LoadSourceAsync(Path.GetTempPath());
+
+        Assert.Same(kept, Assert.Single(viewModel.Items));
+        Assert.Contains(viewModel.Log, line => line.Contains("Wait for the current run", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LoadingAMissingFolderLogsInsteadOfThrowing()
+    {
+        var viewModel = NewEnginelessViewModel();
+        var kept = Add(viewModel, "a.usm");
+        var missing = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+        await viewModel.LoadSourceAsync(missing);
+
+        Assert.Same(kept, Assert.Single(viewModel.Items));
+        Assert.Contains(viewModel.Log, line => line.Contains("Could not read", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AddedFilesAreFilteredToUsmAndDedupedByBareName()
+    {
+        var viewModel = NewEnginelessViewModel();
+
+        await viewModel.AddFilesAsync([
+            @"C:\one\a.usm",
+            @"C:\one\notes.txt",
+            @"C:\two\a.usm",
+            @"C:\two\B.USM",
+        ]);
+
+        // Every engine event names a file by bare name, so a second a.usm could never be told apart.
+        Assert.Equal(["a.usm", "B.USM"], viewModel.Items.Select(item => item.FileName));
+        Assert.Equal(@"C:\one", viewModel.SourceDirectory);
+        Assert.Contains(viewModel.Log, line => line.Contains("already in the queue", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ClearingTheQueueStopsListeningToTheOldRows()
+    {
+        var viewModel = NewViewModel();
+        var old = Add(viewModel, "a.usm");
+        viewModel.Items.Clear();
+        Add(viewModel, "b.usm");
+
+        // A stale handler would flip AllChecked from a row that is no longer in the queue.
+        old.IsChecked = true;
+
+        Assert.False(viewModel.AllChecked);
+    }
+
+    [Fact]
+    public void ProgressOutsideAnyJobStillDrivesTheStatusBar()
+    {
+        // The subtitle sync runs before the file loop, so its progress names no job. It should
+        // still show in the status bar; it just has no row to land on.
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+
+        viewModel.Apply(new StageEvent { Stage = "subtitles", Status = "start" });
+        viewModel.Apply(new ProgressEvent { Stage = "subtitles", Current = 1, Total = 4 });
+
+        Assert.Equal("subtitles · 25%", viewModel.StageText);
+        Assert.Equal(0, item.Progress);
+        Assert.Equal(ItemStatus.Pending, item.Status);
+    }
+
+    [Fact]
+    public void RecoverKeysNeedsACheckedRow()
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
+
+        item.IsChecked = true;
+        Assert.True(viewModel.RecoverKeysCommand.CanExecute(null));
+
+        viewModel.Items.Clear();
+        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task AnEngineThatCannotStartFailsTheRunWithoutLeavingRowsQueued()
+    {
+        // A launcher that does not exist: Process.Start throws before any event can arrive, the
+        // only way to drive RunEngineAsync's failure path without a real engine.
+        var missing = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "charlotte.exe");
+        var viewModel = NewViewModel(EngineLaunchProfile.Packaged(missing));
+        var first = Add(viewModel, "a.usm");
+        var second = Add(viewModel, "b.usm");
+
+        await viewModel.StartCommand.ExecuteAsync(null);
+
+        Assert.False(viewModel.IsRunning);
+        Assert.Equal("Idle", viewModel.StageText);
+        Assert.Contains(viewModel.Log, line => line.Contains("Could not start the engine", StringComparison.Ordinal));
+        // Neither row was ever reached, so neither is an error; they simply go back to resting.
+        Assert.Equal(ItemStatus.Pending, first.Status);
+        Assert.Equal(ItemStatus.Pending, second.Status);
+    }
+
+    [Theory]
+    [InlineData(3, ItemStatus.Error, "engine exited with code 3")]
+    [InlineData(0, ItemStatus.Pending, "")]
+    public async Task ARowTheEngineLeftRunningIsSettledByHowTheEngineEnded(int exitCode, ItemStatus expected, string detail)
+    {
+        // A crash mid-file leaves the row Running with nothing more coming: that row is the
+        // failure. A clean exit that never closed the job is --crack, whose outcome is the Key
+        // column, so the row just goes back to resting. Either way nothing stays Queued.
+        var (engine, script) = FakeEngine(
+            """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
+            $"@exit /b {exitCode}");
+        try
+        {
+            var viewModel = NewViewModel(engine);
+            var opened = Add(viewModel, "a.usm");
+            var unreached = Add(viewModel, "b.usm");
+            opened.IsChecked = true;
+            unreached.IsChecked = true;
+
+            await viewModel.RecoverKeysCommand.ExecuteAsync(null);
+
+            Assert.Equal(expected, opened.Status);
+            Assert.Equal(detail, opened.Detail);
+            Assert.Equal(ItemStatus.Pending, unreached.Status);
+            Assert.False(viewModel.IsRunning);
+        }
+        finally
+        {
+            File.Delete(script);
+        }
+    }
+
+    /// <summary>
+    /// A stand-in engine: a batch script that prints the given lines to stdout and ignores the
+    /// arguments it is given. Enough to drive a run through <see cref="MainViewModel"/> end to
+    /// end without charlotte. The caller deletes the script.
+    /// </summary>
+    private static (EngineLaunchProfile Engine, string Script) FakeEngine(params string[] lines)
+    {
+        var script = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".cmd");
+        File.WriteAllLines(script, lines);
+        var engine = new EngineLaunchProfile
+        {
+            FileName = "cmd.exe",
+            BaseArguments = ["/c", script],
+            WorkingDirectory = Path.GetTempPath(),
+        };
+        return (engine, script);
+    }
+
+    /// <summary>
+    /// The whole loading path against the real engine: enumerate a folder, spawn a probe, and let
+    /// the events flow back through <see cref="MainViewModel.Apply"/>. Skips itself without the
+    /// sibling charlotte checkout, like the engine client test.
+    /// </summary>
+    [Fact]
+    public async Task LoadingAFolderProbesEveryFile()
+    {
+        if (Settings.ResolveEngine() is not { } engine)
+        {
+            return;
+        }
+
+        var folder = Path.Combine(engine.WorkingDirectory, "USM", "6.3");
+        if (!Directory.Exists(folder))
+        {
+            return;
+        }
+
+        var viewModel = new MainViewModel(engine, new Settings(), uiContext: null);
+        await viewModel.LoadSourceAsync(folder).WaitAsync(TimeSpan.FromMinutes(3));
+
+        Assert.NotEmpty(viewModel.Items);
+        Assert.False(viewModel.IsRunning);
+        Assert.All(viewModel.Items, item => Assert.NotEqual(KeyState.Unknown, item.Key));
+    }
+}

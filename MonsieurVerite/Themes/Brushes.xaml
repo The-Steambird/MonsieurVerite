@@ -1,0 +1,75 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Color x:Key="WindowColor">#1B1B1B</Color>
+    <Color x:Key="LayerColor">#4C000000</Color>
+    <Color x:Key="RaisedColor">#12FFFFFF</Color>
+    <Color x:Key="LineColor">#14FFFFFF</Color>
+    <Color x:Key="LineStrongColor">#24FFFFFF</Color>
+    <Color x:Key="TextColor">#F2F2F2</Color>
+    <Color x:Key="DimColor">#B0B0B0</Color>
+    <Color x:Key="FaintColor">#767676</Color>
+    <Color x:Key="AccentColor">#8C8AF3</Color>
+    <Color x:Key="OkColor">#5CC98B</Color>
+    <Color x:Key="WarnColor">#E5B04D</Color>
+    <Color x:Key="BadColor">#F0737B</Color>
+    <Color x:Key="HoverColor">#0DFFFFFF</Color>
+    <Color x:Key="ScrollThumbColor">#3DFFFFFF</Color>
+    <Color x:Key="ScrollThumbHoverColor">#5CFFFFFF</Color>
+
+    <SolidColorBrush x:Key="WindowBrush" Color="{StaticResource WindowColor}" />
+    <SolidColorBrush x:Key="LayerBrush" Color="{StaticResource LayerColor}" />
+    <SolidColorBrush x:Key="RaisedBrush" Color="{StaticResource RaisedColor}" />
+    <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="LineStrongBrush" Color="{StaticResource LineStrongColor}" />
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+    <SolidColorBrush x:Key="DimBrush" Color="{StaticResource DimColor}" />
+    <SolidColorBrush x:Key="FaintBrush" Color="{StaticResource FaintColor}" />
+    <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="{StaticResource ScrollThumbColor}" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="{StaticResource ScrollThumbHoverColor}" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentColor}" Opacity="0.16" />
+    <SolidColorBrush x:Key="OkBrush" Color="{StaticResource OkColor}" />
+    <SolidColorBrush x:Key="OkSoftBrush" Color="{StaticResource OkColor}" Opacity="0.16" />
+    <SolidColorBrush x:Key="WarnBrush" Color="{StaticResource WarnColor}" />
+    <SolidColorBrush x:Key="WarnSoftBrush" Color="{StaticResource WarnColor}" Opacity="0.16" />
+    <SolidColorBrush x:Key="BadBrush" Color="{StaticResource BadColor}" />
+    <SolidColorBrush x:Key="BadSoftBrush" Color="{StaticResource BadColor}" Opacity="0.16" />
+
+    <Color x:Key="{x:Static SystemColors.AccentColorDark3Key}">#42409A</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark2Key}">#5250B8</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorDark1Key}">#615FCF</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorKey}">#6F6DDE</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight1Key}">#7E7CEA</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#8C8AF3</Color>
+    <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#A5A3F7</Color>
+
+    <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundThemeBrush" Color="#18FFFFFF" />
+    <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundPointerOverThemeBrush" Color="#20FFFFFF" />
+    <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundPressedThemeBrush" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="ListBoxItemBackgroundSelectedPressedThemeBrush" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="ListBoxItemUnselectedBackgroundPointerOverThemeBrush" Color="#0AFFFFFF" />
+    <SolidColorBrush x:Key="DataGridRowSelectedBackgroundThemeBrush" Color="Transparent" />
+    <SolidColorBrush x:Key="DataGridRowSelectedForegroundThemeBrush"
+                     Color="{StaticResource TextColor}" />
+    <SolidColorBrush x:Key="DataGridHeaderBackground" Color="Transparent" />
+    <SolidColorBrush x:Key="TextControlBorderBrush" Color="{StaticResource LineStrongColor}" />
+    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#38FFFFFF" />
+
+    <Geometry x:Key="WarningIcon">M12 9v5M12 17.5v.5M10.3 3.9L2.4 18a1.9 1.9 0 001.7 2.9h15.8a1.9 1.9 0 001.7-2.9L13.7 3.9a1.9 1.9 0 00-3.4 0z</Geometry>
+    <Geometry x:Key="FilterOffIcon">M13.4 17.9L11 19.3V13L4.6 5.6H15.4M19.4 5.6L13 13v1M3 3l18 18</Geometry>
+    <Geometry x:Key="DownloadIcon">M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3</Geometry>
+    <Geometry x:Key="FolderOpenIcon">M6 14l1.5-2.9A2 2 0 019.24 10H20a2 2 0 011.94 2.5l-1.54 6a2 2 0 01-1.95 1.5H4a2 2 0 01-2-2V5a2 2 0 012-2h3.9a2 2 0 011.69.9l.81 1.2a2 2 0 001.67.9H18a2 2 0 012 2v2</Geometry>
+    <Geometry x:Key="FolderIcon">M20 20a2 2 0 002-2V8a2 2 0 00-2-2h-7.9a2 2 0 01-1.69-.9L9.6 3.9A2 2 0 007.93 3H4a2 2 0 00-2 2v13a2 2 0 002 2z</Geometry>
+    <Geometry x:Key="FilePlusIcon">M14 2v4a2 2 0 002 2h4M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7zM9 15h6M12 12v6</Geometry>
+    <Geometry x:Key="SlidersIcon">M21 4h-6M9 4H3M21 12h-9M6 12H3M21 20h-3M12 20H3M15 2v4M6 10v4M18 18v4</Geometry>
+    <Geometry x:Key="MoreIcon">M4 12a1 1 0 102 0 1 1 0 10-2 0M11 12a1 1 0 102 0 1 1 0 10-2 0M18 12a1 1 0 102 0 1 1 0 10-2 0</Geometry>
+    <Geometry x:Key="ChevronDownIcon">M6 9l6 6 6-6</Geometry>
+    <Geometry x:Key="PlayIcon">M6 4l14 8-14 8z</Geometry>
+    <Geometry x:Key="InboxIcon">M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z</Geometry>
+    <Geometry x:Key="CheckIcon">M4 12.5l5 5L20 6.5</Geometry>
+    <Geometry x:Key="LogoIcon">M4 4h16v16H4zM8 9l4 6 4-6</Geometry>
+
+</ResourceDictionary>

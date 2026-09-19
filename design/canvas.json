@@ -1,0 +1,38 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Direction A" },
+    { "id": "page-2", "name": "Explored" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Option A — Queue table", "page": "page-1", "x": 0, "y": 0, "w": 1120, "h": 760 },
+    { "file": "MasterDetail.dc.html", "title": "Option B — Master–detail", "page": "page-2", "x": 0, "y": 0, "w": 1100, "h": 720 },
+    { "file": "DropZone.dc.html", "title": "Option C — Drop zone", "page": "page-2", "x": 1180, "y": 0, "w": 1100, "h": 720 }
+  ],
+  "annotations": [
+    {
+      "id": "rev-a-changes",
+      "x": 0,
+      "y": -320,
+      "w": 350,
+      "page": "page-1",
+      "text": "REVISED FROM YOUR NOTES\n\nGone: mode chips (Probe runs on add; Decrypt was Start), the Subs column, the dark/light toggle, and the Boy/Girl label on VS.\n\nNew: matching Source and Output bars — label, path field, Browse… — in the Windows convention, per-row checkboxes with a right-click menu, hover tooltips on every option. Start sits alone past a divider on the output bar so the primary action stays visually separate from the picker.\n\nKey column now has three states — in keys.json / missing / recovered — so the automatic fallback is visible during a run.\n\nRecover key is a right-click action on the checked rows, not a mode. Try it: tick a couple of rows and right-click the list.\n\nStill open: where the recovered videoKey values are shown so you can paste them into keys.json."
+    },
+    {
+      "id": "opt-b-master-detail",
+      "x": 0,
+      "y": -210,
+      "w": 340,
+      "page": "page-2",
+      "text": "OPTION B — Master–detail\n\nCompact list on the left, one file examined in depth on the right: cached subtitle languages, pipeline stage, that file's log.\n\nFor: diagnosing why a file skipped or failed.\n\nAgainst: no batch overview — you cannot see 40 files' status at once, which is the normal case."
+    },
+    {
+      "id": "opt-c-drop-zone",
+      "x": 1180,
+      "y": -210,
+      "w": 340,
+      "page": "page-2",
+      "text": "OPTION C — Drop zone\n\nDrag files in, press Convert, walk away. Cards with progress rings; options behind one gear.\n\nFor: the least-in-the-way version of the archival workflow.\n\nAgainst: lowest information density, and it scales badly past ~20 files."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

@@ -1,0 +1,311 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #0078d4; } a:hover { color: #005a9e; }
+    .app {
+      --bg: #f3f3f3; --layer: #ffffff; --layer-2: #fafafa; --line: #e5e5e5;
+      --text: #1b1b1b; --dim: #5d5d5d; --faint: #8a8a8a;
+      --accent: #0f6cbd; --ok: #0f7b0f; --warn: #9d5d00; --bad: #c42b1c;
+      --sel: #eff6fc; --hover: #f5f5f5;
+      font-family: 'Inter Tight', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+    }
+    .app.dark {
+      --bg: #202020; --layer: #2b2b2b; --layer-2: #272727; --line: #3a3a3a;
+      --text: #ffffff; --dim: #c5c5c5; --faint: #8a8a8a;
+      --accent: #60cdff; --ok: #6ccb5f; --warn: #fce100; --bad: #ff99a4;
+      --sel: #383838; --hover: #333333;
+    }
+    .app * { box-sizing: border-box; }
+    .btn {
+      display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 4px; background: var(--layer);
+      color: var(--text); font-size: 13px; font-family: inherit; cursor: pointer;
+    }
+    .btn:hover { background: var(--hover); }
+    .btn.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 500; }
+    .app.dark .btn.primary { color: #003354; }
+    .item:hover { background: var(--hover); }
+    .lang {
+      height: 22px; padding: 0 8px; border-radius: 4px; background: var(--layer-2);
+      border: 1px solid var(--line); font-size: 11px; color: var(--dim);
+      display: flex; align-items: center;
+    }
+  </style>
+</helmet>
+
+<div class="app {{themeClass}}" style="background: var(--bg); color: var(--text); height: 720px; display: flex; flex-direction: column;">
+
+  <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; gap: 8px; border-bottom: 1px solid var(--line); background: var(--layer-2); flex-shrink: 0;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M10 9l5 3-5 3z"/></svg>
+    <div style="font-size: 12px; color: var(--dim);">MonsieurVerite</div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; min-height: 0;">
+
+    <div style="width: 296px; border-right: 1px solid var(--line); background: var(--layer-2); display: flex; flex-direction: column; flex-shrink: 0;">
+      <div style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line); flex-shrink: 0;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em;">QUEUE</div>
+        <div style="font-size: 11px; color: var(--faint);">{{count}}</div>
+        <div style="flex-grow: 1;"></div>
+        <button class="btn" style="height: 26px; padding: 0 8px;" onClick="{{addFile}}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+
+      <div style="flex-grow: 1; overflow: hidden;">
+        <sc-for list="{{files}}" as="f" hint-placeholder-count="5">
+          <div class="item" onClick="{{f.pick}}" style="padding: 9px 12px; display: flex; align-items: center; gap: 9px; cursor: pointer; background: {{f.bg}}; border-left: 2px solid {{f.mark}};">
+            <div style="width: 7px; height: 7px; border-radius: 4px; background: {{f.dot}}; flex-shrink: 0;"></div>
+            <div style="min-width: 0; flex-grow: 1;">
+              <div style="font-size: 12.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{f.short}}</div>
+              <div style="font-size: 11px; color: var(--faint); margin-top: 2px;">{{f.sub}}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 8px; flex-shrink: 0;">
+        <sc-if value="{{idle}}" hint-placeholder-val="{{true}}">
+          <button class="btn primary" style="flex-grow: 1; justify-content: center;" onClick="{{start}}">Start batch</button>
+        </sc-if>
+        <sc-if value="{{running}}" hint-placeholder-val="{{false}}">
+          <button class="btn" style="flex-grow: 1; justify-content: center;" onClick="{{stop}}">Cancel</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden;">
+
+      <div style="padding: 20px 24px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0;">
+        <div style="font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{cur.name}}</div>
+        <div style="font-size: 12px; color: var(--faint); margin-top: 4px;">{{cur.status}}</div>
+      </div>
+
+      <div style="flex-grow: 1; overflow: hidden; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px;">
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em;">PIPELINE</div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+            <sc-for list="{{stages}}" as="st" hint-placeholder-count="4">
+              <div style="border: 1px solid {{st.border}}; border-radius: 6px; background: var(--layer); padding: 11px 12px;">
+                <div style="display: flex; align-items: center; gap: 7px;">
+                  <div style="width: 6px; height: 6px; border-radius: 3px; background: {{st.dot}};"></div>
+                  <div style="font-size: 12.5px; font-weight: 500; color: {{st.text}};">{{st.label}}</div>
+                </div>
+                <div style="height: 4px; border-radius: 2px; background: var(--line); margin-top: 9px; overflow: hidden;">
+                  <div style="height: 4px; background: {{st.dot}}; width: {{st.pct}};"></div>
+                </div>
+                <div style="font-size: 11px; color: var(--faint); margin-top: 6px;">{{st.note}}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em;">AVAILABILITY</div>
+          <div style="border: 1px solid var(--line); border-radius: 6px; background: var(--layer); padding: 14px 16px; display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 74px; font-size: 12px; color: var(--faint);">Key</div>
+              <div style="font-size: 13px; color: {{cur.keyColor}};">{{cur.keyText}}</div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <div style="width: 74px; font-size: 12px; color: var(--faint); padding-top: 3px;">Subtitles</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 5px; flex-grow: 1;">
+                <sc-for list="{{cur.langs}}" as="g" hint-placeholder-count="8">
+                  <div class="lang">{{g.code}}</div>
+                </sc-for>
+                <sc-if value="{{cur.noLangs}}" hint-placeholder-val="{{false}}">
+                  <div style="font-size: 12.5px; color: var(--warn);">none cached</div>
+                </sc-if>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 74px; font-size: 12px; color: var(--faint);">VS script</div>
+              <div style="font-size: 13px; color: var(--dim);">{{cur.vsText}}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em;">ACTIVITY</div>
+          <div style="border: 1px solid var(--line); border-radius: 6px; background: var(--layer); padding: 11px 14px; display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
+            <sc-for list="{{logLines}}" as="l" hint-placeholder-count="4">
+              <div style="font-size: 11.5px; font-family: 'Cascadia Mono', Consolas, monospace; color: {{l.color}};">{{l.text}}</div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 28px; border-top: 1px solid var(--line); background: var(--layer-2); display: flex; align-items: center; padding: 0 12px; gap: 14px; font-size: 11.5px; color: var(--faint); flex-shrink: 0;">
+    <div>{{summary}}</div>
+    <div style="flex-grow: 1;"></div>
+    <div>flac · JP audio · EN subs</div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":true,"section":"Theme"},"$preview":{"width":1100,"height":720}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.stages = ['demux', 'hca', 'ass', 'mux'];
+    this.state = {
+      running: false,
+      selected: 0,
+      cursor: -1,
+      files: [
+        { name: 'Cs_NodKrai_AQ60161901_BSHMO_Boy.usm', key: true,  langs: ['CHS','CHT','DE','EN','ES','FR','ID','IT','JP','KR','PT','RU','TH','TR','VI'], vs: null,  status: 'Queued', pct: 0 },
+        { name: 'Cs_EQHDJ005_HaiDengJie_Boy.usm',      key: true,  langs: ['CHS','CHT','DE','EN','ES','FR','ID','IT','JP','KR','PT','RU','TH','TR','VI'], vs: 'Cs_EQHDJ005_HaiDengJie_Boy.py', status: 'Queued', pct: 0 },
+        { name: 'Cs_ShieldingResources_02.usm',        key: false, langs: [], vs: null, status: 'Queued', pct: 0 },
+        { name: 'Cs_LiYue_AQ30401801_Fungus_Boy.usm',  key: true,  langs: ['CHS','CHT','EN','JP','KR'], vs: null, status: 'Queued', pct: 0 },
+      ],
+      log: [{ text: 'Ready. 4 files queued.', tone: 'dim' }],
+    };
+  }
+
+  componentWillUnmount() { this.halt(); }
+  halt() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+
+  log(text, tone) {
+    this.setState((s) => ({ log: [...s.log, { text, tone: tone || 'dim' }].slice(-5) }));
+  }
+
+  start = () => {
+    if (this.state.running) return;
+    this.setState((s) => ({
+      running: true, cursor: -1, log: [],
+      files: s.files.map((f) => ({ ...f, pct: 0, status: f.key ? 'Queued' : 'Skipped — no key' })),
+    }));
+    this.advance();
+    this.timer = setInterval(() => this.tick(), 110);
+  };
+
+  advance() {
+    this.setState((s) => {
+      let next = s.cursor + 1;
+      while (next < s.files.length && !s.files[next].key) next += 1;
+      if (next >= s.files.length) return { cursor: next, running: false };
+      return {
+        cursor: next, selected: next,
+        files: s.files.map((f, i) => (i === next ? { ...f, status: 'Running' } : f)),
+      };
+    });
+  }
+
+  tick() {
+    const { cursor, files } = this.state;
+    if (cursor < 0 || cursor >= files.length) { this.halt(); return; }
+    const pct = Math.min(100, files[cursor].pct + 8);
+
+    if (pct >= 100) {
+      this.setState((s) => ({ files: s.files.map((f, i) => (i === cursor ? { ...f, pct: 100, status: 'Done' } : f)) }));
+      this.log('mux → output/…/…mkv', 'ok');
+      if (!files.slice(cursor + 1).some((f) => f.key)) {
+        this.halt();
+        this.setState({ running: false, cursor: files.length });
+        this.log('Batch complete.', 'ok');
+        return;
+      }
+      this.advance();
+      return;
+    }
+
+    const stage = this.stages[Math.min(3, Math.floor(pct / 26))];
+    if (stage !== this.lastStage) { this.lastStage = stage; this.log(`stage ${stage} started`, 'dim'); }
+    this.setState((s) => ({ files: s.files.map((f, i) => (i === cursor ? { ...f, pct } : f)) }));
+  }
+
+  stop = () => {
+    this.halt();
+    this.setState((s) => ({
+      running: false,
+      files: s.files.map((f) => (f.status === 'Running' ? { ...f, status: 'Cancelled' } : f)),
+    }));
+    this.log('Cancelled at stage boundary.', 'warn');
+  };
+
+  addFile = () => {
+    this.setState((s) => ({
+      files: [...s.files, {
+        name: `Cs_Sumeru_AQ${41000 + s.files.length * 137}_Aranara.usm`,
+        key: true, langs: ['CHS','EN','JP','KR'], vs: null, status: 'Queued', pct: 0,
+      }],
+    }));
+  };
+
+  renderVals() {
+    const s = this.state;
+    const dark = this.props.dark ?? true;
+    const cur = s.files[s.selected] || s.files[0];
+    const done = s.files.filter((f) => f.status === 'Done').length;
+
+    const dotFor = (f) => {
+      if (f.status === 'Done') return 'var(--ok)';
+      if (f.status === 'Running') return 'var(--accent)';
+      if (!f.key) return 'var(--warn)';
+      return 'var(--faint)';
+    };
+
+    const curStage = Math.floor(cur.pct / 26);
+
+    return {
+      themeClass: dark ? 'dark' : '',
+      running: s.running,
+      idle: !s.running,
+      count: `${s.files.length}`,
+      summary: `${s.files.length} files · ${done} done`,
+
+      files: s.files.map((f, i) => ({
+        short: f.name.replace(/^Cs_/, '').replace(/\.usm$/, ''),
+        sub: f.status === 'Running' ? `${f.pct}%` : f.status,
+        bg: i === s.selected ? 'var(--sel)' : 'transparent',
+        mark: i === s.selected ? 'var(--accent)' : 'transparent',
+        dot: dotFor(f),
+        pick: () => this.setState({ selected: i }),
+      })),
+
+      cur: {
+        name: cur.name,
+        status: cur.status,
+        keyText: cur.key ? 'present in keys.json' : 'missing — will attempt recovery from the video stream',
+        keyColor: cur.key ? 'var(--ok)' : 'var(--warn)',
+        langs: cur.langs.map((c) => ({ code: c })),
+        noLangs: cur.langs.length === 0,
+        vsText: cur.vs || 'none — plain mux',
+      },
+
+      stages: this.stages.map((label, i) => {
+        const active = cur.status === 'Running' && i === curStage;
+        const complete = cur.status === 'Done' || (cur.status === 'Running' && i < curStage);
+        const pct = complete ? 100 : active ? ((cur.pct % 26) / 26) * 100 : 0;
+        return {
+          label,
+          pct: `${pct}%`,
+          dot: complete ? 'var(--ok)' : active ? 'var(--accent)' : 'var(--line)',
+          border: active ? 'var(--accent)' : 'var(--line)',
+          text: complete || active ? 'var(--text)' : 'var(--faint)',
+          note: complete ? 'done' : active ? 'running' : 'waiting',
+        };
+      }),
+
+      logLines: s.log.map((l) => ({
+        text: l.text,
+        color: l.tone === 'ok' ? 'var(--ok)' : l.tone === 'warn' ? 'var(--warn)' : 'var(--dim)',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+using System.Windows;
+using MonsieurVerite.ViewModels;
+
+namespace MonsieurVerite;
+
+public partial class SettingsDialog : Window
+{
+    private readonly RunOptions target;
+    private readonly RunOptions working;
+
+    public SettingsDialog(RunOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        InitializeComponent();
+        target = options;
+        working = options.Clone();
+        DataContext = working;
+        RecoveredKeysRun.Text = Settings.RecoveredKeysPath;
+    }
+
+    private void Ok_Click(object sender, RoutedEventArgs e)
+    {
+        target.CopyFrom(working);
+        DialogResult = true;
+    }
+}

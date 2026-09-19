@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Everything shared lives in ../Directory.Build.props. -->
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <UseWPF>true</UseWPF>
+        <!-- Required by [LibraryImport] in Engine/JobObject.cs: the generated marshalling stubs
+             use pointers. None of our own code is unsafe. The alternative, plain [DllImport],
+             trips SYSLIB1054 instead and would need its own suppression. -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Lets the tests pin internal helpers (e.g. the exact bytes of a stdin command). -->
+        <InternalsVisibleTo Include="MonsieurVerite.Tests" />
+    </ItemGroup>
+
+</Project>

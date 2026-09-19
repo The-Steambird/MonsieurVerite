@@ -1,0 +1,461 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #60cdff; } a:hover { color: #99dbff; }
+    .app {
+      --bg: #202020; --layer: #2b2b2b; --layer-2: #272727; --line: #3a3a3a;
+      --text: #ffffff; --dim: #c5c5c5; --faint: #8a8a8a;
+      --accent: #60cdff; --ok: #6ccb5f; --warn: #fce100; --bad: #ff99a4;
+      --sel: #35414a; --hover: #333333;
+      font-family: 'Inter Tight', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+    }
+    .app * { box-sizing: border-box; }
+    .btn {
+      display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+      border: 1px solid var(--line); border-radius: 4px; background: var(--layer);
+      color: var(--text); font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .btn:hover { background: var(--hover); }
+    .btn.primary { background: var(--accent); border-color: transparent; color: #003354; font-weight: 500; }
+    .path {
+      height: 32px; border: 1px solid var(--line); border-radius: 4px; background: var(--layer-2);
+      display: flex; align-items: center; padding: 0 10px; font-size: 12.5px; color: var(--dim);
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex-grow: 1;
+      font-family: 'Cascadia Mono', Consolas, monospace;
+    }
+    .row:hover { background: var(--hover); }
+    .cell { padding: 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chip {
+      height: 26px; padding: 0 12px; border-radius: 4px; border: 1px solid var(--line);
+      background: var(--layer); color: var(--dim); font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; font-family: inherit;
+    }
+    .chip.on { background: var(--accent); border-color: transparent; color: #003354; font-weight: 500; }
+    .menu-item { padding: 7px 14px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .menu-item:hover { background: var(--hover); }
+    .menu-item.off { color: var(--faint); cursor: default; }
+    .menu-item.off:hover { background: transparent; }
+  </style>
+</helmet>
+
+<div class="app" onClick="{{closeMenus}}" style="background: var(--bg); color: var(--text); height: 760px; display: flex; flex-direction: column; position: relative;">
+
+  <div style="height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--layer-2); flex-shrink: 0;">
+    <div class="path">{{sourceDir}}</div>
+    <button class="btn" onClick="{{pickSource}}">Browse…</button>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; min-height: 0;">
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0;">
+      <div style="display: grid; grid-template-columns: 38px 1fr 96px 108px 132px; height: 34px; align-items: center; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--faint); font-weight: 500; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <div onClick="{{toggleAll}}" style="width: 15px; height: 15px; border-radius: 3px; border: 1px solid {{allBorder}}; background: {{allBg}}; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            <sc-if value="{{anyChecked}}" hint-placeholder-val="{{true}}">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#003354" stroke-width="3.5"><path d="{{allMark}}"/></svg>
+            </sc-if>
+          </div>
+        </div>
+        <div class="cell">Name</div>
+        <div class="cell">Key</div>
+        <div class="cell">Status</div>
+        <div class="cell">Progress</div>
+      </div>
+
+      <div onContextMenu="{{openMenu}}" style="flex-grow: 1; overflow: hidden;">
+        <sc-for list="{{files}}" as="f" hint-placeholder-count="6">
+          <div class="row" style="display: grid; grid-template-columns: 38px 1fr 96px 108px 132px; height: 40px; align-items: center; font-size: 13px; border-bottom: 1px solid var(--line); background: {{f.rowBg}};">
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <div onClick="{{f.check}}" style="width: 15px; height: 15px; border-radius: 3px; border: 1px solid {{f.boxBorder}}; background: {{f.boxBg}}; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <sc-if value="{{f.checked}}" hint-placeholder-val="{{false}}">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#003354" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>
+                </sc-if>
+              </div>
+            </div>
+            <div class="cell" style="display: flex; align-items: center; gap: 7px;">
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{f.name}}</span>
+              <sc-if value="{{f.noSubs}}" hint-placeholder-val="{{false}}">
+                <span title="No cached subtitles — this file will mux without any subtitle track" style="display: flex; flex-shrink: 0;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2"><path d="M12 9v5M12 17.5v.5"/><path d="M10.3 3.9L2.4 18a1.9 1.9 0 001.7 2.9h15.8a1.9 1.9 0 001.7-2.9L13.7 3.9a1.9 1.9 0 00-3.4 0z"/></svg>
+                </span>
+              </sc-if>
+            </div>
+            <div class="cell" style="color: {{f.keyColor}}; font-size: 12.5px;">{{f.keyText}}</div>
+            <div class="cell" style="color: {{f.statusColor}};">{{f.status}}</div>
+            <div class="cell">
+              <div style="height: 6px; border-radius: 3px; background: var(--line); overflow: hidden;">
+                <div style="height: 6px; border-radius: 3px; background: {{f.barColor}}; width: {{f.pct}};"></div>
+              </div>
+              <div style="font-size: 11px; color: var(--faint); margin-top: 3px;">{{f.detail}}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="width: 244px; border-left: 1px solid var(--line); background: var(--layer-2); padding: 14px; display: flex; flex-direction: column; gap: 14px; flex-shrink: 0; overflow: hidden;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--faint); letter-spacing: 0.04em;">OPTIONS</div>
+
+      <sc-for list="{{toggles}}" as="t" hint-placeholder-count="4">
+        <div onClick="{{t.flip}}" onMouseEnter="{{t.hover}}" onMouseLeave="{{clearTip}}" style="display: flex; align-items: center; gap: 9px; cursor: pointer;">
+          <div style="width: 16px; height: 16px; border-radius: 3px; border: 1px solid {{t.boxBorder}}; background: {{t.boxBg}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <sc-if value="{{t.on}}" hint-placeholder-val="{{true}}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#003354" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </sc-if>
+          </div>
+          <div style="font-size: 13px; color: var(--text);">{{t.label}}</div>
+        </div>
+      </sc-for>
+
+      <div style="height: 1px; background: var(--line);"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <div style="font-size: 12px; color: var(--dim);">Audio codec</div>
+        <div style="display: flex; gap: 6px;">
+          <sc-for list="{{codecs}}" as="c" hint-placeholder-count="2">
+            <button class="chip {{c.cls}}" onClick="{{c.pick}}" onMouseEnter="{{c.hover}}" onMouseLeave="{{clearTip}}">{{c.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 11px; color: var(--faint); line-height: 1.5;">Default audio and subtitle tracks are set once, in Settings.</div>
+    </div>
+  </div>
+
+  <div style="border-top: 1px solid var(--line); background: var(--layer-2); flex-shrink: 0;">
+    <div onClick="{{toggleLog}}" style="height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 12px; cursor: pointer;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--dim)" stroke-width="2" style="transform: rotate({{logRotate}}deg);"><path d="M9 6l6 6-6 6"/></svg>
+      <div style="font-size: 12px; color: var(--dim);">Log</div>
+    </div>
+    <sc-if value="{{logOpen}}" hint-placeholder-val="{{true}}">
+      <div style="height: 104px; overflow: hidden; padding: 0 12px 10px; display: flex; flex-direction: column; gap: 3px;">
+        <sc-for list="{{logLines}}" as="l" hint-placeholder-count="5">
+          <div style="font-size: 11.5px; font-family: 'Cascadia Mono', Consolas, monospace; color: {{l.color}};">{{l.text}}</div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-top: 1px solid var(--line); flex-shrink: 0;">
+    <div class="path">{{outputDir}}</div>
+    <button class="btn" onClick="{{pickOutput}}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+      Output
+    </button>
+    <div style="width: 1px; height: 22px; background: var(--line); margin: 0 6px; flex-shrink: 0;"></div>
+    <sc-if value="{{idle}}" hint-placeholder-val="{{true}}">
+      <button class="btn primary" style="padding: 0 22px;" onClick="{{start}}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>
+        Start
+      </button>
+    </sc-if>
+    <sc-if value="{{running}}" hint-placeholder-val="{{false}}">
+      <button class="btn" style="padding: 0 22px;" onClick="{{stop}}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        Cancel
+      </button>
+    </sc-if>
+  </div>
+
+  <div style="height: 26px; border-top: 1px solid var(--line); background: var(--layer-2); display: flex; align-items: center; padding: 0 12px; gap: 14px; font-size: 11.5px; color: var(--faint); flex-shrink: 0;">
+    <div>{{summary}}</div>
+    <div style="flex-grow: 1;"></div>
+    <div>{{stageText}}</div>
+  </div>
+
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: {{menuX}}px; top: {{menuY}}px; min-width: 186px; background: var(--layer); border: 1px solid var(--line); border-radius: 6px; padding: 4px 0; box-shadow: 0 10px 28px rgba(0,0,0,0.45); z-index: 40;">
+      <div class="menu-item {{menu.removeCls}}" onClick="{{menu.remove}}">Remove from queue</div>
+      <div class="menu-item {{menu.recoverCls}}" onClick="{{menu.recover}}">{{menu.recoverLabel}}</div>
+      <div style="height: 1px; background: var(--line); margin: 4px 0;"></div>
+      <div class="menu-item {{menu.openCls}}" onClick="{{menu.openFolder}}">Open output folder</div>
+      <div class="menu-item" onClick="{{menu.clearSel}}">Clear selection</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{tipOpen}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; right: 258px; bottom: 96px; width: 268px; background: var(--layer); border: 1px solid var(--line); border-radius: 6px; padding: 11px 13px; box-shadow: 0 10px 28px rgba(0,0,0,0.45); z-index: 30;">
+      <div style="font-size: 12.5px; font-weight: 600; margin-bottom: 5px;">{{tip.title}}</div>
+      <div style="font-size: 12px; color: var(--dim); line-height: 1.55;">{{tip.body}}</div>
+      <sc-if value="{{tip.hasFlag}}" hint-placeholder-val="{{true}}">
+        <div style="font-size: 11px; color: var(--faint); margin-top: 7px; font-family: 'Cascadia Mono', Consolas, monospace;">{{tip.flag}}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":760}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.sources = [
+      'C:\\Users\\Mint\\Desktop\\Data\\Programming\\charlotte\\USM\\6.3',
+      'C:\\Users\\Mint\\Desktop\\Data\\Programming\\charlotte\\USM\\5.8',
+    ];
+    this.stages = ['demux', 'hca', 'ass', 'mux'];
+    this.state = {
+      sourceIndex: 0,
+      outputDir: 'C:\\Users\\Mint\\Desktop\\Data\\Programming\\charlotte\\output',
+      running: false,
+      logOpen: true,
+      codec: 'flac',
+      cursor: -1,
+      stage: '',
+      menu: null,
+      tip: null,
+      opts: { noCleanup: false, vapourSynth: false, skipExisting: true, flat: false },
+      files: [
+        { name: 'Cs_NodKrai_AQ60161901_BSHMO_Boy.usm', key: 'yes',  subs: 15, status: 'Queued', pct: 0, checked: false },
+        { name: 'Cs_EQHDJ005_HaiDengJie_Boy.usm',      key: 'yes',  subs: 15, status: 'Queued', pct: 0, checked: false },
+        { name: 'Cs_ShieldingResources_02.usm',        key: 'no',   subs: 0,  status: 'Queued', pct: 0, checked: false },
+        { name: 'Cs_LiYue_AQ30401801_Fungus_Boy.usm',  key: 'yes',  subs: 13, status: 'Queued', pct: 0, checked: false },
+        { name: 'Cs_Inazuma_EQ21072103_Kimono.usm',    key: 'yes',  subs: 15, status: 'Queued', pct: 0, checked: false },
+        { name: 'Cs_Natlan_AQ52301_Ochkanatlan.usm',   key: 'no',   subs: 15, status: 'Queued', pct: 0, checked: false },
+      ],
+      log: [
+        { text: 'charlotte 0.4.0  ·  protocol 1', tone: 'dim' },
+        { text: 'Subtitles up to date (no change upstream)', tone: 'dim' },
+        { text: '6 files added · 4 keys present, 2 will be recovered', tone: 'dim' },
+      ],
+    };
+  }
+
+  componentWillUnmount() { this.halt(); }
+  halt() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+
+  log(text, tone) {
+    this.setState((s) => ({ log: [...s.log, { text, tone: tone || 'dim' }].slice(-5) }));
+  }
+
+  closeMenus = () => { if (this.state.menu) this.setState({ menu: null }); };
+
+  openMenu = (e) => {
+    e.preventDefault();
+    this.setState({ menu: { x: Math.min(e.clientX, 900), y: Math.min(e.clientY, 560) } });
+  };
+
+  clearTip = () => this.setState({ tip: null });
+
+  pickSource = () => {
+    this.setState((s) => ({ sourceIndex: (s.sourceIndex + 1) % this.sources.length }));
+    this.log('Probed 6 files — read-only, nothing written.', 'dim');
+  };
+
+  pickOutput = () => {
+    this.setState((s) => ({
+      outputDir: s.outputDir.endsWith('output')
+        ? 'D:\\Archive\\Genshin\\cutscenes'
+        : 'C:\\Users\\Mint\\Desktop\\Data\\Programming\\charlotte\\output',
+    }));
+  };
+
+  toggleAll = () => {
+    this.setState((s) => {
+      const every = s.files.every((f) => f.checked);
+      return { files: s.files.map((f) => ({ ...f, checked: !every })) };
+    });
+  };
+
+  start = () => {
+    if (this.state.running) return;
+    this.setState((s) => ({
+      running: true, cursor: -1, log: [], menu: null,
+      files: s.files.map((f) => ({ ...f, pct: 0, status: 'Queued' })),
+    }));
+    this.advance();
+    this.timer = setInterval(() => this.tick(), 105);
+  };
+
+  advance() {
+    this.setState((s) => {
+      const next = s.cursor + 1;
+      if (next >= s.files.length) return { cursor: next, running: false, stage: '' };
+      const target = s.files[next];
+      if (target.key === 'no') {
+        this.pendingRecover = target.name;
+      }
+      return {
+        cursor: next, stage: this.stages[0],
+        files: s.files.map((f, i) => (i === next ? { ...f, status: 'Running' } : f)),
+      };
+    });
+    if (this.pendingRecover) {
+      this.log(`${this.pendingRecover.slice(0, 30)}… no key in keys.json — recovering from the video stream`, 'warn');
+      this.pendingRecover = null;
+    }
+  }
+
+  tick() {
+    const { cursor, files } = this.state;
+    if (cursor < 0 || cursor >= files.length) { this.halt(); return; }
+    const current = files[cursor];
+    const pct = Math.min(100, current.pct + 8);
+    const stage = this.stages[Math.min(3, Math.floor(pct / 26))];
+
+    if (pct >= 100) {
+      this.setState((s) => ({
+        files: s.files.map((f, i) => (i === cursor
+          ? { ...f, pct: 100, status: 'Done', key: f.key === 'no' ? 'recovered' : f.key }
+          : f)),
+      }));
+      this.log(`${current.name.replace('.usm', '.mkv')}`, 'ok');
+      if (cursor + 1 >= files.length) {
+        this.halt();
+        this.setState({ running: false, stage: '', cursor: files.length });
+        this.log('Batch complete.', 'ok');
+        return;
+      }
+      this.advance();
+      return;
+    }
+    this.setState((s) => ({ files: s.files.map((f, i) => (i === cursor ? { ...f, pct } : f)), stage }));
+  }
+
+  stop = () => {
+    this.halt();
+    this.setState((s) => ({
+      running: false, stage: '',
+      files: s.files.map((f) => (f.status === 'Running' ? { ...f, status: 'Cancelled' } : f)),
+    }));
+    this.log('Cancelled at stage boundary — partial files cleaned up.', 'warn');
+  };
+
+  renderVals() {
+    const s = this.state;
+    const checked = s.files.filter((f) => f.checked);
+    const done = s.files.filter((f) => f.status === 'Done').length;
+    const missing = s.files.filter((f) => f.key === 'no').length;
+
+    const statusColor = (st) => ({
+      Done: 'var(--ok)', Running: 'var(--accent)', Cancelled: 'var(--warn)', Error: 'var(--bad)',
+    }[st] || 'var(--dim)');
+
+    const keyView = (k) => ({
+      yes: { text: 'in keys.json', color: 'var(--ok)' },
+      no: { text: 'missing', color: 'var(--warn)' },
+      recovered: { text: 'recovered', color: 'var(--accent)' },
+    }[k]);
+
+    const tips = {
+      noCleanup: { title: 'Keep intermediates', body: 'Leaves the decrypted .ivf, the per-channel .hca audio and the generated .ass subtitles on disk after muxing, instead of deleting them.', flag: '--no-cleanup / -nc' },
+      vapourSynth: { title: 'VapourSynth filter', body: 'Runs the matching vs/ script over the video before muxing. Extremely slow — heavy CPU and GPU. Files with no matching script are muxed unfiltered.', flag: '--vapoursynth / -vs' },
+      skipExisting: { title: 'Skip existing', body: 'Skips any file whose .mkv is already in the output folder. Useful for resuming an interrupted batch.', flag: '--skip-existing / -se' },
+      flat: { title: 'Flat output', body: 'Writes each .mkv straight into the output folder instead of giving every cutscene its own subfolder.', flag: '--flat / -f' },
+      flac: { title: 'FLAC', body: 'Lossless. Roughly three to five times the size of Opus, and the right default when the output is meant to be an archive.', flag: '--audio-codec flac' },
+      opus: { title: 'Opus', body: '256 kbps VBR, muxed through an .mka intermediate. Far smaller and transparent in practice, but lossy — a re-encode you cannot undo later.', flag: '--audio-codec opus' },
+    };
+
+    const setTip = (k) => () => this.setState({ tip: k });
+    const every = s.files.length > 0 && s.files.every((f) => f.checked);
+
+    return {
+      sourceDir: this.sources[s.sourceIndex],
+      outputDir: s.outputDir,
+      running: s.running,
+      idle: !s.running,
+      logOpen: s.logOpen,
+      logRotate: s.logOpen ? 90 : 0,
+      logCount: `${s.log.length} lines`,
+      summary: `${s.files.length} files · ${done} done · ${missing} needing key recovery`,
+      stageText: s.running ? `${s.stage} · ${s.files[s.cursor] ? s.files[s.cursor].pct : 0}%` : 'Idle',
+      anyChecked: checked.length > 0,
+      allMark: every ? 'M5 13l4 4L19 7' : 'M6 12h12',
+      allBg: checked.length > 0 ? 'var(--accent)' : 'transparent',
+      allBorder: checked.length > 0 ? 'transparent' : 'var(--faint)',
+      toggleAll: this.toggleAll,
+      closeMenus: this.closeMenus,
+      openMenu: this.openMenu,
+      clearTip: this.clearTip,
+      toggleLog: () => this.setState((p) => ({ logOpen: !p.logOpen })),
+
+      menuOpen: !!s.menu,
+      menuX: s.menu ? s.menu.x : 0,
+      menuY: s.menu ? s.menu.y : 0,
+      menu: {
+        removeCls: checked.length ? '' : 'off',
+        recoverCls: checked.length ? '' : 'off',
+        openCls: checked.some((f) => f.status === 'Done') ? '' : 'off',
+        recoverLabel: checked.length > 1 ? `Recover keys (${checked.length})` : 'Recover key',
+        remove: () => this.setState((p) => ({ files: p.files.filter((f) => !f.checked), menu: null })),
+        recover: () => {
+          this.setState({ menu: null });
+          if (checked.length) {
+            this.log(`Recovering ${checked.length} key(s) — results land in a dialog you can copy into keys.json.`, 'dim');
+          }
+        },
+        openFolder: () => this.setState({ menu: null }),
+        clearSel: () => this.setState((p) => ({ files: p.files.map((f) => ({ ...f, checked: false })), menu: null })),
+      },
+
+      tipOpen: !!s.tip,
+      tip: {
+        title: s.tip ? tips[s.tip].title : '',
+        body: s.tip ? tips[s.tip].body : '',
+        flag: s.tip ? tips[s.tip].flag : '',
+        hasFlag: !!s.tip,
+      },
+
+      files: s.files.map((f, i) => {
+        const kv = keyView(f.key);
+        return {
+          name: f.name,
+          checked: f.checked,
+          noSubs: f.subs === 0,
+          boxBg: f.checked ? 'var(--accent)' : 'transparent',
+          boxBorder: f.checked ? 'transparent' : 'var(--faint)',
+          keyText: kv.text,
+          keyColor: kv.color,
+          status: f.status,
+          statusColor: statusColor(f.status),
+          pct: `${f.pct}%`,
+          barColor: f.status === 'Done' ? 'var(--ok)' : 'var(--accent)',
+          detail: f.status === 'Running' ? s.stage : '',
+          rowBg: f.checked ? 'var(--sel)' : 'transparent',
+          check: () => this.setState((p) => ({
+            files: p.files.map((g, j) => (j === i ? { ...g, checked: !g.checked } : g)),
+          })),
+        };
+      }),
+
+      toggles: [
+        { id: 'noCleanup', label: 'Keep intermediates' },
+        { id: 'vapourSynth', label: 'VapourSynth filter' },
+        { id: 'skipExisting', label: 'Skip existing' },
+        { id: 'flat', label: 'Flat output' },
+      ].map((t) => ({
+        ...t,
+        on: s.opts[t.id],
+        boxBg: s.opts[t.id] ? 'var(--accent)' : 'transparent',
+        boxBorder: s.opts[t.id] ? 'transparent' : 'var(--faint)',
+        hover: setTip(t.id),
+        flip: () => this.setState((p) => ({ opts: { ...p.opts, [t.id]: !p.opts[t.id] } })),
+      })),
+
+      codecs: ['flac', 'opus'].map((c) => ({
+        label: c,
+        cls: s.codec === c ? 'on' : '',
+        hover: setTip(c),
+        pick: () => this.setState({ codec: c }),
+      })),
+
+      logLines: s.log.map((l) => ({
+        text: l.text,
+        color: l.tone === 'ok' ? 'var(--ok)' : l.tone === 'warn' ? 'var(--warn)' : 'var(--dim)',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>
