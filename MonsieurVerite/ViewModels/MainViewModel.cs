@@ -327,11 +327,12 @@ public sealed partial class MainViewModel : ObservableObject
             item.OutputPath = null;
         }
 
-        var arguments = new List<string> { "--output", OutputDirectory };
-        arguments.AddRange(Options.ToArguments());
-        arguments.AddRange(extraArguments);
-        arguments.AddRange(targets.Select(item => item.FullPath));
-        await RunEngineAsync(arguments, targets.Count).ConfigureAwait(true);
+        await RunEngineAsync(
+            [
+                "--output", OutputDirectory, .. Options.ToArguments(), .. extraArguments,
+                .. targets.Select(item => item.FullPath),
+            ],
+            targets.Count).ConfigureAwait(true);
     }
 
     [RelayCommand(CanExecute = nameof(CanRecoverKeys))]
