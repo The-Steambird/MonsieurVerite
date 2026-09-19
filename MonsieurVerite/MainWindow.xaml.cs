@@ -401,31 +401,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        logScroller ??= FindScrollViewer(LogList);
+        logScroller ??= LogList.Template.FindName("PART_ContentHost", LogList) as ScrollViewer;
         var wasAtBottom = logScroller is null
                           || logScroller.VerticalOffset >= logScroller.ScrollableHeight - 1;
         if (wasAtBottom)
         {
             LogList.ScrollIntoView(LogList.Items[^1]);
         }
-    }
-
-    private static ScrollViewer? FindScrollViewer(DependencyObject root)
-    {
-        if (root is ScrollViewer found)
-        {
-            return found;
-        }
-
-        var count = VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < count; i++)
-        {
-            if (FindScrollViewer(VisualTreeHelper.GetChild(root, i)) is { } child)
-            {
-                return child;
-            }
-        }
-
-        return null;
     }
 }
