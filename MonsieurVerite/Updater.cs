@@ -80,10 +80,6 @@ public static class Updater
         string url, string destination, Action<long, long?> onProgress,
         CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(url);
-        ArgumentException.ThrowIfNullOrWhiteSpace(destination);
-        ArgumentNullException.ThrowIfNull(onProgress);
-
         try
         {
             using var response = await Http
