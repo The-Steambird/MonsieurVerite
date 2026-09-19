@@ -12,6 +12,7 @@ public partial class SettingsDialog : Window
     {
         ArgumentNullException.ThrowIfNull(options);
         InitializeComponent();
+        SourceInitialized += (_, _) => Chrome.Acrylic(this);
         target = options;
         working = options.Clone();
         DataContext = working;
@@ -23,4 +24,6 @@ public partial class SettingsDialog : Window
         target.CopyFrom(working);
         DialogResult = true;
     }
+
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

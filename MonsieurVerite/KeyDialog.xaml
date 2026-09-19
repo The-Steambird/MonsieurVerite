@@ -7,28 +7,27 @@
         UseLayoutRounding="True"
         FocusManager.FocusedElement="{Binding ElementName=KeyBox}">
 
-    <StackPanel x:Name="Root" Margin="24,20,24,20">
-        <StackPanel.RenderTransform>
-            <TranslateTransform x:Name="Slide" />
-        </StackPanel.RenderTransform>
-        <StackPanel.Triggers>
-            <EventTrigger RoutedEvent="Loaded">
-                <BeginStoryboard Storyboard="{StaticResource DialogEnter}" />
-            </EventTrigger>
-        </StackPanel.Triggers>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="36" GlassFrameThickness="-1" ResizeBorderThickness="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
 
-        <TextBlock Style="{StaticResource DialogTitle}" Text="Decryption key" />
-        <TextBlock x:Name="Caption" Style="{StaticResource DialogBody}" Margin="0,0,0,12" />
-        <TextBox x:Name="KeyBox" Style="{StaticResource OptionField}"
-                 FontFamily="Cascadia Mono, Consolas" FontSize="13" MinHeight="32"
-                 Margin="0,0,0,8" TextChanged="KeyBox_TextChanged" />
-        <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20"
-                   Text="The videoKey as it appears in keys.json — a decimal integer. The same number Recover key reports." />
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="OkButton" Content="Convert"
-                    Style="{StaticResource DialogPrimaryButton}"
-                    IsDefault="True" IsEnabled="False" Click="Ok_Click" />
-            <Button Content="Cancel" Style="{StaticResource DialogButton}" IsCancel="True" />
+    <Grid>
+        <StackPanel Style="{StaticResource DialogRoot}">
+            <TextBlock Style="{StaticResource DialogTitle}" Text="Decryption key" />
+            <TextBlock x:Name="Caption" Style="{StaticResource DialogBody}" Margin="0,0,0,12" />
+            <TextBox x:Name="KeyBox" Style="{StaticResource OptionField}"
+                     FontFamily="Cascadia Mono, Consolas" FontSize="13" MinHeight="32"
+                     Margin="0,0,0,8" TextChanged="KeyBox_TextChanged" />
+            <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20"
+                       Text="The videoKey as it appears in keys.json — a decimal integer. The same number Recover key reports." />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="OkButton" Content="Convert" Style="{StaticResource PrimaryButton}"
+                        IsDefault="True" IsEnabled="False" Click="Ok_Click" />
+                <Button Content="Cancel" Style="{StaticResource ActionButton}" IsCancel="True"
+                        Margin="8,0,0,0" />
+            </StackPanel>
         </StackPanel>
-    </StackPanel>
+        <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Close_Click" />
+    </Grid>
 </Window>

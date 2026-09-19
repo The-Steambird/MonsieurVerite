@@ -6,42 +6,43 @@
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
         UseLayoutRounding="True" KeyDown="Window_KeyDown">
 
-    <Grid x:Name="Root" Margin="24,20,24,20">
-        <Grid.RenderTransform>
-            <TranslateTransform x:Name="Slide" />
-        </Grid.RenderTransform>
-        <Grid.Triggers>
-            <EventTrigger RoutedEvent="Loaded">
-                <BeginStoryboard Storyboard="{StaticResource DialogEnter}" />
-            </EventTrigger>
-        </Grid.Triggers>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="36" GlassFrameThickness="-1" ResizeBorderThickness="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
 
-        <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource DialogTitle}" />
-        <TextBlock x:Name="MessageText" Grid.Row="1" Style="{StaticResource DialogBody}" />
+    <Grid>
+        <Grid Style="{StaticResource DialogRoot}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <!-- Release notes, an engine description: anything long enough to want its own box. -->
-        <Border x:Name="DetailPanel" Grid.Row="2" Margin="0,14,0,0" Padding="12,10"
-                Background="{StaticResource LayerBrush}"
-                BorderBrush="{StaticResource LineStrongBrush}"
-                BorderThickness="1" CornerRadius="6" Visibility="Collapsed">
-            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
-                <TextBlock x:Name="DetailText" FontSize="12" Foreground="{StaticResource DimBrush}"
-                           TextWrapping="Wrap" LineHeight="18" />
-            </ScrollViewer>
-        </Border>
+            <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource DialogTitle}" />
+            <TextBlock x:Name="MessageText" Grid.Row="1" Style="{StaticResource DialogBody}" />
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
-                    Margin="0,22,0,0">
-            <Button x:Name="PrimaryButton" Style="{StaticResource DialogPrimaryButton}"
-                    IsDefault="True" Click="Primary_Click" />
-            <Button x:Name="SecondaryButton" Style="{StaticResource DialogButton}" IsCancel="True"
-                    Visibility="Collapsed" />
-        </StackPanel>
+            <Border x:Name="DetailPanel" Grid.Row="2" Margin="0,14,0,0" Padding="12,10"
+                    Background="{StaticResource LayerBrush}"
+                    BorderBrush="{StaticResource LineStrongBrush}"
+                    BorderThickness="1" CornerRadius="6" Visibility="Collapsed">
+                <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="DetailText" FontSize="12"
+                               Foreground="{StaticResource DimBrush}"
+                               TextWrapping="Wrap" LineHeight="18" />
+                </ScrollViewer>
+            </Border>
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+                        Margin="0,22,0,0">
+                <Button x:Name="PrimaryButton" Style="{StaticResource PrimaryButton}"
+                        IsDefault="True" Click="Primary_Click" />
+                <Button x:Name="SecondaryButton" Style="{StaticResource ActionButton}"
+                        IsCancel="True"
+                        Margin="8,0,0,0" Visibility="Collapsed" />
+            </StackPanel>
+        </Grid>
+        <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Close_Click" />
     </Grid>
 </Window>

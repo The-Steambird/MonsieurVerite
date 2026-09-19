@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -37,13 +38,79 @@ public partial class MainWindow : Window
             RestartRequested = Restart,
         };
         DataContext = viewModel;
-        viewModel.Log.CollectionChanged += OnLogChanged;
+        LogList.ItemContainerGenerator.ItemsChanged += OnLogChanged;
 
         Loaded += OnLoaded;
+        ContentRendered += OnContentRendered;
         Closing += OnClosing;
+        Activated += (_, _) => ShowModalShade(false);
+        Deactivated += (_, _) => ShowModalShade(OwnedWindows.Cast<Window>().Any(w => w.IsVisible));
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        Chrome.Solid(this);
+        HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(SnapLayouts);
+        PaintBleed(VisualTreeHelper.GetDpi(this));
+    }
+
+    private IntPtr SnapLayouts(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int hitTest = 0x0084, buttonDown = 0x00A1, buttonUp = 0x00A2, mouseLeave = 0x02A2;
+        const int maxButton = 9;
+        switch (msg)
+        {
+            case hitTest when MaximizeButton.IsVisible:
+                var packed = lParam.ToInt64();
+                var screen = new Point((short)(packed & 0xFFFF), (short)((packed >> 16) & 0xFFFF));
+                var over = new Rect(MaximizeButton.RenderSize)
+                    .Contains(MaximizeButton.PointFromScreen(screen));
+                MaximizeButton.Tag = over ? "hot" : null;
+                handled = over;
+                return over ? maxButton : IntPtr.Zero;
+            case buttonDown when wParam == maxButton:
+                handled = true;
+                return IntPtr.Zero;
+            case buttonUp when wParam == maxButton:
+                handled = true;
+                Maximize_Click(this, new RoutedEventArgs());
+                return IntPtr.Zero;
+            case mouseLeave:
+                MaximizeButton.Tag = null;
+                return IntPtr.Zero;
+            default:
+                return IntPtr.Zero;
+        }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState.Minimized;
+
+    private void Maximize_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+        Root.Margin = WindowState == WindowState.Maximized
+            ? Chrome.MaximizedInset(VisualTreeHelper.GetDpi(this))
+            : default;
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        PaintBleed(newDpi);
+    }
+
+    private void PaintBleed(DpiScale dpi) =>
+        Bleed.Fill = Chrome.Bleed((Color)FindResource("WindowColor"),
+            (Color)FindResource("AccentColor"), dpi);
+
+    private void OnContentRendered(object? sender, EventArgs e)
     {
         if (!viewModel.HasEngine)
         {
@@ -53,7 +120,10 @@ public partial class MainWindow : Window
                 "The engine has to sit beside MonsieurVerite.exe. Converting and key recovery are unavailable until it does.",
                 detail: $"Expected: {Settings.BundledEnginePath}");
         }
+    }
 
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+    {
         if (Directory.Exists(viewModel.SourceDirectory))
         {
             await viewModel.LoadSourceAsync(viewModel.SourceDirectory);
@@ -280,6 +350,10 @@ public partial class MainWindow : Window
         DropOverlay.BeginAnimation(OpacityProperty,
             new DoubleAnimation(visible ? 1 : 0, OverlayFade));
 
+    private void ShowModalShade(bool visible) =>
+        ModalShade.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(visible ? 1 : 0, OverlayFade));
+
     private async void Window_Drop(object sender, DragEventArgs e)
     {
         e.Handled = true;
@@ -320,10 +394,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnLogChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnLogChanged(object sender, ItemsChangedEventArgs e)
     {
-        if (e.Action != NotifyCollectionChangedAction.Add || e.NewItems is null ||
-            e.NewItems.Count == 0)
+        if (e.Action != NotifyCollectionChangedAction.Add)
         {
             return;
         }
@@ -333,7 +406,7 @@ public partial class MainWindow : Window
                           || logScroller.VerticalOffset >= logScroller.ScrollableHeight - 1;
         if (wasAtBottom)
         {
-            LogList.ScrollIntoView(e.NewItems[^1]);
+            LogList.ScrollIntoView(LogList.Items[^1]);
         }
     }
 

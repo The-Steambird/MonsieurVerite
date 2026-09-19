@@ -12,13 +12,18 @@
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver"
         DragLeave="Window_DragLeave" Drop="Window_Drop">
 
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="48" GlassFrameThickness="-1" ResizeBorderThickness="6"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OpenFolderCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl+Shift" Command="{Binding BrowseFilesCommand}" />
         <KeyBinding Key="OemComma" Modifiers="Ctrl" Command="{Binding EditSettingsCommand}" />
     </Window.InputBindings>
 
-    <Grid>
+    <Grid x:Name="Root" Background="{StaticResource WindowBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -26,15 +31,18 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        
+        <Rectangle x:Name="Bleed" Grid.RowSpan="5" IsHitTestVisible="False"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
         <Border Grid.Row="0" Height="48" Background="{StaticResource LayerBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
-            <DockPanel Margin="12,0" LastChildFill="False">
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="12,0,0,0">
                     <Path Style="{StaticResource Icon}" Data="{StaticResource LogoIcon}"
                           Stroke="{StaticResource AccentBrush}" StrokeThickness="2" Width="18"
                           Height="18" Margin="2,0,8,0" />
-                    <TextBlock Text="MonsieurVerite" FontWeight="SemiBold"
+                    <TextBlock Text="Monsieur Verite" FontWeight="SemiBold"
                                Foreground="{StaticResource TextBrush}"
                                VerticalAlignment="Center" Margin="0,0,4,0" />
                     <Border Style="{StaticResource ToolbarDivider}" />
@@ -82,6 +90,25 @@
                         </Button.ContextMenu>
                         <Path Style="{StaticResource Icon}" Data="{StaticResource MoreIcon}" />
                     </Button>
+                    <Border Style="{StaticResource ToolbarDivider}" Margin="8,0" />
+                    <Button Style="{StaticResource CaptionButton}" Content="&#xE921;"
+                            Click="Minimize_Click" />
+                    <Button x:Name="MaximizeButton" Click="Maximize_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+                                <Setter Property="Content" Value="&#xE922;" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Value="Maximized">
+                                        <Setter Property="Content" Value="&#xE923;" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Style="{StaticResource CaptionCloseButton}" Content="&#xE8BB;"
+                            Click="Exit_Click" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -193,7 +220,7 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Command="{Binding StartCommand}">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryBarButton}">
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed" />
@@ -209,10 +236,9 @@
                             <TextBlock Text="{Binding StartLabel}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Content="Cancel" Padding="22,0" MinWidth="104"
-                            Command="{Binding CancelCommand}">
+                    <Button Content="Cancel" Command="{Binding CancelCommand}">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource BarButton}">
+                            <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsRunning}" Value="True">
@@ -227,7 +253,8 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarDivider}"
                         Margin="12,0" />
 
-                <Button DockPanel.Dock="Right" Margin="8,0,0,0" Style="{StaticResource BarButton}"
+                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                        Style="{StaticResource ActionButton}"
                         Command="{Binding BrowseOutputCommand}"
                         ToolTip="Choose the output folder">
                     <StackPanel Orientation="Horizontal">
@@ -264,6 +291,10 @@
             </TextBlock>
         </DockPanel>
 
+        <!-- Dims the window under a modal dialog; the dialog's acrylic blurs the rest. -->
+        <Rectangle x:Name="ModalShade" Grid.RowSpan="5" Fill="{StaticResource ShadeBrush}"
+                   Opacity="0" IsHitTestVisible="False" />
+
         <Grid x:Name="DropOverlay" Grid.RowSpan="5" Opacity="0" IsHitTestVisible="False">
             <Rectangle Fill="{StaticResource WindowBrush}" Opacity="0.7" />
             <Rectangle Margin="10" RadiusX="8" RadiusY="8" Stroke="{StaticResource AccentBrush}"
@@ -272,7 +303,7 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Path Style="{StaticResource Icon}" Data="{StaticResource DownloadIcon}" Width="36"
                       Height="36"
-                      Stroke="{StaticResource AccentBrush}" StrokeThickness="1.75"
+                      Stroke="{StaticResource AccentBrush}"
                       Margin="0,0,0,12" />
                 <TextBlock Text="Drop to add to the queue" FontSize="15" FontWeight="SemiBold"
                            Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center" />

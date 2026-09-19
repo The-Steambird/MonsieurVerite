@@ -2,11 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:MonsieurVerite">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="Brushes.xaml" />
-        <ResourceDictionary Source="Styles.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
     <Style x:Key="RowWarningGlyph" TargetType="Path" BasedOn="{StaticResource Icon}">
         <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="Width" Value="13" />
@@ -278,7 +273,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="QueueCheckHeader">
-        <CheckBox Style="{StaticResource QueueCheck}" HorizontalAlignment="Left" Margin="12,0,0,0"
+        <CheckBox Style="{StaticResource QueueCheck}"
                   IsThreeState="False"
                   IsChecked="{Binding DataContext.CheckState, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
                   Command="{Binding DataContext.ToggleAllCommand, RelativeSource={RelativeSource AncestorType=Window}}" />

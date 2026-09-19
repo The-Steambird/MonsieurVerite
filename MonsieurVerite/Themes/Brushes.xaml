@@ -17,6 +17,7 @@
     <Color x:Key="ScrollThumbHoverColor">#5CFFFFFF</Color>
 
     <SolidColorBrush x:Key="WindowBrush" Color="{StaticResource WindowColor}" />
+    <SolidColorBrush x:Key="ShadeBrush" Color="#000000" Opacity="0.45" />
     <SolidColorBrush x:Key="LayerBrush" Color="{StaticResource LayerColor}" />
     <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
     <SolidColorBrush x:Key="LineStrongBrush" Color="{StaticResource LineStrongColor}" />
@@ -46,13 +47,7 @@
 
     <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundThemeBrush" Color="#18FFFFFF" />
     <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundPointerOverThemeBrush" Color="#20FFFFFF" />
-    <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundPressedThemeBrush" Color="#24FFFFFF" />
-    <SolidColorBrush x:Key="ListBoxItemBackgroundSelectedPressedThemeBrush" Color="#24FFFFFF" />
     <SolidColorBrush x:Key="ListBoxItemUnselectedBackgroundPointerOverThemeBrush" Color="#0AFFFFFF" />
-    <SolidColorBrush x:Key="DataGridRowSelectedBackgroundThemeBrush" Color="Transparent" />
-    <SolidColorBrush x:Key="DataGridRowSelectedForegroundThemeBrush"
-                     Color="{StaticResource TextColor}" />
-    <SolidColorBrush x:Key="DataGridHeaderBackground" Color="Transparent" />
     <SolidColorBrush x:Key="TextControlBorderBrush" Color="{StaticResource LineStrongColor}" />
     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#38FFFFFF" />
 

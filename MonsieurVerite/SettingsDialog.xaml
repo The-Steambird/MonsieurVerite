@@ -11,177 +11,112 @@
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
         UseLayoutRounding="True">
 
-    <StackPanel x:Name="Root" Margin="24,20,24,20">
-        <StackPanel.RenderTransform>
-            <TranslateTransform x:Name="Slide" />
-        </StackPanel.RenderTransform>
-        <StackPanel.Triggers>
-            <EventTrigger RoutedEvent="Loaded">
-                <BeginStoryboard Storyboard="{StaticResource DialogEnter}" />
-            </EventTrigger>
-        </StackPanel.Triggers>
-        <StackPanel.Resources>
-            <Style TargetType="TextBlock" BasedOn="{StaticResource OptionLabel}" />
-        </StackPanel.Resources>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="36" GlassFrameThickness="-1" ResizeBorderThickness="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
 
-        <TextBlock Style="{StaticResource SectionLabel}" Text="MKV" />
-        <Grid Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="110" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <Grid>
+        <StackPanel Style="{StaticResource DialogRoot}">
+            <StackPanel.Resources>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource OptionLabel}" />
+            </StackPanel.Resources>
 
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Default audio" />
-            <ComboBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionCombo}"
-                      ItemsSource="{x:Static vm:RunOptions.AudioLanguages}"
-                      DisplayMemberPath="Display"
-                      SelectedValuePath="Code" SelectedValue="{Binding DefaultAudio}">
-                <ComboBox.ToolTip>
-                    <TextBlock Style="{StaticResource OptionTip}">
-                        Every dub is muxed; this one is flagged default so players pick it.
-                        <LineBreak />
-                        <Run Foreground="{StaticResource FaintBrush}">--default-audio / -da</Run>
-                    </TextBlock>
-                </ComboBox.ToolTip>
-            </ComboBox>
+            <TextBlock Style="{StaticResource DialogTitle}" Text="Settings" Margin="0,0,0,16" />
+            <TextBlock Style="{StaticResource SectionLabel}" Text="MKV" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle" />
-            <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
-                      ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
-                      DisplayMemberPath="Display"
-                      SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}">
-                <ComboBox.ToolTip>
-                    <TextBlock Style="{StaticResource OptionTip}">
-                        Every cached subtitle is muxed; this one is flagged default.<LineBreak />
-                        <Run Foreground="{StaticResource FaintBrush}">--default-sub / -ds</Run>
-                    </TextBlock>
-                </ComboBox.ToolTip>
-            </ComboBox>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default audio" />
+                <ComboBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                          ItemsSource="{x:Static vm:RunOptions.AudioLanguages}"
+                          DisplayMemberPath="Display"
+                          SelectedValuePath="Code" SelectedValue="{Binding DefaultAudio}"
+                          ToolTip="Every dub is muxed; this one is flagged default so players pick it." />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec" />
-            <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionCombo}" Width="120"
-                      HorizontalAlignment="Left"
-                      ItemsSource="{x:Static vm:RunOptions.AudioCodecs}"
-                      SelectedItem="{Binding AudioCodec}">
-                <ComboBox.ToolTip>
-                    <TextBlock Style="{StaticResource OptionTip}">
-                        flac is lossless, the right default for an archive. opus is 256 kbps VBR: three to five
-                        times smaller and transparent in practice, but a re-encode you cannot undo.
-                        <LineBreak />
-                        <Run Foreground="{StaticResource FaintBrush}">--audio-codec / -ac</Run>
-                    </TextBlock>
-                </ComboBox.ToolTip>
-            </ComboBox>
-        </Grid>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle" />
+                <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                          ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
+                          DisplayMemberPath="Display"
+                          SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}"
+                          ToolTip="Every cached subtitle is muxed; this one is flagged default." />
 
-        <TextBlock Style="{StaticResource SectionLabel}" Text="RUN" />
-        <CheckBox Style="{StaticResource OptionCheck}" Content="Skip existing"
-                  IsChecked="{Binding SkipExisting}">
-            <CheckBox.ToolTip>
-                <TextBlock Style="{StaticResource OptionTip}">
-                    Skips any file whose .mkv is already in the output folder. Useful for resuming an
-                    interrupted batch.<LineBreak />
-                    <Run Foreground="{StaticResource FaintBrush}">--skip-existing / -se</Run>
-                </TextBlock>
-            </CheckBox.ToolTip>
-        </CheckBox>
-        <CheckBox Style="{StaticResource OptionCheck}" Content="Flat output"
-                  IsChecked="{Binding FlatOutput}">
-            <CheckBox.ToolTip>
-                <TextBlock Style="{StaticResource OptionTip}">
-                    Writes each .mkv straight into the output folder instead of giving every cutscene
-                    its own subfolder.<LineBreak />
-                    <Run Foreground="{StaticResource FaintBrush}">--flat / -f</Run>
-                </TextBlock>
-            </CheckBox.ToolTip>
-        </CheckBox>
-        <CheckBox Style="{StaticResource OptionCheck}" Content="Keep intermediates"
-                  IsChecked="{Binding KeepIntermediates}">
-            <CheckBox.ToolTip>
-                <TextBlock Style="{StaticResource OptionTip}">
-                    Leaves the decrypted .ivf, the per-channel .hca audio and the generated .ass subtitles
-                    on disk after muxing, instead of deleting them.<LineBreak />
-                    <Run Foreground="{StaticResource FaintBrush}">--no-cleanup / -nc</Run>
-                </TextBlock>
-            </CheckBox.ToolTip>
-        </CheckBox>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                          Width="120"
+                          HorizontalAlignment="Left"
+                          ItemsSource="{x:Static vm:RunOptions.AudioCodecs}"
+                          SelectedItem="{Binding AudioCodec}"
+                          ToolTip="flac is lossless, the right default for an archive. opus is 256 kbps VBR: three to five times smaller and transparent in practice, but a re-encode you cannot undo." />
+            </Grid>
 
-        <TextBlock Style="{StaticResource SectionLabel}" Margin="0,8,0,10" Text="VAPOURSYNTH" />
-        <CheckBox Style="{StaticResource OptionCheck}" Content="Apply VapourSynth filter"
-                  IsChecked="{Binding UseVapourSynth}">
-            <CheckBox.ToolTip>
-                <TextBlock Style="{StaticResource OptionTip}">
-                    Runs the matching vs/ script over the video before muxing. Extremely slow: heavy CPU
-                    and GPU. Files with no matching script are muxed unfiltered.<LineBreak />
-                    <Run Foreground="{StaticResource FaintBrush}">--vapoursynth / -vs</Run>
-                </TextBlock>
-            </CheckBox.ToolTip>
-        </CheckBox>
+            <TextBlock Style="{StaticResource SectionLabel}" Text="RUN" />
+            <CheckBox Style="{StaticResource OptionCheck}" Content="Skip existing"
+                      IsChecked="{Binding SkipExisting}"
+                      ToolTip="Skips any file whose .mkv is already in the output folder. Useful for resuming an interrupted batch." />
+            <CheckBox Style="{StaticResource OptionCheck}" Content="Flat output"
+                      IsChecked="{Binding FlatOutput}"
+                      ToolTip="Writes each .mkv straight into the output folder instead of giving every cutscene its own subfolder." />
+            <CheckBox Style="{StaticResource OptionCheck}" Content="Keep intermediates"
+                      IsChecked="{Binding KeepIntermediates}"
+                      ToolTip="Leaves the decrypted .ivf, the per-channel .hca audio and the generated .ass subtitles on disk after muxing, instead of deleting them." />
 
-        <Grid Margin="28,0,0,14" IsEnabled="{Binding UseVapourSynth}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="82" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+            <TextBlock Style="{StaticResource SectionLabel}" Margin="0,8,0,10" Text="VAPOURSYNTH" />
+            <CheckBox Style="{StaticResource OptionCheck}" Content="Apply VapourSynth filter"
+                      IsChecked="{Binding UseVapourSynth}"
+                      ToolTip="Runs the matching vs/ script over the video before muxing. Extremely slow: heavy CPU and GPU. Files with no matching script are muxed unfiltered." />
 
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="CRF" />
-            <TextBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionField}" Width="72"
-                     HorizontalAlignment="Left"
-                     Text="{Binding Crf, StringFormat={}{0:0.#}}">
-                <TextBox.ToolTip>
-                    <TextBlock Style="{StaticResource OptionTip}">
-                        x265 quality, 0 to 51. Lower is better and bigger; 13.5 is near-lossless for these
-                        sources.<LineBreak />
-                        <Run Foreground="{StaticResource FaintBrush}">--crf</Run>
-                    </TextBlock>
-                </TextBox.ToolTip>
-            </TextBox>
+            <Grid Margin="28,0,0,14" IsEnabled="{Binding UseVapourSynth}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="82" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset" />
-            <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}" Width="140"
-                      HorizontalAlignment="Left"
-                      ItemsSource="{x:Static vm:RunOptions.Presets}"
-                      SelectedItem="{Binding Preset}">
-                <ComboBox.ToolTip>
-                    <TextBlock Style="{StaticResource OptionTip}">
-                        x265 speed against efficiency. Slower presets take longer for a smaller file at the
-                        same quality.<LineBreak />
-                        <Run Foreground="{StaticResource FaintBrush}">--preset</Run>
-                    </TextBlock>
-                </ComboBox.ToolTip>
-            </ComboBox>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="CRF" />
+                <TextBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionField}"
+                         Width="72"
+                         HorizontalAlignment="Left"
+                         Text="{Binding Crf, StringFormat={}{0:0.#}}"
+                         ToolTip="x265 quality, 0 to 51. Lower is better and bigger; 13.5 is near-lossless for these sources." />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" />
-            <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
-                     Text="{Binding X265Params, UpdateSourceTrigger=PropertyChanged}">
-                <TextBox.ToolTip>
-                    <TextBlock Style="{StaticResource OptionTip}">
-                        Colon-separated x265 parameters. Replaces the built-in tuning entirely, so
-                        leave empty unless you know what you are overriding.<LineBreak />
-                        <Run Foreground="{StaticResource FaintBrush}">--x265-params</Run>
-                    </TextBlock>
-                </TextBox.ToolTip>
-            </TextBox>
-        </Grid>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset" />
+                <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                          Width="140"
+                          HorizontalAlignment="Left"
+                          ItemsSource="{x:Static vm:RunOptions.Presets}"
+                          SelectedItem="{Binding Preset}"
+                          ToolTip="x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality." />
 
-        <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20">
-            Recovered keys are written to <Run x:Name="RecoveredKeysRun" />.
-        </TextBlock>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" />
+                <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
+                         Text="{Binding X265Params, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Colon-separated x265 parameters. Replaces the built-in tuning entirely, so leave empty unless you know what you are overriding." />
+            </Grid>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Style="{StaticResource DialogPrimaryButton}" IsDefault="True"
-                    Click="Ok_Click" />
-            <Button Content="Cancel" Style="{StaticResource DialogButton}" IsCancel="True" />
+            <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20">
+                Recovered keys are written to <Run x:Name="RecoveredKeysRun" />.
+            </TextBlock>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="OK" Style="{StaticResource PrimaryButton}" IsDefault="True"
+                        Click="Ok_Click" />
+                <Button Content="Cancel" Style="{StaticResource ActionButton}" IsCancel="True"
+                        Margin="8,0,0,0" />
+            </StackPanel>
         </StackPanel>
-    </StackPanel>
+        <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Close_Click" />
+    </Grid>
 </Window>

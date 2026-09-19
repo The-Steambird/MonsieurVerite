@@ -9,6 +9,7 @@ public partial class KeyDialog : Window
     public KeyDialog(string fileName)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => Chrome.Acrylic(this);
         Caption.Text =
             $"Convert {fileName} with a key that neither keys.json nor recovery supplied.";
     }
@@ -24,4 +25,6 @@ public partial class KeyDialog : Window
         VideoKey = ulong.Parse(KeyBox.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture);
         DialogResult = true;
     }
+
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

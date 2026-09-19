@@ -8,6 +8,7 @@ public partial class MessageDialog : Window
     private MessageDialog()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => Chrome.Acrylic(this);
     }
 
     public static bool Show(
@@ -44,4 +45,6 @@ public partial class MessageDialog : Window
             Close();
         }
     }
+
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }
