@@ -15,7 +15,6 @@ public sealed partial class MainViewModel : ObservableObject
     private const int LogCapacity = 2000;
     private readonly Settings settings;
     private readonly SynchronizationContext? uiContext;
-    private readonly HashSet<QueueItem> subscribed = [];
     private EngineClient? client;
     private CancellationTokenSource? cancellation;
     private QueueItem? current;
@@ -46,13 +45,17 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    // ---- State -------------------------------------------------------------------------
-
     public ObservableCollection<QueueItem> Items { get; } = [];
 
     public ObservableCollection<string> Log { get; } = [];
 
     public RunOptions Options => settings.Options;
+
+    public Func<string, string?>? PickFolder { get; set; }
+
+    public Func<string, IReadOnlyList<string>?>? PickFiles { get; set; }
+
+    public Func<RunOptions, bool>? EditOptions { get; set; }
 
     public Func<string, bool>? ConfirmKeyOverwrite { get; set; }
 
@@ -76,7 +79,8 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsIdle), nameof(CanRunEngine), nameof(CanSetKey))]
     [NotifyCanExecuteChangedFor(
         nameof(StartCommand), nameof(CancelCommand), nameof(RecoverKeysCommand),
-        nameof(RemoveCheckedCommand), nameof(CheckForUpdatesCommand))]
+        nameof(RemoveCheckedCommand), nameof(CheckForUpdatesCommand),
+        nameof(OpenFolderCommand), nameof(BrowseFilesCommand))]
     public partial bool IsRunning { get; set; }
 
     public bool IsIdle => !IsRunning;
@@ -128,14 +132,8 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        List<string> paths;
-        try
+        if (ListCutscenes(directory) is not { } paths)
         {
-            paths = Directory.EnumerateFiles(directory, "*.usm").Order().ToList();
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            AppendLog($"Could not read {directory}: {e.Message}");
             return;
         }
 
@@ -154,7 +152,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         var added = new List<QueueItem>();
-        foreach (var path in paths)
+        foreach (var path in paths.SelectMany(Expand))
         {
             if (!string.Equals(Path.GetExtension(path), ".usm", StringComparison.OrdinalIgnoreCase))
             {
@@ -186,6 +184,72 @@ public sealed partial class MainViewModel : ObservableObject
         {
             await RunEngineAsync(["--probe", .. added.Select(item => item.FullPath)], added.Count)
                 .ConfigureAwait(true);
+        }
+    }
+
+    private IEnumerable<string> Expand(string path) =>
+        Directory.Exists(path) ? ListCutscenes(path) ?? [] : [path];
+
+    private List<string>? ListCutscenes(string directory)
+    {
+        try
+        {
+            return Directory.EnumerateFiles(directory, "*.usm").Order().ToList();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            AppendLog($"Could not read {directory}: {e.Message}");
+            return null;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task OpenFolderAsync()
+    {
+        if (PickFolder?.Invoke(SourceDirectory) is { } folder)
+        {
+            await LoadSourceAsync(folder).ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task BrowseFilesAsync()
+    {
+        if (PickFiles?.Invoke(SourceDirectory) is { } files)
+        {
+            await AddFilesAsync(files).ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand]
+    private void BrowseOutput()
+    {
+        if (PickFolder?.Invoke(OutputDirectory) is { } folder)
+        {
+            OutputDirectory = folder;
+        }
+    }
+
+    [RelayCommand]
+    private void EditSettings()
+    {
+        if (EditOptions?.Invoke(Options) ?? false)
+        {
+            SaveSettings();
+        }
+    }
+
+    public void SaveSettings()
+    {
+        settings.SourceDirectory = SourceDirectory;
+        settings.OutputDirectory = OutputDirectory;
+        try
+        {
+            settings.Save();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            AppendLog($"Could not save settings: {e.Message}");
         }
     }
 
@@ -297,7 +361,6 @@ public sealed partial class MainViewModel : ObservableObject
         if (cancellation is { IsCancellationRequested: false } source)
         {
             source.Cancel();
-            // The engine stops at its next checkpoint, which can be a while into a long stage.
             StageText = "Cancelling…";
         }
     }
@@ -602,22 +665,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.Action == NotifyCollectionChangedAction.Reset)
-        {
-            foreach (var item in subscribed)
-            {
-                item.PropertyChanged -= OnItemPropertyChanged;
-            }
-
-            subscribed.Clear();
-        }
-
         if (e.OldItems is not null)
         {
             foreach (QueueItem item in e.OldItems)
             {
                 item.PropertyChanged -= OnItemPropertyChanged;
-                subscribed.Remove(item);
             }
         }
 
@@ -625,10 +677,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             foreach (QueueItem item in e.NewItems)
             {
-                if (subscribed.Add(item))
-                {
-                    item.PropertyChanged += OnItemPropertyChanged;
-                }
+                item.PropertyChanged += OnItemPropertyChanged;
             }
         }
 
@@ -639,6 +688,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (sender is not QueueItem item || !Items.Contains(item))
+        {
+            return;
+        }
+
         switch (e.PropertyName)
         {
             case nameof(QueueItem.IsChecked):

@@ -1,7 +1,6 @@
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -17,14 +16,7 @@ namespace MonsieurVerite;
 
 public partial class MainWindow : Window
 {
-    public static RoutedUICommand AddFilesCommand { get; } =
-        new("Add files", nameof(AddFilesCommand), typeof(MainWindow));
-
-    public static RoutedUICommand SettingsCommand { get; } =
-        new("Settings", nameof(SettingsCommand), typeof(MainWindow));
-
     private static readonly Duration OverlayFade = new(TimeSpan.FromMilliseconds(150));
-    private readonly Settings settings;
     private readonly MainViewModel viewModel;
     private ScrollViewer? logScroller;
     private int dragDepth;
@@ -33,10 +25,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        settings = Settings.Load();
-        viewModel = new MainViewModel(Settings.ResolveEngine(), settings,
+        viewModel = new MainViewModel(Settings.ResolveEngine(), Settings.Load(),
             SynchronizationContext.Current)
         {
+            PickFolder = PickFolder,
+            PickFiles = PickFiles,
+            EditOptions = EditOptions,
             ConfirmKeyOverwrite =
                 prompt => MessageDialog.Show(this, "charlotte", prompt, "Yes", "No"),
             ConfirmUpdate = ConfirmUpdate,
@@ -44,14 +38,6 @@ public partial class MainWindow : Window
         };
         DataContext = viewModel;
         viewModel.Log.CollectionChanged += OnLogChanged;
-        viewModel.PropertyChanged += (_, args) =>
-        {
-            if (args.PropertyName == nameof(MainViewModel.IsRunning))
-            {
-                CommandManager.InvalidateRequerySuggested();
-            }
-        };
-        CommandManager.InvalidateRequerySuggested();
 
         Loaded += OnLoaded;
         Closing += OnClosing;
@@ -90,27 +76,9 @@ public partial class MainWindow : Window
             }
         }
 
-        settings.SourceDirectory = viewModel.SourceDirectory;
-        settings.OutputDirectory = viewModel.OutputDirectory;
-        SaveSettings();
+        viewModel.SaveSettings();
         viewModel.Shutdown();
     }
-
-    private void SaveSettings()
-    {
-        try
-        {
-            settings.Save();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Losing a few remembered values is not worth refusing to close over.
-            viewModel.AppendLog($"Could not save settings: {ex.Message}");
-        }
-    }
-
-    private void WhenIdle_CanExecute(object sender, CanExecuteRoutedEventArgs e) =>
-        e.CanExecute = viewModel?.IsIdle ?? false;
 
     private void More_Click(object sender, RoutedEventArgs e)
     {
@@ -128,33 +96,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void OpenFolder_Executed(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (PickFolder(viewModel.SourceDirectory) is { } folder)
-        {
-            await viewModel.LoadSourceAsync(folder);
-        }
-    }
-
-    private async void AddFiles_Executed(object sender, ExecutedRoutedEventArgs e)
-    {
-        var dialog = new OpenFileDialog
-        {
-            Multiselect = true,
-            Filter = "USM cutscenes (*.usm)|*.usm|All files|*.*",
-            Title = "Add files to the queue",
-        };
-        if (Directory.Exists(viewModel.SourceDirectory))
-        {
-            dialog.InitialDirectory = viewModel.SourceDirectory;
-        }
-
-        if (dialog.ShowDialog(this) == true)
-        {
-            await viewModel.AddFilesAsync(dialog.FileNames);
-        }
-    }
-
     private void ShowRecoveredKeys_Click(object sender, RoutedEventArgs e)
     {
         var path = viewModel.RecoveredKeysPath;
@@ -168,24 +109,44 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Settings_Executed(object sender, ExecutedRoutedEventArgs e)
+    private string? PickFolder(string initial)
     {
-        var dialog = new SettingsDialog(settings.Options) { Owner = this };
-        if (dialog.ShowDialog() == true)
+        var dialog = new OpenFolderDialog();
+        if (Directory.Exists(initial))
         {
-            SaveSettings();
+            dialog.InitialDirectory = initial;
         }
+
+        return dialog.ShowDialog(this) == true ? dialog.FolderName : null;
     }
+
+    private string[]? PickFiles(string initial)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Multiselect = true,
+            Filter = "USM cutscenes (*.usm)|*.usm|All files|*.*",
+            Title = "Add files to the queue",
+        };
+        if (Directory.Exists(initial))
+        {
+            dialog.InitialDirectory = initial;
+        }
+
+        return dialog.ShowDialog(this) == true ? dialog.FileNames : null;
+    }
+
+    private bool EditOptions(RunOptions options) =>
+        new SettingsDialog(options) { Owner = this }.ShowDialog() == true;
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
     private void About_Click(object sender, RoutedEventArgs e)
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";
         var engine = viewModel.Engine?.Description ?? "none found";
         MessageDialog.Show(
             this,
-            $"MonsieurVerite {version}",
+            $"MonsieurVerite {App.Version}",
             "A front end for charlotte, the Genshin Impact cutscene converter.",
             detail: $"Engine: {engine}");
     }
@@ -274,14 +235,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void BrowseOutput_Click(object sender, RoutedEventArgs e)
-    {
-        if (PickFolder(viewModel.OutputDirectory) is { } folder)
-        {
-            viewModel.OutputDirectory = folder;
-        }
-    }
-
     private void OutputBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter && sender is TextBox box)
@@ -290,17 +243,6 @@ public partial class MainWindow : Window
             box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
             Queue.Focus();
         }
-    }
-
-    private string? PickFolder(string initial)
-    {
-        var dialog = new OpenFolderDialog();
-        if (Directory.Exists(initial))
-        {
-            dialog.InitialDirectory = initial;
-        }
-
-        return dialog.ShowDialog(this) == true ? dialog.FolderName : null;
     }
 
     private bool CanAccept(DragEventArgs e) =>
@@ -352,30 +294,11 @@ public partial class MainWindow : Window
         if (dropped is [var only] && Directory.Exists(only))
         {
             await viewModel.LoadSourceAsync(only);
-            return;
         }
-
-        var files = new List<string>();
-        foreach (var path in dropped)
+        else
         {
-            if (Directory.Exists(path))
-            {
-                try
-                {
-                    files.AddRange(Directory.EnumerateFiles(path, "*.usm").Order());
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    viewModel.AppendLog($"Could not read {path}: {ex.Message}");
-                }
-            }
-            else
-            {
-                files.Add(path);
-            }
+            await viewModel.AddFilesAsync(dropped);
         }
-
-        await viewModel.AddFilesAsync(files);
     }
 
     private void CopyLog_Click(object sender, RoutedEventArgs e)

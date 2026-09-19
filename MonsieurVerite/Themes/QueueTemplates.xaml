@@ -124,47 +124,31 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Background" Value="{StaticResource HoverBrush}" />
         <Setter Property="ToolTip" Value="{Binding Detail}" />
+        <Setter Property="Tag" Value="{Binding Status, NotifyOnTargetUpdated=True}" />
         <Style.Triggers>
+            <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
+            </EventTrigger>
             <DataTrigger Binding="{Binding Detail}" Value="">
                 <Setter Property="ToolTipService.IsEnabled" Value="False" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Pending">
                 <Setter Property="Visibility" Value="Collapsed" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Queued">
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-                </DataTrigger.EnterActions>
-            </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Running">
                 <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-                </DataTrigger.EnterActions>
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Done">
                 <Setter Property="Background" Value="{StaticResource OkSoftBrush}" />
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-                </DataTrigger.EnterActions>
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Skipped">
                 <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-                </DataTrigger.EnterActions>
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Cancelled">
                 <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-                </DataTrigger.EnterActions>
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Error">
                 <Setter Property="Background" Value="{StaticResource BadSoftBrush}" />
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-                </DataTrigger.EnterActions>
             </DataTrigger>
         </Style.Triggers>
     </Style>
@@ -174,19 +158,11 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
-        <Setter Property="Text" Value="{Binding Status}" />
+        <Setter Property="Text" Value="{Binding StatusLabel}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Status}" Value="Running">
                 <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-                <Setter Property="Text" Value="{Binding Detail}" />
             </DataTrigger>
-            <MultiDataTrigger>
-                <MultiDataTrigger.Conditions>
-                    <Condition Binding="{Binding Status}" Value="Running" />
-                    <Condition Binding="{Binding Detail}" Value="" />
-                </MultiDataTrigger.Conditions>
-                <Setter Property="Text" Value="Running" />
-            </MultiDataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Done">
                 <Setter Property="Foreground" Value="{StaticResource OkBrush}" />
             </DataTrigger>
@@ -258,13 +234,7 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
-            <DataTrigger Binding="{Binding Status}" Value="Pending">
-                <Setter Property="Visibility" Value="Hidden" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Queued">
-                <Setter Property="Visibility" Value="Hidden" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Skipped">
+            <DataTrigger Binding="{Binding HasProgress}" Value="False">
                 <Setter Property="Visibility" Value="Hidden" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Done">
@@ -287,13 +257,7 @@
         <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         <Setter Property="Text" Value="{Binding Progress, StringFormat={}{0:0}%}" />
         <Style.Triggers>
-            <DataTrigger Binding="{Binding Status}" Value="Pending">
-                <Setter Property="Visibility" Value="Hidden" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Queued">
-                <Setter Property="Visibility" Value="Hidden" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Skipped">
+            <DataTrigger Binding="{Binding HasProgress}" Value="False">
                 <Setter Property="Visibility" Value="Hidden" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Running">

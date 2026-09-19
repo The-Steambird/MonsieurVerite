@@ -2,7 +2,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text.Json;
 
 namespace MonsieurVerite;
@@ -213,10 +212,9 @@ public static class Updater
 
     private static HttpClient CreateClient()
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
         client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("MonsieurVerite", version));
+            new ProductInfoHeaderValue("MonsieurVerite", App.Version));
         client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         return client;

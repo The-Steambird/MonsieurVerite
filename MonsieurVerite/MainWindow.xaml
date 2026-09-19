@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MonsieurVerite"
         xmlns:vm="clr-namespace:MonsieurVerite.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
@@ -13,27 +12,10 @@
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver"
         DragLeave="Window_DragLeave" Drop="Window_Drop">
 
-    <!-- Layout only. Brushes and shared styles live in Themes/Brushes.xaml and Themes/Styles.xaml;
-         the queue's cell templates in Themes/QueueTemplates.xaml. All three are merged in
-         App.xaml. Run options live in SettingsDialog.xaml, off the toolbar's Settings button.
-         The whole window accepts drops: a folder replaces the queue, .usm files append to it.
-         No Background on purpose: Fluent's window style leaves it transparent so the Mica
-         backdrop shows through (see Brushes.xaml), and paints it solid where there is none. -->
-
-    <Window.CommandBindings>
-        <CommandBinding Command="Open" Executed="OpenFolder_Executed"
-                        CanExecute="WhenIdle_CanExecute" />
-        <CommandBinding Command="{x:Static local:MainWindow.AddFilesCommand}"
-                        Executed="AddFiles_Executed" CanExecute="WhenIdle_CanExecute" />
-        <CommandBinding Command="{x:Static local:MainWindow.SettingsCommand}"
-                        Executed="Settings_Executed" />
-    </Window.CommandBindings>
     <Window.InputBindings>
-        <KeyBinding Key="O" Modifiers="Ctrl" Command="Open" />
-        <KeyBinding Key="O" Modifiers="Ctrl+Shift"
-                    Command="{x:Static local:MainWindow.AddFilesCommand}" />
-        <KeyBinding Key="OemComma" Modifiers="Ctrl"
-                    Command="{x:Static local:MainWindow.SettingsCommand}" />
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OpenFolderCommand}" />
+        <KeyBinding Key="O" Modifiers="Ctrl+Shift" Command="{Binding BrowseFilesCommand}" />
+        <KeyBinding Key="OemComma" Modifiers="Ctrl" Command="{Binding EditSettingsCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -56,7 +38,8 @@
                                Foreground="{StaticResource TextBrush}"
                                VerticalAlignment="Center" Margin="0,0,4,0" />
                     <Border Style="{StaticResource ToolbarDivider}" />
-                    <Button Style="{StaticResource ToolbarButton}" Command="Open"
+                    <Button Style="{StaticResource ToolbarButton}"
+                            Command="{Binding OpenFolderCommand}"
                             ToolTip="Open folder (Ctrl+O)">
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource Icon}"
@@ -65,7 +48,7 @@
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource ToolbarButton}"
-                            Command="{x:Static local:MainWindow.AddFilesCommand}"
+                            Command="{Binding BrowseFilesCommand}"
                             ToolTip="Add files (Ctrl+Shift+O)">
                         <StackPanel Orientation="Horizontal">
                             <Path Style="{StaticResource Icon}"
@@ -77,7 +60,7 @@
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Style="{StaticResource ToolbarIconButton}"
-                            Command="{x:Static local:MainWindow.SettingsCommand}"
+                            Command="{Binding EditSettingsCommand}"
                             ToolTip="Settings (Ctrl+,)">
                         <Path Style="{StaticResource Icon}" Data="{StaticResource SlidersIcon}" />
                     </Button>
@@ -245,7 +228,7 @@
                         Margin="12,0" />
 
                 <Button DockPanel.Dock="Right" Margin="8,0,0,0" Style="{StaticResource BarButton}"
-                        Click="BrowseOutput_Click"
+                        Command="{Binding BrowseOutputCommand}"
                         ToolTip="Choose the output folder">
                     <StackPanel Orientation="Horizontal">
                         <Path Style="{StaticResource Icon}" Data="{StaticResource FolderIcon}"

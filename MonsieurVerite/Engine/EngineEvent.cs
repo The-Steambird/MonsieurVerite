@@ -31,22 +31,23 @@ public abstract record EngineEvent
             }
 
             var type = typeProperty.GetString() ?? "";
+            var root = document.RootElement;
             EngineEvent? parsed = type switch
             {
-                "session_start" => Read<SessionStartEvent>(line),
-                "log" => Read<LogEvent>(line),
-                "stage" => Read<StageEvent>(line),
-                "progress" => Read<ProgressEvent>(line),
-                "question" => Read<QuestionEvent>(line),
-                "job_start" => Read<JobStartEvent>(line),
-                "job_skipped" => Read<JobSkippedEvent>(line),
-                "result" => Read<ResultEvent>(line),
-                "error" => Read<ErrorEvent>(line),
-                "cancelled" => Read<CancelledEvent>(line),
-                "probe" => Read<ProbeEvent>(line),
-                "crack" => Read<CrackEvent>(line),
-                "crack_summary" => Read<CrackSummaryEvent>(line),
-                "update" => Read<UpdateEvent>(line),
+                "session_start" => Read<SessionStartEvent>(root),
+                "log" => Read<LogEvent>(root),
+                "stage" => Read<StageEvent>(root),
+                "progress" => Read<ProgressEvent>(root),
+                "question" => Read<QuestionEvent>(root),
+                "job_start" => Read<JobStartEvent>(root),
+                "job_skipped" => Read<JobSkippedEvent>(root),
+                "result" => Read<ResultEvent>(root),
+                "error" => Read<ErrorEvent>(root),
+                "cancelled" => Read<CancelledEvent>(root),
+                "probe" => Read<ProbeEvent>(root),
+                "crack" => Read<CrackEvent>(root),
+                "crack_summary" => Read<CrackSummaryEvent>(root),
+                "update" => Read<UpdateEvent>(root),
                 _ => null,
             };
 
@@ -58,8 +59,8 @@ public abstract record EngineEvent
         }
     }
 
-    private static T? Read<T>(string line) where T : EngineEvent =>
-        JsonSerializer.Deserialize<T>(line, SerializerOptions);
+    private static T? Read<T>(JsonElement root) where T : EngineEvent =>
+        root.Deserialize<T>(SerializerOptions);
 }
 
 public sealed record SessionStartEvent : EngineEvent
