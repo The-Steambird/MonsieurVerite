@@ -585,7 +585,7 @@
         <Setter Property="Margin" Value="0,0,8,8" />
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{StaticResource FaintBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -604,6 +604,20 @@
         <Setter Property="Margin" Value="0,0,0,8" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="OptionPlaceholder" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+        <Setter Property="Margin" Value="11,0,8,8" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="IsHitTestVisible" Value="False" />
     </Style>
 
     <Style x:Key="OptionCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">

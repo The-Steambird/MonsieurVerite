@@ -5,6 +5,11 @@ namespace MonsieurVerite.ViewModels;
 
 public sealed partial class RunOptions : ObservableObject
 {
+    public const string DefaultX265Params =
+        "keyint=300:min-keyint=30:no-open-gop=1:ref=6:bframes=8:lookahead-slices=0:rc-lookahead=60:aq-mode=3:aq-strength=0.75:qcomp=0.72:cbqpoffs=-2:crqpoffs=-2:no-cutree=1:rd=4:psy-rd=2.0:psy-rdoq=1.7:max-merge=5:no-strong-intra-smoothing=1:tskip=1:deblock=-2,-2:no-sao=1:no-sao-non-deblock=1";
+
+    public static string DefaultX265ParamsListed { get; } = DefaultX265Params.Replace(':', '\n');
+
     public static IReadOnlyList<Language> AudioLanguages { get; } =
     [
         new("ja", "日本語"),

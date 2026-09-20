@@ -90,7 +90,7 @@
                          Width="72"
                          HorizontalAlignment="Left"
                          Text="{Binding Crf, StringFormat={}{0:0.#}}"
-                         ToolTip="x265 quality, 0 to 51. Lower is better and bigger; 13.5 is near-lossless for these sources." />
+                         ToolTip="x265 quality, 0 to 51. Lower is better in quality and bigger in size." />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset" />
                 <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
@@ -101,9 +101,36 @@
                           ToolTip="x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality." />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" />
-                <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
-                         Text="{Binding X265Params, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="Colon-separated x265 parameters. Replaces the built-in tuning entirely, so leave empty unless you know what you are overriding." />
+                <Grid Grid.Row="2" Grid.Column="1">
+                    <TextBox x:Name="X265ParamsBox" Style="{StaticResource OptionField}"
+                             Text="{Binding X265Params, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBox.ToolTip>
+                            <TextBlock>
+                                <Run
+                                    Text="Colon-separated x265 parameters. Leave empty to use the default tuning:" />
+                                <LineBreak />
+                                <Run Text="{x:Static vm:RunOptions.DefaultX265ParamsListed}"
+                                     Foreground="{StaticResource DimBrush}"
+                                     FontFamily="Cascadia Mono, Consolas" FontSize="11" />
+                            </TextBlock>
+                        </TextBox.ToolTip>
+                    </TextBox>
+                    <TextBlock Text="{x:Static vm:RunOptions.DefaultX265Params}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock"
+                                   BasedOn="{StaticResource OptionPlaceholder}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding Text.Length, ElementName=X265ParamsBox}"
+                                        Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Grid>
 
             <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20">

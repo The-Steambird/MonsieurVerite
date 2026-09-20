@@ -1,9 +1,14 @@
+using System.IO;
+using System.Text.RegularExpressions;
+
 using MonsieurVerite.ViewModels;
+
+using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
 
 /// <summary>Pins the settings-to-flag spelling, so a renamed charlotte flag fails here first.</summary>
-public class RunOptionsTests
+public class RunOptionsTests(ITestOutputHelper output)
 {
     [Fact]
     public void DefaultsMatchCharlottes()
@@ -25,6 +30,25 @@ public class RunOptionsTests
         Assert.Contains(RunOptions.SubtitleLanguages, language => language.Code == options.DefaultSubtitle);
         Assert.Contains(options.AudioCodec, RunOptions.AudioCodecs);
         Assert.Contains(options.Preset, RunOptions.Presets);
+    }
+
+    [Fact]
+    public void DefaultX265ParamsMatchCharlottes()
+    {
+        // The placeholder quotes charlotte's built-in tuning, which only its source knows.
+        // Skips like the live tests when the sibling checkout is absent.
+        if (Settings.ResolveEngine() is not { } engine)
+        {
+            output.WriteLine("SKIPPED: no sibling charlotte checkout with main.py found.");
+            return;
+        }
+
+        // The tuning is the one place ffmpeg_params lists quoted key=value strings, one per line.
+        var source = File.ReadAllText(Path.Combine(engine.WorkingDirectory, "stages", "filter.py"));
+        var listed = Regex.Matches(source, """^\s+"([^"=]+=[^"]+)",$""", RegexOptions.Multiline)
+            .Select(match => match.Groups[1].Value);
+
+        Assert.Equal(listed, RunOptions.DefaultX265Params.Split(':'));
     }
 
     [Fact]
