@@ -31,7 +31,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        
+
         <Rectangle x:Name="Bleed" Grid.RowSpan="5" IsHitTestVisible="False"
                    RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
