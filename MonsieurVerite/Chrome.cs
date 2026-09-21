@@ -26,7 +26,11 @@ public static partial class Chrome
     {
         var hwnd = new WindowInteropHelper(window).Handle;
         var backdrop = BackdropAcrylic;
-        _ = DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int));
+        if (DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int)) != 0)
+        {
+            window.Background = (Brush)window.FindResource("WindowBrush");
+        }
+
         _ = SetWindowLongPtrW(hwnd, Style, GetWindowLongPtrW(hwnd, Style) & ~SystemMenu);
         _ = SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, FrameChanged);
     }
