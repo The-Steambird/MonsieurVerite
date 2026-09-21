@@ -12,7 +12,7 @@ public partial class SettingsDialog : Window
     {
         ArgumentNullException.ThrowIfNull(options);
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Acrylic(this);
+        SourceInitialized += (_, _) => Chrome.Frost(this);
         target = options;
         working = options.Clone();
         DataContext = working;

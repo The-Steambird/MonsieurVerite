@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 
 namespace MonsieurVerite;
@@ -13,7 +15,6 @@ public static partial class Chrome
     private const long SystemMenu = 0x00080000;
     private const uint FrameChanged = 0x0027; // SWP_FRAMECHANGED | NOZORDER | NOMOVE | NOSIZE
     private const int BackdropNone = 1;
-    private const int BackdropAcrylic = 3;
 
     public static void Solid(Window window)
     {
@@ -22,17 +23,78 @@ public static partial class Chrome
         _ = DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int));
     }
 
-    public static void Acrylic(Window window)
+    /// <summary>
+    /// Frosted glass for a dialog, rendered by the app rather than DWM. The system acrylic
+    /// backdrop composes its first frame unfrosted, drops the material whenever the window is
+    /// inactive, and tints from the system theme with no way to darken it; a snapshot of the
+    /// owner's content, blurred and tinted once at open, has none of those problems and looks the
+    /// same on Windows 10. Dialogs cannot be moved or resized, so the glass is aligned once; a
+    /// dialog is also laid out and centred before its handle exists, so this cannot wait for
+    /// LocationChanged or SizeChanged.
+    /// </summary>
+    public static void Frost(Window dialog)
     {
-        var hwnd = new WindowInteropHelper(window).Handle;
-        var backdrop = BackdropAcrylic;
-        if (DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int)) != 0)
-        {
-            window.Background = (Brush)window.FindResource("WindowBrush");
-        }
-
+        var hwnd = new WindowInteropHelper(dialog).Handle;
+        var backdrop = BackdropNone;
+        _ = DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int));
         _ = SetWindowLongPtrW(hwnd, Style, GetWindowLongPtrW(hwnd, Style) & ~SystemMenu);
         _ = SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, FrameChanged);
+
+        dialog.Background = (Brush)dialog.FindResource("WindowBrush");
+        if (dialog.Owner?.Content is not FrameworkElement { ActualWidth: >= 1, ActualHeight: >= 1 } scene
+            || dialog.Content is not Panel root)
+        {
+            return;
+        }
+
+        var glass = new ImageBrush(Frosted(scene, (Color)dialog.FindResource("FrostColor")))
+        {
+            ViewboxUnits = BrushMappingMode.Absolute,
+            Stretch = Stretch.Fill,
+        };
+        root.Background = glass;
+
+        var dpi = VisualTreeHelper.GetDpi(scene);
+        var origin = dialog.PointToScreen(default);
+        var sceneOrigin = scene.PointToScreen(default);
+        glass.Viewbox = new Rect(
+            (origin.X - sceneOrigin.X) / dpi.DpiScaleX,
+            (origin.Y - sceneOrigin.Y) / dpi.DpiScaleY,
+            dialog.ActualWidth, dialog.ActualHeight);
+
+    }
+
+    private static RenderTargetBitmap Frosted(FrameworkElement scene, Color tint)
+    {
+        const double scale = 0.25, blur = 28, tintOpacity = 0.62;
+        var width = (int)Math.Ceiling(scene.ActualWidth * scale);
+        var height = (int)Math.Ceiling(scene.ActualHeight * scale);
+        var bounds = new Rect(0, 0, scene.ActualWidth, scene.ActualHeight);
+
+        var snapshot = new RenderTargetBitmap(width, height, 96 * scale, 96 * scale,
+            PixelFormats.Pbgra32);
+        snapshot.Render(scene);
+
+        var blurred = new DrawingVisual { Effect = new BlurEffect { Radius = blur } };
+        using (var context = blurred.RenderOpen())
+        {
+            context.DrawImage(snapshot, bounds);
+        }
+
+        var tinted = new DrawingVisual();
+        using (var context = tinted.RenderOpen())
+        {
+            context.DrawRectangle(new SolidColorBrush(tint) { Opacity = tintOpacity }, null, bounds);
+        }
+
+        var layers = new ContainerVisual();
+        layers.Children.Add(blurred);
+        layers.Children.Add(tinted);
+        var frosted = new RenderTargetBitmap(width, height, 96 * scale, 96 * scale,
+            PixelFormats.Pbgra32);
+        frosted.Render(layers);
+        frosted.Freeze();
+        return frosted;
     }
 
     public static ImageBrush Bleed(Color canvas, Color accent, DpiScale dpi)

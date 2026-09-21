@@ -136,9 +136,6 @@
             <DataTrigger Binding="{Binding Status}" Value="Done">
                 <Setter Property="Background" Value="{StaticResource OkSoftBrush}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Skipped">
-                <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
-            </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Cancelled">
                 <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
             </DataTrigger>
@@ -160,9 +157,6 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Done">
                 <Setter Property="Foreground" Value="{StaticResource OkBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Skipped">
-                <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Cancelled">
                 <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />

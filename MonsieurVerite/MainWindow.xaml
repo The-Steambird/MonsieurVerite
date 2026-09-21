@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:MonsieurVerite.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="charlotte" Height="760" Width="1120" MinHeight="520" MinWidth="860"
+        Title="charlotte" Height="802" Width="1120" MinHeight="520" MinWidth="860"
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
         UseLayoutRounding="True"
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver"
@@ -42,7 +42,7 @@
                     <Path Style="{StaticResource Icon}" Data="{StaticResource LogoIcon}"
                           Stroke="{StaticResource AccentBrush}" StrokeThickness="2" Width="18"
                           Height="18" Margin="2,0,8,0" />
-                    <TextBlock Text="Monsieur Verite" FontWeight="SemiBold"
+                    <TextBlock Text="charlotte" FontWeight="SemiBold"
                                Foreground="{StaticResource TextBrush}"
                                VerticalAlignment="Center" Margin="0,0,4,0" />
                     <Border Style="{StaticResource ToolbarDivider}" />
@@ -171,10 +171,10 @@
                       Height="40"
                       Stroke="{StaticResource LineStrongBrush}" StrokeThickness="1.5"
                       Margin="0,0,0,14" />
-                <TextBlock Text="Drop a folder or .usm files here" FontSize="14"
+                <TextBlock Text="Nothing to report yet" FontSize="14"
                            Foreground="{StaticResource DimBrush}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="or open a folder with Ctrl+O" FontSize="12"
+                <TextBlock Text="Drop a folder or .usm files here, or open a folder with Ctrl+O" FontSize="12"
                            Foreground="{StaticResource FaintBrush}"
                            HorizontalAlignment="Center" Margin="0,6,0,0" />
             </StackPanel>

@@ -9,7 +9,7 @@ public partial class KeyDialog : Window
     public KeyDialog(string fileName)
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Acrylic(this);
+        SourceInitialized += (_, _) => Chrome.Frost(this);
         Caption.Text =
             $"Convert {fileName} with a key that neither keys.json nor recovery supplied.";
     }

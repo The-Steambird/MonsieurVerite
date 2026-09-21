@@ -8,7 +8,7 @@ public partial class MessageDialog : Window
     private MessageDialog()
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Acrylic(this);
+        SourceInitialized += (_, _) => Chrome.Frost(this);
     }
 
     public static bool Show(

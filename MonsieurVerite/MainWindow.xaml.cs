@@ -26,6 +26,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        var area = SystemParameters.WorkArea;
+        Width = Math.Min(Width, area.Width - 48);
+        Height = Math.Min(Height, area.Height - 48);
 
         viewModel = new MainViewModel(Settings.ResolveEngine(), Settings.Load(),
             SynchronizationContext.Current)

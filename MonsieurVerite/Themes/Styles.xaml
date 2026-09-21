@@ -251,7 +251,7 @@
                             SnapsToDevicePixels="True">
                         <Grid>
                             <Border x:Name="CheckedTint"
-                                    Background="{StaticResource AccentSoftBrush}" Opacity="0" />
+                                    Background="{StaticResource CheckedBrush}" Opacity="0" />
                             <Border x:Name="Hover" Background="{StaticResource HoverBrush}"
                                     Opacity="0" />
                             <SelectiveScrollingGrid>
