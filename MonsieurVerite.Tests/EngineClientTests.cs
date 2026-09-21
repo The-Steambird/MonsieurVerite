@@ -94,4 +94,19 @@ public class EngineClientTests(ITestOutputHelper output)
         Assert.Equal(id, parsed.RootElement.GetProperty("id").GetString());
         Assert.Equal(value, parsed.RootElement.GetProperty("value").GetBoolean());
     }
+
+    [Theory]
+    [InlineData("Cs_A.usm")]
+    [InlineData("we\"ird\\name\n.usm")]
+    public void SkipCommandNamesTheFileTheEngineMustMatch(string file)
+    {
+        // json.py honors a skip only while `cmd.get("file")` equals the file its last job_start
+        // announced, so the name goes over verbatim, on one line.
+        var command = EngineClient.SkipCommand(file);
+
+        Assert.DoesNotContain('\n', command);
+        using var parsed = System.Text.Json.JsonDocument.Parse(command);
+        Assert.Equal("skip", parsed.RootElement.GetProperty("type").GetString());
+        Assert.Equal(file, parsed.RootElement.GetProperty("file").GetString());
+    }
 }

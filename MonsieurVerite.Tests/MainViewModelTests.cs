@@ -180,6 +180,7 @@ public class MainViewModelTests
     [Theory]
     [InlineData("exists", "already exists")]
     [InlineData("no_key", "no key")]
+    [InlineData("requested", "skipped on request")]
     public void SkipReasonsBecomeReadableDetail(string reason, string expected)
     {
         var viewModel = NewViewModel();
@@ -189,6 +190,31 @@ public class MainViewModelTests
 
         Assert.Equal(ItemStatus.Skipped, item.Status);
         Assert.Equal(expected, item.Detail);
+    }
+
+    [Fact]
+    public void RetryFailedIsOfferedOnlyWhileAnErrorRowExists()
+    {
+        var viewModel = NewViewModel();
+        var failed = Add(viewModel, "a.usm");
+        Add(viewModel, "b.usm").Status = ItemStatus.Done;
+        Assert.False(viewModel.RetryFailedCommand.CanExecute(null));
+
+        failed.Status = ItemStatus.Error;
+        Assert.True(viewModel.RetryFailedCommand.CanExecute(null));
+
+        viewModel.Items.Remove(failed);
+        Assert.False(viewModel.RetryFailedCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SkipIsOfferedOnlyDuringAFileRun()
+    {
+        // An update check runs the engine too, but has no file to skip.
+        var viewModel = NewViewModel();
+        viewModel.IsRunning = true;
+
+        Assert.False(viewModel.SkipCommand.CanExecute(null));
     }
 
     [Fact]

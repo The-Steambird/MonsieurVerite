@@ -135,6 +135,7 @@
                                   Click="SetKey_Click" />
                         <MenuItem Header="Copy videoKey" IsEnabled="{Binding CanCopyVideoKey}"
                                   Click="CopyVideoKey_Click" />
+                        <MenuItem Header="Retry failed" Command="{Binding RetryFailedCommand}" />
                         <Separator />
                         <MenuItem Header="Open output folder"
                                   Command="{Binding OpenOutputFolderCommand}" />
@@ -237,9 +238,12 @@
                             <TextBlock Text="{Binding StartLabel}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Content="Cancel" Command="{Binding CancelCommand}">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource ActionButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel.Resources>
+                            <Style TargetType="Button" BasedOn="{StaticResource ActionButton}" />
+                        </StackPanel.Resources>
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsRunning}" Value="True">
@@ -247,8 +251,12 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Button.Style>
-                    </Button>
+                        </StackPanel.Style>
+                        <Button Content="Skip file" Command="{Binding SkipCommand}"
+                                ToolTip="Drop the file being converted and carry on with the rest" />
+                        <Button Content="Cancel" Command="{Binding CancelCommand}"
+                                Margin="8,0,0,0" />
+                    </StackPanel>
                 </StackPanel>
 
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarDivider}"

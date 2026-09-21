@@ -79,6 +79,15 @@ public sealed class EngineClient : IDisposable
 
     public void SendCancel() => Send("""{"type":"cancel"}""");
 
+    public void SendSkip(string file)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(file);
+        Send(SkipCommand(file));
+    }
+
+    internal static string SkipCommand(string file) =>
+        JsonSerializer.Serialize(new { type = "skip", file });
+
     public void Dispose()
     {
         if (disposed)

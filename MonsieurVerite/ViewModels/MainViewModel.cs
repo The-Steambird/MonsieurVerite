@@ -80,9 +80,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIdle), nameof(CanRunEngine), nameof(CanSetKey))]
     [NotifyCanExecuteChangedFor(
-        nameof(StartCommand), nameof(CancelCommand), nameof(RecoverKeysCommand),
-        nameof(RemoveCheckedCommand), nameof(CheckForUpdatesCommand),
-        nameof(OpenFolderCommand), nameof(BrowseFilesCommand))]
+        nameof(StartCommand), nameof(CancelCommand), nameof(SkipCommand),
+        nameof(RetryFailedCommand), nameof(RecoverKeysCommand), nameof(RemoveCheckedCommand),
+        nameof(CheckForUpdatesCommand), nameof(OpenFolderCommand), nameof(BrowseFilesCommand))]
     public partial bool IsRunning { get; set; }
 
     public bool IsIdle => !IsRunning;
@@ -315,6 +315,16 @@ public sealed partial class MainViewModel : ObservableObject
 
     private bool CanStart() => CanRunEngine && Items.Count > 0;
 
+    [RelayCommand(CanExecute = nameof(CanRetryFailed))]
+    private async Task RetryFailedAsync()
+    {
+        var targets = Items.Where(item => item.Status == ItemStatus.Error).ToList();
+        await ConvertAsync(targets, []).ConfigureAwait(true);
+    }
+
+    private bool CanRetryFailed() =>
+        CanRunEngine && Items.Any(item => item.Status == ItemStatus.Error);
+
     public Task ConvertWithKeyAsync(QueueItem item, ulong videoKey)
     {
         ArgumentNullException.ThrowIfNull(item);
@@ -367,6 +377,20 @@ public sealed partial class MainViewModel : ObservableObject
             StageText = "Cancelling…";
         }
     }
+
+    // The skip names the file so the engine can drop it if that job already finished by the
+    // time the command arrives, instead of skipping whichever file started next.
+    [RelayCommand(CanExecute = nameof(CanSkip))]
+    private void Skip()
+    {
+        if (current is { Status: ItemStatus.Running } item)
+        {
+            client?.SendSkip(item.FileName);
+            item.Detail = "skipping…";
+        }
+    }
+
+    private bool CanSkip() => IsRunning && runTotal > 0;
 
     public void Shutdown() => cancellation?.Cancel();
 
@@ -577,7 +601,12 @@ public sealed partial class MainViewModel : ObservableObject
 
             case JobSkippedEvent skipped when Find(skipped.File) is { } skippedItem:
                 skippedItem.Status = ItemStatus.Skipped;
-                skippedItem.Detail = skipped.Reason == "exists" ? "already exists" : "no key";
+                skippedItem.Detail = skipped.Reason switch
+                {
+                    "exists" => "already exists",
+                    "requested" => "skipped on request",
+                    _ => "no key",
+                };
                 break;
 
             case CancelledEvent cancelled:
@@ -716,6 +745,7 @@ public sealed partial class MainViewModel : ObservableObject
         OnCheckedChanged();
         OnPropertyChanged(nameof(Summary));
         StartCommand.NotifyCanExecuteChanged();
+        RetryFailedCommand.NotifyCanExecuteChanged();
     }
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -735,6 +765,7 @@ public sealed partial class MainViewModel : ObservableObject
                 break;
             case nameof(QueueItem.Status) or nameof(QueueItem.Key):
                 OnPropertyChanged(nameof(Summary));
+                RetryFailedCommand.NotifyCanExecuteChanged();
                 break;
         }
     }
