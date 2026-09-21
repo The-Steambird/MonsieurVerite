@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
 
-/// <summary>Pins the settings-to-flag spelling, so a renamed charlotte flag fails here first.</summary>
+/// <summary>Pins the settings-to-flag spelling. A renamed charlotte flag fails here first.</summary>
 public class RunOptionsTests(ITestOutputHelper output)
 {
     [Fact]
@@ -23,7 +23,8 @@ public class RunOptionsTests(ITestOutputHelper output)
     [Fact]
     public void DefaultLanguagesAndCodecAreInTheDropdownLists()
     {
-        // The dialog's dropdowns are populated from these lists, so the defaults must be in them.
+        // The dialog's dropdowns are populated from these lists, which is why the defaults must
+        // be in them.
         var options = new RunOptions();
 
         Assert.Contains(RunOptions.AudioLanguages, language => language.Code == options.DefaultAudio);
@@ -35,8 +36,8 @@ public class RunOptionsTests(ITestOutputHelper output)
     [Fact]
     public void DefaultX265ParamsMatchCharlottes()
     {
-        // The placeholder quotes charlotte's built-in tuning, which only its source knows.
-        // Skips like the live tests when the sibling checkout is absent.
+        // The placeholder quotes charlotte's built-in tuning, which only its source knows. This
+        // skips like the live tests when the sibling checkout is absent.
         if (Settings.ResolveEngine() is not { } engine)
         {
             output.WriteLine("SKIPPED: no sibling charlotte checkout with main.py found.");
@@ -79,7 +80,7 @@ public class RunOptionsTests(ITestOutputHelper output)
     {
         var options = new RunOptions { Crf = 18, Preset = "medium", X265Params = "aq-mode=3", SkipExisting = false };
 
-        // Off: none of them, however they are set.
+        // With VapourSynth off none of them appear, however they are set.
         Assert.DoesNotContain("--crf", options.ToArguments());
 
         options.UseVapourSynth = true;
@@ -110,7 +111,7 @@ public class RunOptionsTests(ITestOutputHelper output)
     [Fact]
     public void CloneAndCopyFromCoverEveryValue()
     {
-        // The dialog edits a clone and copies back on OK; a value missing from either would be
+        // The dialog edits a clone and copies back on OK. A value missing from either would be
         // silently reset to its default on every OK.
         var original = new RunOptions
         {

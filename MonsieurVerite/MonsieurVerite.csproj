@@ -8,6 +8,8 @@
         <AssemblyName>charlotte-gui</AssemblyName>
         <RootNamespace>MonsieurVerite</RootNamespace>
         <Product>charlotte</Product>
+        <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(_IsPublishing)' == 'true'">

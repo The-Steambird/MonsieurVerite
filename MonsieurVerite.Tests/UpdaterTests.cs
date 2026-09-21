@@ -5,7 +5,7 @@ namespace MonsieurVerite.Tests;
 
 /// <summary>
 /// The install half of updating, against a scratch folder. The network half is two GET calls
-/// that are not worth mocking; PickZipUrl covers the parsing.
+/// that are not worth mocking, and PickZipUrl covers the parsing.
 /// </summary>
 public class UpdaterTests : IDisposable
 {
@@ -62,8 +62,8 @@ public class UpdaterTests : IDisposable
         Assert.Equal("new gui", File.ReadAllText(App("charlotte-gui.exe")));
         Assert.Equal("new engine", File.ReadAllText(App("charlotte-cli.exe")));
         Assert.Equal("lib", File.ReadAllText(App("extra.dll")));
-        // The replaced binaries are renamed, not deleted: a running exe can only be renamed,
-        // and the next launch removes them.
+        // The replaced binaries are renamed rather than deleted, because a running exe can only
+        // be renamed. The next launch removes them.
         Assert.Equal("old gui", File.ReadAllText(App("charlotte-gui.exe.old")));
         Assert.Equal("old engine", File.ReadAllText(App("charlotte-cli.exe.old")));
 
@@ -108,7 +108,8 @@ public class UpdaterTests : IDisposable
 
         Assert.Throws<InvalidDataException>(() => Updater.Install(zip, App("")));
 
-        // Rolled back: the first entry had already been swapped when the second was refused.
+        // The first entry had already been swapped when the second was refused, and the swap is
+        // rolled back.
         Assert.Equal("old engine", File.ReadAllText(App("charlotte-cli.exe")));
         Assert.False(File.Exists(App("charlotte-cli.exe.old")));
         Assert.False(File.Exists(Path.Combine(folder, "outside.txt")));

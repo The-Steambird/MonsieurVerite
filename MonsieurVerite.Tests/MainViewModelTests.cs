@@ -6,14 +6,13 @@ using MonsieurVerite.ViewModels;
 namespace MonsieurVerite.Tests;
 
 /// <summary>
-/// Every view model here is given no SynchronizationContext, so engine events are applied on
-/// the thread that read them and every assertion can follow the call directly. (xUnit does
-/// install a context of its own on the test thread; capturing it would post the events to the
-/// thread pool and race the assertions.)
+/// Every view model here is given no SynchronizationContext, which applies engine events on the
+/// thread that read them and lets every assertion follow the call directly. xUnit installs a
+/// context of its own on the test thread, and capturing that one would post the events to the
+/// thread pool and race the assertions.
 /// </summary>
 public class MainViewModelTests
 {
-    // Recovered keys go to a throwaway file, never the real one under %AppData%.
     private static string ScratchKeysPath() =>
         Path.Combine(Path.GetTempPath(), "MonsieurVerite.Tests", Path.GetRandomFileName(), "recovered_keys.json");
 
@@ -22,7 +21,6 @@ public class MainViewModelTests
 
     private static MainViewModel NewViewModel() => NewViewModel(EngineLaunchProfile.Dev(Path.GetTempPath()));
 
-    /// <summary>No engine at all, so the load and add paths can be exercised without a process.</summary>
     private static MainViewModel NewEnginelessViewModel() => NewViewModel(null);
 
     private static QueueItem Add(MainViewModel viewModel, string name)
@@ -63,19 +61,21 @@ public class MainViewModelTests
         viewModel.Apply(new JobStartEvent { File = "a.usm" });
         Assert.Equal(ItemStatus.Running, item.Status);
 
-        // Progress and stage events name no file; they belong to the job that started last.
+        // Progress and stage events name no file and belong to the job that started last.
         viewModel.Apply(new StageEvent { Stage = "demux", Status = "start" });
         Assert.Equal("demux", item.Detail);
 
         viewModel.Apply(new ProgressEvent { Stage = "demux", Current = 5, Total = 10 });
         Assert.Equal(50, item.Progress);
-        // No run position: runTotal is only set by a real run, and this test feeds events directly.
+        // The text has no run position because runTotal is only set by a real run, and this test
+        // feeds events directly.
         Assert.Equal("demux · 50%", viewModel.StageText);
 
         viewModel.Apply(new ResultEvent { File = "a.usm", Output = @"C:\out\a\a.mkv" });
         Assert.Equal(ItemStatus.Done, item.Status);
         Assert.Equal(100, item.Progress);
-        // Kept verbatim: it is what "open output folder" reveals, whatever the Flat toggle says now.
+        // The path is kept as sent because it is what "open output folder" reveals, whatever the
+        // Flat toggle says now.
         Assert.Equal(@"C:\out\a\a.mkv", item.OutputPath);
     }
 
@@ -110,7 +110,7 @@ public class MainViewModelTests
         Assert.Equal(7UL, item.VideoKey);
         Assert.Contains(viewModel.Log, line => line.Contains("videoKey=7", StringComparison.Ordinal));
 
-        // And it lands in the recovered-keys file, under the stem as keys.json wants it.
+        // It also lands in the recovered-keys file under the stem, which is how keys.json wants it.
         Assert.Contains("\"a\"", File.ReadAllText(viewModel.RecoveredKeysPath), StringComparison.Ordinal);
         Directory.Delete(Path.GetDirectoryName(viewModel.RecoveredKeysPath)!, recursive: true);
     }
@@ -232,7 +232,7 @@ public class MainViewModelTests
         first.IsChecked = true;
         Assert.Equal("Start (1 checked)", viewModel.StartLabel);
 
-        // Everything checked is the same run as nothing checked, so no qualifier.
+        // Everything checked is the same run as nothing checked, which is why the qualifier goes.
         second.IsChecked = true;
         Assert.Equal("Start", viewModel.StartLabel);
     }
@@ -304,7 +304,8 @@ public class MainViewModelTests
             @"C:\two\B.USM",
         ]);
 
-        // Every engine event names a file by bare name, so a second a.usm could never be told apart.
+        // A second a.usm could never be told apart, because every engine event names a file by
+        // bare name.
         Assert.Equal(["a.usm", "B.USM"], viewModel.Items.Select(item => item.FileName));
         Assert.Equal(@"C:\one", viewModel.SourceDirectory);
         Assert.Contains(viewModel.Log, line => line.Contains("already in the queue", StringComparison.Ordinal));
@@ -327,8 +328,8 @@ public class MainViewModelTests
     [Fact]
     public void ProgressOutsideAnyJobStillDrivesTheStatusBar()
     {
-        // The subtitle sync runs before the file loop, so its progress names no job. It should
-        // still show in the status bar; it just has no row to land on.
+        // The subtitle sync runs before the file loop and its progress names no job. It should
+        // still show in the status bar even though it has no row to land on.
         var viewModel = NewViewModel();
         var item = Add(viewModel, "a.usm");
 
@@ -357,8 +358,8 @@ public class MainViewModelTests
     [Fact]
     public async Task AnEngineThatCannotStartFailsTheRunWithoutLeavingRowsQueued()
     {
-        // A launcher that does not exist: Process.Start throws before any event can arrive, the
-        // only way to drive RunEngineAsync's failure path without a real engine.
+        // A launcher that does not exist makes Process.Start throw before any event can arrive,
+        // which is the only way to drive RunEngineAsync's failure path without a real engine.
         var missing = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "charlotte-cli.exe");
         var viewModel = NewViewModel(EngineLaunchProfile.Packaged(missing));
         var first = Add(viewModel, "a.usm");
@@ -369,7 +370,8 @@ public class MainViewModelTests
         Assert.False(viewModel.IsRunning);
         Assert.Equal("Idle", viewModel.StageText);
         Assert.Contains(viewModel.Log, line => line.Contains("Could not start the engine", StringComparison.Ordinal));
-        // Neither row was ever reached, so neither is an error; they simply go back to resting.
+        // Neither row was ever reached, and neither is an error for it. They simply go back to
+        // resting.
         Assert.Equal(ItemStatus.Pending, first.Status);
         Assert.Equal(ItemStatus.Pending, second.Status);
     }
@@ -379,9 +381,9 @@ public class MainViewModelTests
     [InlineData(0, ItemStatus.Pending, "")]
     public async Task ARowTheEngineLeftRunningIsSettledByHowTheEngineEnded(int exitCode, ItemStatus expected, string detail)
     {
-        // A crash mid-file leaves the row Running with nothing more coming: that row is the
+        // A crash mid-file leaves the row Running with nothing more coming, and that row is the
         // failure. A clean exit that never closed the job is --crack, whose outcome is the Key
-        // column, so the row just goes back to resting. Either way nothing stays Queued.
+        // column, and the row just goes back to resting. Either way nothing stays Queued.
         var (engine, script) = FakeEngine(
             """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
             $"@exit /b {exitCode}");
@@ -407,9 +409,8 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// A stand-in engine: a batch script that prints the given lines to stdout and ignores the
-    /// arguments it is given. Enough to drive a run through <see cref="MainViewModel"/> end to
-    /// end without charlotte. The caller deletes the script.
+    /// A batch script that prints the given lines to stdout and ignores its arguments, standing in
+    /// for the engine. The caller deletes the script.
     /// </summary>
     private static (EngineLaunchProfile Engine, string Script) FakeEngine(params string[] lines)
     {
@@ -424,11 +425,6 @@ public class MainViewModelTests
         return (engine, script);
     }
 
-    /// <summary>
-    /// The whole loading path against the real engine: enumerate a folder, spawn a probe, and let
-    /// the events flow back through <see cref="MainViewModel.Apply"/>. Skips itself without the
-    /// sibling charlotte checkout, like the engine client test.
-    /// </summary>
     [Fact]
     public async Task LoadingAFolderProbesEveryFile()
     {
