@@ -20,6 +20,7 @@
         <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
         <DebugType>none</DebugType>
         <PublishDocumentationFile>false</PublishDocumentationFile>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <RestoreLockedMode>true</RestoreLockedMode>
     </PropertyGroup>
 
