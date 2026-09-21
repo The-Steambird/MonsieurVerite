@@ -1,8 +1,9 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Color x:Key="WindowColor">#1B1A1B</Color>
-    <Color x:Key="FrostColor">#1E1C1E</Color>
+    <Color x:Key="WindowColor">#1E1820</Color>
+    <Color x:Key="FrostColor">#221C25</Color>
+    <Color x:Key="PopupColor">#2A232C</Color>
     <Color x:Key="LayerColor">#4C000000</Color>
     <Color x:Key="LineColor">#14FFFFFF</Color>
     <Color x:Key="LineStrongColor">#24FFFFFF</Color>
@@ -48,6 +49,9 @@
     <Color x:Key="{x:Static SystemColors.AccentColorLight2Key}">#E4A0B3</Color>
     <Color x:Key="{x:Static SystemColors.AccentColorLight3Key}">#EDB8C6</Color>
 
+    <SolidColorBrush x:Key="ContextMenuBackground" Color="{StaticResource PopupColor}" />
+    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="{StaticResource PopupColor}" />
+    <SolidColorBrush x:Key="ToolTipBackgroundBrush" Color="{StaticResource PopupColor}" />
     <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundThemeBrush" Color="#18FFFFFF" />
     <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundPointerOverThemeBrush" Color="#20FFFFFF" />
     <SolidColorBrush x:Key="ListBoxItemUnselectedBackgroundPointerOverThemeBrush" Color="#0AFFFFFF" />

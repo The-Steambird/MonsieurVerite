@@ -66,7 +66,7 @@ public static partial class Chrome
 
     private static RenderTargetBitmap Frosted(FrameworkElement scene, Color tint)
     {
-        const double scale = 0.25, blur = 28, tintOpacity = 0.62;
+        const double scale = 0.5, blur = 20, tintOpacity = 0.4;
         var width = (int)Math.Ceiling(scene.ActualWidth * scale);
         var height = (int)Math.Ceiling(scene.ActualHeight * scale);
         var bounds = new Rect(0, 0, scene.ActualWidth, scene.ActualHeight);
