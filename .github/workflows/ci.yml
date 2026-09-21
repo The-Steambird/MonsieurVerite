@@ -1,0 +1,40 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Check lockfiles are up to date
+        run: dotnet restore --locked-mode
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Run tests
+        run: dotnet test --no-build -c Release
+
+      - name: Publish smoke test
+        run: |
+          dotnet publish MonsieurVerite/MonsieurVerite.csproj -c Release -p:Version=0.0.0 -o publish
+          $files = Get-ChildItem publish -File
+          if ($files.Count -ne 1 -or $files[0].Name -ne 'charlotte-gui.exe') {
+            Write-Error "Expected publish/ to hold only charlotte-gui.exe, got: $($files.Name -join ', ')"
+          }
