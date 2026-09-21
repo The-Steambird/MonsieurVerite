@@ -22,6 +22,8 @@ public partial class MainWindow : Window
     private readonly MainViewModel viewModel;
     private ScrollViewer? logScroller;
     private int dragDepth;
+    private bool moving;
+    private Vector offset;
 
     public MainWindow()
     {
@@ -56,30 +58,43 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         ContentRendered += OnContentRendered;
         Closing += OnClosing;
-        Activated += (_, _) => Fade(ModalShade, false);
-        Deactivated += (_, _) =>
-            Fade(ModalShade, OwnedWindows.Cast<Window>().Any(window => window.IsVisible));
+        Activated += OnActivated;
+        Deactivated += OnDeactivated;
+        LocationChanged += OnLocationChanged;
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
         Chrome.Solid(this);
-        HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(SnapLayouts);
+        HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(Caption);
         PaintBleed(VisualTreeHelper.GetDpi(this));
     }
 
-    private IntPtr SnapLayouts(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    /// <summary>
+    /// Snap layouts need the maximize button reported as HTMAXBUTTON. While a dialog is open, the
+    /// toolbar is caption and the rest is border, so the app can be dragged but nothing else.
+    /// </summary>
+    private IntPtr Caption(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int hitTest = 0x0084, buttonDown = 0x00A1, buttonUp = 0x00A2, mouseLeave = 0x02A2;
-        const int maxButton = 9;
+        const int mouseActivate = 0x0021,
+            hitTest = 0x0084,
+            buttonDown = 0x00A1,
+            buttonUp = 0x00A2,
+            enterSizeMove = 0x0231,
+            exitSizeMove = 0x0232,
+            mouseLeave = 0x02A2;
+        const int caption = 2, noActivate = 3, maxButton = 9, border = 18;
         switch (msg)
         {
+            case hitTest when Dialog is not null:
+                handled = true;
+                return Over(Toolbar, lParam) ? caption : border;
+            case mouseActivate when Dialog is not null:
+                handled = true;
+                return noActivate;
             case hitTest when MaximizeButton.IsVisible:
-                var packed = lParam.ToInt64();
-                var screen = new Point((short)(packed & 0xFFFF), (short)((packed >> 16) & 0xFFFF));
-                var over = new Rect(MaximizeButton.RenderSize)
-                    .Contains(MaximizeButton.PointFromScreen(screen));
+                var over = Over(MaximizeButton, lParam);
                 MaximizeButton.Tag = over ? "hot" : null;
                 handled = over;
                 return over ? maxButton : IntPtr.Zero;
@@ -93,8 +108,84 @@ public partial class MainWindow : Window
             case mouseLeave:
                 MaximizeButton.Tag = null;
                 return IntPtr.Zero;
+            case enterSizeMove:
+                moving = true;
+                return IntPtr.Zero;
+            case exitSizeMove:
+                moving = false;
+                if (Dialog is not null)
+                {
+                    Refocus();
+                }
+
+                return IntPtr.Zero;
             default:
                 return IntPtr.Zero;
+        }
+    }
+
+    private static bool Over(FrameworkElement element, IntPtr packedScreenPoint)
+    {
+        var packed = packedScreenPoint.ToInt64();
+        var screen = new Point((short)(packed & 0xFFFF), (short)((packed >> 16) & 0xFFFF));
+        return new Rect(element.RenderSize).Contains(element.PointFromScreen(screen));
+    }
+
+    private Window? Dialog =>
+        OwnedWindows.Cast<Window>().FirstOrDefault(window => window.IsVisible);
+
+    private void OnDeactivated(object? sender, EventArgs e)
+    {
+        if (Dialog is not { } dialog)
+        {
+            return;
+        }
+
+        Fade(ModalShade, true);
+        Chrome.Modal(this, true);
+        offset = new Vector(dialog.Left - Left, dialog.Top - Top);
+    }
+
+    /// <summary>
+    /// A caption drag activates this window first. Activating the dialog mid-drag would cancel the
+    /// drag, so the hand-back waits until the drag ends.
+    /// </summary>
+    private void OnActivated(object? sender, EventArgs e)
+    {
+        if (Dialog is null)
+        {
+            Refocus();
+        }
+        else
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, Refocus);
+        }
+    }
+
+    private void Refocus()
+    {
+        if (moving)
+        {
+            return;
+        }
+
+        if (Dialog is { } dialog)
+        {
+            dialog.Activate();
+        }
+        else
+        {
+            Fade(ModalShade, false);
+            Chrome.Modal(this, false);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, EventArgs e)
+    {
+        if (Dialog is { } dialog)
+        {
+            dialog.Left = Left + offset.X;
+            dialog.Top = Top + offset.Y;
         }
     }
 
@@ -317,7 +408,7 @@ public partial class MainWindow : Window
     }
 
     private bool CanAccept(DragEventArgs e) =>
-        !viewModel.IsRunning && e.Data.GetDataPresent(DataFormats.FileDrop);
+        !viewModel.IsRunning && Dialog is null && e.Data.GetDataPresent(DataFormats.FileDrop);
 
     private void Window_DragEnter(object sender, DragEventArgs e)
     {
@@ -355,7 +446,7 @@ public partial class MainWindow : Window
         e.Handled = true;
         dragDepth = 0;
         Fade(DropOverlay, false);
-        if (viewModel.IsRunning ||
+        if (viewModel.IsRunning || Dialog is not null ||
             e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } dropped)
         {
             return;

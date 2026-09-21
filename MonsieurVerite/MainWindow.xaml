@@ -35,7 +35,7 @@
         <Rectangle x:Name="Bleed" Grid.RowSpan="5" IsHitTestVisible="False"
                    RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
-        <Border Grid.Row="0" Height="48" Background="{StaticResource LayerBrush}"
+        <Border x:Name="Toolbar" Grid.Row="0" Height="48" Background="{StaticResource LayerBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="12,0,0,0">
@@ -174,7 +174,8 @@
                 <TextBlock Text="Nothing to report yet" FontSize="14"
                            Foreground="{StaticResource DimBrush}"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="Drop a folder or .usm files here, or open a folder with Ctrl+O" FontSize="12"
+                <TextBlock Text="Drop a folder or .usm files here, or open a folder with Ctrl+O"
+                           FontSize="12"
                            Foreground="{StaticResource FaintBrush}"
                            HorizontalAlignment="Center" Margin="0,6,0,0" />
             </StackPanel>
