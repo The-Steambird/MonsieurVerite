@@ -17,14 +17,14 @@ public sealed class Settings
     public RunOptions Options { get; set; } = new();
 
     private static string Folder => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MonsieurVerite");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "charlotte");
 
     private static string FilePath => Path.Combine(Folder, "settings.json");
 
     public static string RecoveredKeysPath => Path.Combine(Folder, "recovered_keys.json");
 
     public static string BundledEnginePath =>
-        Path.Combine(AppContext.BaseDirectory, "charlotte.exe");
+        Path.Combine(AppContext.BaseDirectory, "charlotte-cli.exe");
 
     public static Settings Load() => Load(FilePath);
 

@@ -359,7 +359,7 @@ public class MainViewModelTests
     {
         // A launcher that does not exist: Process.Start throws before any event can arrive, the
         // only way to drive RunEngineAsync's failure path without a real engine.
-        var missing = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "charlotte.exe");
+        var missing = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "charlotte-cli.exe");
         var viewModel = NewViewModel(EngineLaunchProfile.Packaged(missing));
         var first = Add(viewModel, "a.usm");
         var second = Add(viewModel, "b.usm");

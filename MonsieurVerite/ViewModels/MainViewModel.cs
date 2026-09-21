@@ -41,7 +41,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (engine is null)
         {
-            AppendLog("No engine found. charlotte.exe must sit next to MonsieurVerite.exe.");
+            AppendLog("No engine found. charlotte-cli.exe must sit next to charlotte-gui.exe.");
         }
     }
 

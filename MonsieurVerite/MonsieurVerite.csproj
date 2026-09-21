@@ -5,6 +5,9 @@
         <UseWPF>true</UseWPF>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AssemblyName>charlotte-gui</AssemblyName>
+        <RootNamespace>MonsieurVerite</RootNamespace>
+        <Product>charlotte</Product>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(_IsPublishing)' == 'true'">

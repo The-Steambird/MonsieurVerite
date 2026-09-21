@@ -24,7 +24,7 @@ public static class Updater
                   ?? throw new InvalidDataException(
                       "The latest release has no .zip asset to install.");
 
-        var zipPath = Path.Combine(Path.GetTempPath(), "MonsieurVerite-update.zip");
+        var zipPath = Path.Combine(Path.GetTempPath(), "charlotte-update.zip");
         try
         {
             await DownloadAsync(
@@ -210,7 +210,7 @@ public static class Updater
     {
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
         client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("MonsieurVerite", App.Version));
+            new ProductInfoHeaderValue("charlotte-gui", App.Version));
         client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         return client;

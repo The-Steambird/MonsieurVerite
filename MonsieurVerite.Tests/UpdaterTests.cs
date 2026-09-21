@@ -39,12 +39,12 @@ public class UpdaterTests : IDisposable
     {
         const string release = """
             {"tag_name":"v1.2","assets":[
-              {"name":"charlotte.exe","browser_download_url":"https://x/charlotte.exe"},
-              {"name":"MonsieurVerite-1.2.zip","browser_download_url":"https://x/bundle.zip"}]}
+              {"name":"charlotte-cli.exe","browser_download_url":"https://x/charlotte-cli.exe"},
+              {"name":"charlotte-1.2.zip","browser_download_url":"https://x/bundle.zip"}]}
             """;
 
         Assert.Equal("https://x/bundle.zip", Updater.PickZipUrl(release));
-        Assert.Null(Updater.PickZipUrl("""{"assets":[{"name":"charlotte.exe","browser_download_url":"u"}]}"""));
+        Assert.Null(Updater.PickZipUrl("""{"assets":[{"name":"charlotte-cli.exe","browser_download_url":"u"}]}"""));
         Assert.Null(Updater.PickZipUrl("{}"));
     }
 
@@ -52,25 +52,25 @@ public class UpdaterTests : IDisposable
     public void InstallReplacesFilesAndKeepsTheOldOnesAside()
     {
         Directory.CreateDirectory(App(""));
-        File.WriteAllText(App("MonsieurVerite.exe"), "old gui");
-        File.WriteAllText(App("charlotte.exe"), "old engine");
-        var zip = Zip(("MonsieurVerite.exe", "new gui"), ("charlotte.exe", "new engine"), ("extra.dll", "lib"));
+        File.WriteAllText(App("charlotte-gui.exe"), "old gui");
+        File.WriteAllText(App("charlotte-cli.exe"), "old engine");
+        var zip = Zip(("charlotte-gui.exe", "new gui"), ("charlotte-cli.exe", "new engine"), ("extra.dll", "lib"));
 
         var written = Updater.Install(zip, App(""));
 
         Assert.Equal(3, written.Count);
-        Assert.Equal("new gui", File.ReadAllText(App("MonsieurVerite.exe")));
-        Assert.Equal("new engine", File.ReadAllText(App("charlotte.exe")));
+        Assert.Equal("new gui", File.ReadAllText(App("charlotte-gui.exe")));
+        Assert.Equal("new engine", File.ReadAllText(App("charlotte-cli.exe")));
         Assert.Equal("lib", File.ReadAllText(App("extra.dll")));
         // The replaced binaries are renamed, not deleted: a running exe can only be renamed,
         // and the next launch removes them.
-        Assert.Equal("old gui", File.ReadAllText(App("MonsieurVerite.exe.old")));
-        Assert.Equal("old engine", File.ReadAllText(App("charlotte.exe.old")));
+        Assert.Equal("old gui", File.ReadAllText(App("charlotte-gui.exe.old")));
+        Assert.Equal("old engine", File.ReadAllText(App("charlotte-cli.exe.old")));
 
         Updater.DeleteStaleFiles(App(""));
-        Assert.False(File.Exists(App("MonsieurVerite.exe.old")));
-        Assert.False(File.Exists(App("charlotte.exe.old")));
-        Assert.True(File.Exists(App("MonsieurVerite.exe")));
+        Assert.False(File.Exists(App("charlotte-gui.exe.old")));
+        Assert.False(File.Exists(App("charlotte-cli.exe.old")));
+        Assert.True(File.Exists(App("charlotte-gui.exe")));
     }
 
     [Fact]
@@ -79,38 +79,38 @@ public class UpdaterTests : IDisposable
         // AppContext.BaseDirectory, the real caller's argument, ends in a separator. The
         // containment check must not turn that into "C:\app\\" and refuse every entry.
         Directory.CreateDirectory(App(""));
-        var zip = Zip(("charlotte.exe", "engine"));
+        var zip = Zip(("charlotte-cli.exe", "engine"));
 
         Updater.Install(zip, App("") + Path.DirectorySeparatorChar);
 
-        Assert.Equal("engine", File.ReadAllText(App("charlotte.exe")));
+        Assert.Equal("engine", File.ReadAllText(App("charlotte-cli.exe")));
     }
 
     [Fact]
     public void ASingleWrappingFolderIsStripped()
     {
         Directory.CreateDirectory(App(""));
-        var zip = Zip(("MonsieurVerite-1.2/charlotte.exe", "engine"), ("MonsieurVerite-1.2/font/ja.ttf", "font"));
+        var zip = Zip(("charlotte-1.2/charlotte-cli.exe", "engine"), ("charlotte-1.2/font/ja.ttf", "font"));
 
         Updater.Install(zip, App(""));
 
-        Assert.Equal("engine", File.ReadAllText(App("charlotte.exe")));
+        Assert.Equal("engine", File.ReadAllText(App("charlotte-cli.exe")));
         Assert.Equal("font", File.ReadAllText(App(Path.Combine("font", "ja.ttf"))));
-        Assert.False(Directory.Exists(App("MonsieurVerite-1.2")));
+        Assert.False(Directory.Exists(App("charlotte-1.2")));
     }
 
     [Fact]
     public void AnEntryEscapingTheAppFolderIsRefusedAndNothingChanges()
     {
         Directory.CreateDirectory(App(""));
-        File.WriteAllText(App("charlotte.exe"), "old engine");
-        var zip = Zip(("charlotte.exe", "new engine"), ("../outside.txt", "escape"));
+        File.WriteAllText(App("charlotte-cli.exe"), "old engine");
+        var zip = Zip(("charlotte-cli.exe", "new engine"), ("../outside.txt", "escape"));
 
         Assert.Throws<InvalidDataException>(() => Updater.Install(zip, App("")));
 
         // Rolled back: the first entry had already been swapped when the second was refused.
-        Assert.Equal("old engine", File.ReadAllText(App("charlotte.exe")));
-        Assert.False(File.Exists(App("charlotte.exe.old")));
+        Assert.Equal("old engine", File.ReadAllText(App("charlotte-cli.exe")));
+        Assert.False(File.Exists(App("charlotte-cli.exe.old")));
         Assert.False(File.Exists(Path.Combine(folder, "outside.txt")));
     }
 

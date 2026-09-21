@@ -117,7 +117,7 @@ public partial class MainWindow : Window
             MessageDialog.Show(
                 this,
                 "Could not find charlotte",
-                "The engine has to sit beside MonsieurVerite.exe. Converting and key recovery are unavailable until it does.",
+                "charlotte-cli.exe has to sit beside charlotte-gui.exe. Converting and key recovery are unavailable until it does.",
                 detail: $"Expected: {Settings.BundledEnginePath}");
         }
     }
@@ -216,8 +216,8 @@ public partial class MainWindow : Window
         var engine = viewModel.Engine?.Description ?? "none found";
         MessageDialog.Show(
             this,
-            $"MonsieurVerite {App.Version}",
-            "A front end for charlotte, the Genshin Impact cutscene converter.",
+            $"charlotte {App.Version}",
+            "MonsieurVerite, the front end for charlotte, the Genshin Impact cutscene converter.",
             detail: $"Engine: {engine}");
     }
 

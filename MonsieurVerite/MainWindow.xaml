@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:MonsieurVerite.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="MonsieurVerite" Height="760" Width="1120" MinHeight="520" MinWidth="860"
+        Title="charlotte" Height="760" Width="1120" MinHeight="520" MinWidth="860"
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
         UseLayoutRounding="True"
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver"
@@ -83,7 +83,7 @@
                                 <Separator />
                                 <MenuItem Header="Check for updates…"
                                           Command="{Binding CheckForUpdatesCommand}" />
-                                <MenuItem Header="About MonsieurVerite" Click="About_Click" />
+                                <MenuItem Header="About charlotte" Click="About_Click" />
                                 <Separator />
                                 <MenuItem Header="Exit" Click="Exit_Click" />
                             </ContextMenu>
