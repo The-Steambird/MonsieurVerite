@@ -6,6 +6,7 @@ namespace MonsieurVerite.Engine;
 
 public sealed class EngineClient : IDisposable
 {
+    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
     private readonly EngineLaunchProfile profile;
     private readonly JobObject job = new();
     private readonly Lock stdinGate = new();
@@ -42,9 +43,9 @@ public sealed class EngineClient : IDisposable
             RedirectStandardInput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            StandardOutputEncoding = new UTF8Encoding(false),
-            StandardErrorEncoding = new UTF8Encoding(false),
-            StandardInputEncoding = new UTF8Encoding(false),
+            StandardOutputEncoding = Utf8,
+            StandardErrorEncoding = Utf8,
+            StandardInputEncoding = Utf8,
         };
 
         foreach (var argument in profile.BaseArguments.Concat(arguments))

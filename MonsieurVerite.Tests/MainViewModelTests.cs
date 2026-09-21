@@ -146,6 +146,26 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public void ACrackBatchRestsEachRowWhenTheNextOneStarts()
+    {
+        var viewModel = NewViewModel();
+        var first = Add(viewModel, "a.usm");
+        var second = Add(viewModel, "b.usm");
+
+        viewModel.Apply(new JobStartEvent { File = "a.usm" });
+        viewModel.Apply(new CrackEvent { File = "a.usm", Stem = "a", VideoKey = null, Reason = "x" });
+        // --crack closes no job, so the row is still Running here and only the next job_start
+        // says the file is done. Without that the whole batch pulses until the engine exits.
+        Assert.Equal(ItemStatus.Running, first.Status);
+
+        viewModel.Apply(new JobStartEvent { File = "b.usm" });
+
+        Assert.Equal(ItemStatus.Pending, first.Status);
+        Assert.Equal(KeyState.Missing, first.Key);
+        Assert.Equal(ItemStatus.Running, second.Status);
+    }
+
+    [Fact]
     public void FailedRecoveryStaysMissingAndSaysWhy()
     {
         var viewModel = NewViewModel();
@@ -401,6 +421,30 @@ public class MainViewModelTests
             Assert.Equal(detail, opened.Detail);
             Assert.Equal(ItemStatus.Pending, unreached.Status);
             Assert.False(viewModel.IsRunning);
+        }
+        finally
+        {
+            File.Delete(script);
+        }
+    }
+
+    [Fact]
+    public async Task AFailedRunShowsWhatTheEngineSaidOnStderr()
+    {
+        // A usage error or a traceback never becomes a log event; stderr is the only place it
+        // goes, and "exited with code 1" alone would leave the user with nothing to act on.
+        var (engine, script) = FakeEngine(
+            "@echo Traceback: something broke>&2",
+            "@exit /b 1");
+        try
+        {
+            var viewModel = NewViewModel(engine);
+            Add(viewModel, "a.usm");
+
+            await viewModel.StartCommand.ExecuteAsync(null);
+
+            Assert.Contains(viewModel.Log, line => line.Contains("exited with code 1", StringComparison.Ordinal));
+            Assert.Contains(viewModel.Log, line => line.Contains("something broke", StringComparison.Ordinal));
         }
         finally
         {

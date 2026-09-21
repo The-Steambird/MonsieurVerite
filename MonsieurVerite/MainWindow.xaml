@@ -75,7 +75,7 @@
                     <Button x:Name="MoreButton" Style="{StaticResource ToolbarIconButton}"
                             Click="More_Click" ToolTip="More">
                         <Button.ContextMenu>
-                            <ContextMenu>
+                            <ContextMenu x:Name="MoreMenu">
                                 <MenuItem Header="Open output folder"
                                           Command="{Binding OpenOutputFolderCommand}" />
                                 <MenuItem Header="Show recovered keys"

@@ -65,7 +65,9 @@ public static class Updater
 
         foreach (var asset in assets.EnumerateArray())
         {
-            var name = asset.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+            var name = asset.TryGetProperty("name", out var nameProperty)
+                ? nameProperty.GetString() ?? ""
+                : "";
             if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
                 && asset.TryGetProperty("browser_download_url", out var url))
             {
@@ -117,27 +119,30 @@ public static class Updater
 
         var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(appDirectory));
         using var archive = ZipFile.OpenRead(zipPath);
-        var entries = archive.Entries.Where(entry => !entry.FullName.EndsWith('/')).ToList();
+        // Windows archivers are known to write backslashes where the zip spec says slash.
+        var entries = archive.Entries
+            .Select(entry => (Entry: entry, Name: entry.FullName.Replace('\\', '/')))
+            .Where(file => !file.Name.EndsWith('/'))
+            .ToList();
         if (entries.Count == 0)
         {
             throw new InvalidDataException("The update archive is empty.");
         }
 
-        var prefix = CommonFolder(entries.Select(entry => entry.FullName));
+        var prefix = CommonFolder(entries.Select(file => file.Name));
         var movedAside = new List<(string Original, string Stale)>();
         var written = new List<string>();
         try
         {
-            foreach (var entry in entries)
+            foreach (var (entry, name) in entries)
             {
-                var relative = entry.FullName[prefix.Length..]
-                    .Replace('/', Path.DirectorySeparatorChar);
+                var relative = name[prefix.Length..].Replace('/', Path.DirectorySeparatorChar);
                 var target = Path.GetFullPath(Path.Combine(root, relative));
                 if (!target.StartsWith(root + Path.DirectorySeparatorChar,
                         StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidDataException(
-                        $"The update archive tries to write outside the app folder: {entry.FullName}");
+                        $"The update archive tries to write outside the app folder: {name}");
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);

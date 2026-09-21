@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MonsieurVerite.Engine;
@@ -13,6 +14,7 @@ namespace MonsieurVerite.ViewModels;
 public sealed partial class MainViewModel : ObservableObject
 {
     private const int LogCapacity = 2000;
+    private const int StderrTailCapacity = 20;
     private readonly Settings settings;
     private readonly SynchronizationContext? uiContext;
     private EngineClient? client;
@@ -402,10 +404,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            AppendLog("Update cancelled.");
+            AppendLog(source.IsCancellationRequested ? "Update cancelled." : "Update timed out.");
         }
         catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException
-                                      or UnauthorizedAccessException)
+                                      or UnauthorizedAccessException or JsonException)
         {
             AppendLog($"Update failed: {e.Message}");
         }
@@ -434,7 +436,20 @@ public sealed partial class MainViewModel : ObservableObject
         using var source = new CancellationTokenSource();
         using var engine = new EngineClient(profile);
         engine.EventReceived += evt => OnUiThread(() => Apply(evt));
-        engine.StandardErrorReceived += line => Debug.WriteLine(line);
+
+        // Anything the engine says outside the protocol (a usage error, a Python traceback) lands
+        // on stderr. Only its tail is worth showing, and only when the run failed, because a
+        // healthy run's stderr is the console logger repeating the log events.
+        var stderrTail = new Queue<string>();
+        engine.StandardErrorReceived += line =>
+        {
+            Debug.WriteLine(line);
+            stderrTail.Enqueue(line);
+            if (stderrTail.Count > StderrTailCapacity)
+            {
+                stderrTail.Dequeue();
+            }
+        };
 
         cancellation = source;
         client = engine;
@@ -452,6 +467,10 @@ public sealed partial class MainViewModel : ObservableObject
             {
                 failure = $"engine exited with code {exitCode}";
                 AppendLog($"Engine exited with code {exitCode}.");
+                foreach (var line in stderrTail.Where(line => line.Length > 0))
+                {
+                    AppendLog($"  {line}");
+                }
             }
         }
         catch (Win32Exception e)
@@ -467,7 +486,6 @@ public sealed partial class MainViewModel : ObservableObject
             IsRunning = false;
             StageText = "Idle";
             SettleRows(failure);
-            OnPropertyChanged(nameof(Summary));
         }
     }
 
@@ -503,6 +521,13 @@ public sealed partial class MainViewModel : ObservableObject
                 break;
 
             case JobStartEvent job:
+                // --crack never closes a job. Outcome is the Key column, and the next
+                // job_start is the only signal that the previous file is done.
+                if (current is { Status: ItemStatus.Running } previous)
+                {
+                    previous.Status = ItemStatus.Pending;
+                }
+
                 runIndex++;
                 current = Find(job.File);
                 if (current is not null)
@@ -514,7 +539,7 @@ public sealed partial class MainViewModel : ObservableObject
                 break;
 
             case StageEvent stage when stage.Status == "start":
-                StageText = Describe(stage.Stage, null);
+                ShowStage(Describe(stage.Stage, null));
                 if (current is not null)
                 {
                     current.Detail = stage.Stage;
@@ -525,7 +550,7 @@ public sealed partial class MainViewModel : ObservableObject
 
             case ProgressEvent progress when progress.Total > 0:
                 var percent = progress.Current * 100.0 / progress.Total;
-                StageText = Describe(progress.Stage, (int)percent);
+                ShowStage(Describe(progress.Stage, (int)percent));
                 if (current is not null)
                 {
                     current.Progress = percent;
@@ -615,8 +640,14 @@ public sealed partial class MainViewModel : ObservableObject
                 AppendLog($"Engine sent an event kind this GUI does not know: {unknown.Type}");
                 break;
         }
+    }
 
-        OnPropertyChanged(nameof(Summary));
+    private void ShowStage(string text)
+    {
+        if (cancellation is not { IsCancellationRequested: true })
+        {
+            StageText = text;
+        }
     }
 
     private QueueItem? Find(string fileName) =>
@@ -701,6 +732,9 @@ public sealed partial class MainViewModel : ObservableObject
                 break;
             case nameof(QueueItem.VideoKey):
                 OnPropertyChanged(nameof(CanCopyVideoKey));
+                break;
+            case nameof(QueueItem.Status) or nameof(QueueItem.Key):
+                OnPropertyChanged(nameof(Summary));
                 break;
         }
     }

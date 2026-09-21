@@ -16,15 +16,14 @@ public partial class KeyDialog : Window
 
     public ulong VideoKey { get; private set; }
 
-    private void KeyBox_TextChanged(object sender, TextChangedEventArgs e) =>
-        OkButton.IsEnabled = ulong.TryParse(KeyBox.Text.Trim(), NumberStyles.None,
-            CultureInfo.InvariantCulture, out _);
-
-    private void Ok_Click(object sender, RoutedEventArgs e)
+    private void KeyBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        VideoKey = ulong.Parse(KeyBox.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture);
-        DialogResult = true;
+        OkButton.IsEnabled = ulong.TryParse(KeyBox.Text.Trim(), NumberStyles.None,
+            CultureInfo.InvariantCulture, out var videoKey);
+        VideoKey = videoKey;
     }
+
+    private void Ok_Click(object sender, RoutedEventArgs e) => DialogResult = true;
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

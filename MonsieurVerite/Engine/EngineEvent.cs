@@ -32,7 +32,7 @@ public abstract record EngineEvent
 
             var type = typeProperty.GetString() ?? "";
             var root = document.RootElement;
-            EngineEvent? parsed = type switch
+            return type switch
             {
                 "session_start" => Read<SessionStartEvent>(root),
                 "log" => Read<LogEvent>(root),
@@ -48,10 +48,8 @@ public abstract record EngineEvent
                 "crack" => Read<CrackEvent>(root),
                 "crack_summary" => Read<CrackSummaryEvent>(root),
                 "update" => Read<UpdateEvent>(root),
-                _ => null,
+                _ => new UnknownEvent { Type = type },
             };
-
-            return parsed ?? new UnknownEvent { Type = type };
         }
         catch (JsonException)
         {
@@ -59,8 +57,8 @@ public abstract record EngineEvent
         }
     }
 
-    private static T? Read<T>(JsonElement root) where T : EngineEvent =>
-        root.Deserialize<T>(SerializerOptions);
+    private static T Read<T>(JsonElement root) where T : EngineEvent =>
+        root.Deserialize<T>(SerializerOptions)!;
 }
 
 public sealed record SessionStartEvent : EngineEvent

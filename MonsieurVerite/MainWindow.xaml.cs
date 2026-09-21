@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -40,11 +41,21 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         LogList.ItemContainerGenerator.ItemsChanged += OnLogChanged;
 
+        MoreMenu.PlacementTarget = MoreButton;
+        MoreMenu.Placement = PlacementMode.Custom;
+        MoreMenu.CustomPopupPlacementCallback = (popupSize, targetSize, _) =>
+        [
+            new CustomPopupPlacement(
+                new Point(targetSize.Width - popupSize.Width, targetSize.Height + 4),
+                PopupPrimaryAxis.Horizontal)
+        ];
+
         Loaded += OnLoaded;
         ContentRendered += OnContentRendered;
         Closing += OnClosing;
-        Activated += (_, _) => ShowModalShade(false);
-        Deactivated += (_, _) => ShowModalShade(OwnedWindows.Cast<Window>().Any(w => w.IsVisible));
+        Activated += (_, _) => Fade(ModalShade, false);
+        Deactivated += (_, _) =>
+            Fade(ModalShade, OwnedWindows.Cast<Window>().Any(window => window.IsVisible));
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -150,21 +161,7 @@ public partial class MainWindow : Window
         viewModel.Shutdown();
     }
 
-    private void More_Click(object sender, RoutedEventArgs e)
-    {
-        if (MoreButton.ContextMenu is { } menu)
-        {
-            menu.PlacementTarget = MoreButton;
-            menu.Placement = PlacementMode.Custom;
-            menu.CustomPopupPlacementCallback = (popupSize, targetSize, _) =>
-            [
-                new CustomPopupPlacement(
-                    new Point(targetSize.Width - popupSize.Width, targetSize.Height + 4),
-                    PopupPrimaryAxis.Horizontal)
-            ];
-            menu.IsOpen = true;
-        }
-    }
+    private void More_Click(object sender, RoutedEventArgs e) => MoreMenu.IsOpen = true;
 
     private void ShowRecoveredKeys_Click(object sender, RoutedEventArgs e)
     {
@@ -250,7 +247,8 @@ public partial class MainWindow : Window
     {
         if (Environment.ProcessPath is { } exe)
         {
-            Process.Start(new ProcessStartInfo(exe)
+            var processId = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
+            Process.Start(new ProcessStartInfo(exe, ["--wait-for", processId])
                 { WorkingDirectory = AppContext.BaseDirectory });
         }
 
@@ -301,7 +299,7 @@ public partial class MainWindow : Window
     {
         if (viewModel.SingleChecked?.VideoKey is { } videoKey)
         {
-            Clipboard.SetText(videoKey.ToString(CultureInfo.InvariantCulture));
+            CopyToClipboard(videoKey.ToString(CultureInfo.InvariantCulture));
         }
     }
 
@@ -323,7 +321,7 @@ public partial class MainWindow : Window
         dragDepth++;
         if (CanAccept(e))
         {
-            ShowDropOverlay(true);
+            Fade(DropOverlay, true);
         }
     }
 
@@ -335,7 +333,7 @@ public partial class MainWindow : Window
             if (dragDepth <= 0)
             {
                 dragDepth = 0;
-                ShowDropOverlay(false);
+                Fade(DropOverlay, false);
             }
         });
     }
@@ -346,19 +344,14 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void ShowDropOverlay(bool visible) =>
-        DropOverlay.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(visible ? 1 : 0, OverlayFade));
-
-    private void ShowModalShade(bool visible) =>
-        ModalShade.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(visible ? 1 : 0, OverlayFade));
+    private static void Fade(UIElement element, bool visible) =>
+        element.BeginAnimation(OpacityProperty, new DoubleAnimation(visible ? 1 : 0, OverlayFade));
 
     private async void Window_Drop(object sender, DragEventArgs e)
     {
         e.Handled = true;
         dragDepth = 0;
-        ShowDropOverlay(false);
+        Fade(DropOverlay, false);
         if (viewModel.IsRunning ||
             e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } dropped)
         {
@@ -380,17 +373,30 @@ public partial class MainWindow : Window
         var lines = LogList.SelectedItems.Count > 0
             ? LogList.SelectedItems.Cast<string>()
             : viewModel.Log;
-        CopyLines(lines);
+        CopyToClipboard(string.Join(Environment.NewLine, lines));
     }
 
-    private void CopyAllLog_Click(object sender, RoutedEventArgs e) => CopyLines(viewModel.Log);
+    private void CopyAllLog_Click(object sender, RoutedEventArgs e) =>
+        CopyToClipboard(string.Join(Environment.NewLine, viewModel.Log));
 
-    private static void CopyLines(IEnumerable<string> lines)
+    /// <summary>
+    /// The clipboard is a shared resource, and Clipboard.SetText throws when another process is
+    /// holding it, even after WPF's own retries.
+    /// </summary>
+    private void CopyToClipboard(string text)
     {
-        var text = string.Join(Environment.NewLine, lines);
-        if (text.Length > 0)
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        try
         {
             Clipboard.SetText(text);
+        }
+        catch (ExternalException e)
+        {
+            viewModel.AppendLog($"Could not copy to the clipboard: {e.Message}");
         }
     }
 

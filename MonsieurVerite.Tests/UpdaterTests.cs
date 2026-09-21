@@ -100,6 +100,21 @@ public class UpdaterTests : IDisposable
     }
 
     [Fact]
+    public void BackslashEntriesAreUnwrappedLikeSlashOnes()
+    {
+        // Windows archivers are known to write backslashes where the zip spec says slash. Read
+        // literally, "charlotte-1.2\charlotte-cli.exe" would be one flat file with a backslash
+        // in its name.
+        Directory.CreateDirectory(App(""));
+        var zip = Zip((@"charlotte-1.2\charlotte-cli.exe", "engine"), (@"charlotte-1.2\font\ja.ttf", "font"));
+
+        Updater.Install(zip, App(""));
+
+        Assert.Equal("engine", File.ReadAllText(App("charlotte-cli.exe")));
+        Assert.Equal("font", File.ReadAllText(App(Path.Combine("font", "ja.ttf"))));
+    }
+
+    [Fact]
     public void AnEntryEscapingTheAppFolderIsRefusedAndNothingChanges()
     {
         Directory.CreateDirectory(App(""));

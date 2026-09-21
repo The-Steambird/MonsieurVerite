@@ -28,7 +28,8 @@ public static class RecoveredKeys
 
             for (var i = videos.Count - 1; i >= 0; i--)
             {
-                if (videos[i]?.GetValue<string>() == stem)
+                if (videos[i] is JsonValue video && video.TryGetValue<string>(out var name) &&
+                    name == stem)
                 {
                     videos.RemoveAt(i);
                 }
