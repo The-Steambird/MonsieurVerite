@@ -139,7 +139,7 @@
                         <Separator />
                         <MenuItem Header="Open output folder"
                                   Command="{Binding OpenOutputFolderCommand}" />
-                        <MenuItem Header="Uncheck all" Command="{Binding ClearSelectionCommand}" />
+                        <MenuItem Header="Uncheck all" Command="{Binding UncheckAllCommand}" />
                     </ContextMenu>
                 </DataGrid.ContextMenu>
 
@@ -306,7 +306,7 @@
             </TextBlock>
         </DockPanel>
 
-        <!-- Dims the window under a modal dialog; the dialog's acrylic blurs the rest. -->
+        <!-- Dims the window under a dialog, whose own frost blurs what shows through. -->
         <Rectangle x:Name="ModalShade" Grid.RowSpan="5" Fill="{StaticResource ShadeBrush}"
                    Opacity="0" IsHitTestVisible="False" />
 

@@ -39,8 +39,7 @@ public partial class MainWindow : Window
             PickFolder = PickFolder,
             PickFiles = PickFiles,
             ShowSettings = ShowSettings,
-            ConfirmKeyOverwrite =
-                prompt => MessageDialog.Show(this, "charlotte", prompt, "Yes", "No"),
+            AnswerQuestion = prompt => MessageDialog.Show(this, "charlotte", prompt, "Yes", "No"),
             ConfirmUpdate = ConfirmUpdate,
             RestartRequested = Restart,
         };
@@ -340,8 +339,11 @@ public partial class MainWindow : Window
         if (Environment.ProcessPath is { } exe)
         {
             var processId = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
-            Process.Start(new ProcessStartInfo(exe, ["--wait-for", processId])
-                { WorkingDirectory = AppContext.BaseDirectory });
+            var successor = new ProcessStartInfo(exe, ["--wait-for", processId])
+            {
+                WorkingDirectory = AppContext.BaseDirectory,
+            };
+            Process.Start(successor);
         }
 
         Close();

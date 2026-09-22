@@ -23,16 +23,18 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    // The engine path puts recovered_keys.json in the scratch folder, beside where the engine
+    // would be.
     private MainViewModel NewViewModel(EngineLaunchProfile? engine) =>
-        new(engine, new Settings(), uiContext: null) { RecoveredKeysPath = scratch.File("recovered_keys.json") };
+        new(engine, new Settings { EnginePath = scratch.File("charlotte-cli.exe") }, uiContext: null);
 
     private MainViewModel NewViewModel() => NewViewModel(EngineLaunchProfile.Packaged(scratch.File("charlotte-cli.exe")));
 
     private MainViewModel NewEnginelessViewModel() => NewViewModel(null);
 
-    private static QueueItem Add(MainViewModel viewModel, string name)
+    private QueueItem Add(MainViewModel viewModel, string name)
     {
-        var item = new QueueItem(Path.Combine(@"C:\usm", name));
+        var item = new QueueItem(scratch.File(Path.Combine("usm", name)));
         viewModel.Items.Add(item);
         return item;
     }
@@ -89,10 +91,11 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
         // No run position in the text, because only a real run sets runTotal.
         Assert.Equal("demux · 50%", viewModel.StageText);
 
-        viewModel.Apply(new ResultEvent { File = "a.usm", Output = @"C:\out\a\a.mkv" });
+        var output = scratch.File(Path.Combine("out", "a", "a.mkv"));
+        viewModel.Apply(new ResultEvent { File = "a.usm", Output = output });
         Assert.Equal(ItemStatus.Done, item.Status);
         Assert.Equal(100, item.Progress);
-        Assert.Equal(@"C:\out\a\a.mkv", item.OutputPath);
+        Assert.Equal(output, item.OutputPath);
     }
 
     [Fact]
@@ -231,7 +234,7 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
     {
         var viewModel = NewViewModel();
         string? asked = null;
-        viewModel.ConfirmKeyOverwrite = prompt => { asked = prompt; return true; };
+        viewModel.AnswerQuestion = prompt => { asked = prompt; return true; };
 
         viewModel.Apply(new QuestionEvent { Id = "q0", Prompt = "Overwrite keys.json?", Default = false });
 
@@ -370,16 +373,18 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
     public async Task AddedFilesAreFilteredToUsmAndDedupedByBareName()
     {
         var viewModel = NewEnginelessViewModel();
+        var one = scratch.File("one");
+        var two = scratch.File("two");
 
         await viewModel.AddFilesAsync([
-            @"C:\one\a.usm",
-            @"C:\one\notes.txt",
-            @"C:\two\a.usm",
-            @"C:\two\B.USM",
+            Path.Combine(one, "a.usm"),
+            Path.Combine(one, "notes.txt"),
+            Path.Combine(two, "a.usm"),
+            Path.Combine(two, "B.USM"),
         ]);
 
         Assert.Equal(["a.usm", "B.USM"], viewModel.Items.Select(item => item.FileName));
-        Assert.Equal(@"C:\one", viewModel.SourceDirectory);
+        Assert.Equal(one, viewModel.SourceDirectory);
         Assert.Contains(viewModel.Log, line => line.Contains("already in the queue", StringComparison.Ordinal));
     }
 
@@ -479,6 +484,38 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
 
         Assert.Contains(viewModel.Log, line => line.Contains("exited with code 1", StringComparison.Ordinal));
         Assert.Contains(viewModel.Log, line => line.Contains("something broke", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AFailureTheEventsAlreadyExplainedDoesNotEchoStderr()
+    {
+        // The engine exits 1 after a batch with a failed file, and the error event on the row
+        // already explains it, which is why the console logger's copy stays out of the log.
+        var engine = FakeEngine(
+            """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
+            """@echo {"type":"error","file":"a.usm","message":"bad chunk"}""",
+            "@echo [12:00:00] ERROR Failed to process a.usm: bad chunk>&2",
+            "@exit /b 1");
+        var viewModel = NewViewModel(engine);
+        var failed = Add(viewModel, "a.usm");
+
+        await viewModel.StartCommand.ExecuteAsync(null);
+
+        Assert.Equal(ItemStatus.Error, failed.Status);
+        Assert.Equal("bad chunk", failed.Detail);
+        Assert.Contains(viewModel.Log, line => line.Contains("exited with code 1", StringComparison.Ordinal));
+        Assert.DoesNotContain(viewModel.Log, line => line.Contains("Failed to process", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AnUnreadableSettingsFileIsReportedInTheLog()
+    {
+        var path = scratch.File("settings.json");
+        File.WriteAllText(path, "{ not json");
+
+        var viewModel = new MainViewModel(null, Settings.Load(path), uiContext: null);
+
+        Assert.Contains(viewModel.Log, line => line.Contains("using defaults", StringComparison.Ordinal));
     }
 
     [Fact]

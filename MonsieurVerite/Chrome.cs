@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
@@ -57,7 +57,6 @@ public static partial class Chrome
             (origin.X - sceneOrigin.X) / dpi.DpiScaleX,
             (origin.Y - sceneOrigin.Y) / dpi.DpiScaleY,
             dialog.ActualWidth, dialog.ActualHeight);
-
     }
 
     private static RenderTargetBitmap Frosted(FrameworkElement scene, Color tint)

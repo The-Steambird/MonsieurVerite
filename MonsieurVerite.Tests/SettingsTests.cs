@@ -16,9 +16,12 @@ public class SettingsTests : IDisposable
     public void RoundTripsThroughDiskIncludingTheRunOptions()
     {
         var path = scratch.File("settings.json");
+        var engine = scratch.File(Path.Combine("charlotte", "charlotte-cli.exe"));
         var saved = new Settings
         {
-            SourceDirectory = @"D:\usm", OutputDirectory = @"D:\out", EnginePath = @"D:\charlotte\charlotte-cli.exe",
+            SourceDirectory = scratch.File("usm"),
+            OutputDirectory = scratch.File("out"),
+            EnginePath = engine,
         };
         saved.Options.DefaultAudio = "en";
         saved.Options.DefaultSubtitle = "JP";
@@ -30,10 +33,10 @@ public class SettingsTests : IDisposable
 
         var loaded = Settings.Load(path);
 
-        Assert.Equal(@"D:\usm", loaded.SourceDirectory);
-        Assert.Equal(@"D:\out", loaded.OutputDirectory);
-        Assert.Equal(@"D:\charlotte\charlotte-cli.exe", loaded.EnginePath);
-        Assert.Equal(@"D:\charlotte\recovered_keys.json", loaded.RecoveredKeysPath);
+        Assert.Equal(saved.SourceDirectory, loaded.SourceDirectory);
+        Assert.Equal(saved.OutputDirectory, loaded.OutputDirectory);
+        Assert.Equal(engine, loaded.EnginePath);
+        Assert.Equal(scratch.File(Path.Combine("charlotte", "recovered_keys.json")), loaded.RecoveredKeysPath);
         Assert.Equal(saved.Options.ToArguments(), loaded.Options.ToArguments());
     }
 
@@ -49,8 +52,9 @@ public class SettingsTests : IDisposable
         settings.EnginePath = "  ";
         Assert.Null(settings.EnginePath);
 
-        settings.EnginePath = @"D:\charlotte\charlotte-cli.exe";
-        Assert.Equal(@"D:\charlotte\charlotte-cli.exe", settings.EffectiveEnginePath);
+        var elsewhere = scratch.File("charlotte-cli.exe");
+        settings.EnginePath = elsewhere;
+        Assert.Equal(elsewhere, settings.EffectiveEnginePath);
     }
 
     [Fact]

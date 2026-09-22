@@ -15,10 +15,13 @@ public static class RecoveredKeys
         ArgumentException.ThrowIfNullOrWhiteSpace(stem);
 
         var root = Load(path);
-        var list = root["list"] as JsonArray ?? [];
-        root["list"] = list;
+        if (root["list"] is not JsonArray list)
+        {
+            list = [];
+            root["list"] = list;
+        }
 
-        JsonObject? target = null;
+        JsonArray? target = null;
         foreach (var entry in list.OfType<JsonObject>())
         {
             if (entry["videos"] is not JsonArray videos)
@@ -38,17 +41,17 @@ public static class RecoveredKeys
             if (entry["videoKey"] is JsonValue value && value.TryGetValue<ulong>(out var key) &&
                 key == videoKey)
             {
-                target = entry;
+                target = videos;
             }
         }
 
         if (target is null)
         {
-            target = new JsonObject { ["videoKey"] = videoKey, ["videos"] = new JsonArray() };
-            list.Add(target);
+            target = [];
+            list.Add(new JsonObject { ["videoKey"] = videoKey, ["videos"] = target });
         }
 
-        ((JsonArray)target["videos"]!).Add(stem);
+        target.Add(stem);
 
         for (var i = list.Count - 1; i >= 0; i--)
         {

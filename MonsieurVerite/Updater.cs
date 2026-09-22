@@ -179,8 +179,10 @@ public static class Updater
     public static void DeleteStaleFiles(string appDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(appDirectory);
-        foreach (var stale in Directory.EnumerateFiles(appDirectory, "*.old",
-                     SearchOption.AllDirectories))
+        // The default output folder sits under the app folder, and an unreadable subfolder in it
+        // must not fail the sweep, which runs at every startup.
+        var options = new EnumerationOptions { RecurseSubdirectories = true };
+        foreach (var stale in Directory.EnumerateFiles(appDirectory, "*.old", options))
         {
             try
             {

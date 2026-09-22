@@ -10,9 +10,6 @@ public sealed record EngineLaunchProfile
 
     public required string WorkingDirectory { get; init; }
 
-    public string Description =>
-        BaseArguments.Count == 0 ? FileName : $"{FileName} {string.Join(' ', BaseArguments)} in {WorkingDirectory}";
-
     public static EngineLaunchProfile Packaged(string executablePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);

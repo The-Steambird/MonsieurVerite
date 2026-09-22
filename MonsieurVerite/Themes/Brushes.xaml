@@ -11,6 +11,7 @@
     <Color x:Key="DimColor">#B0B0B0</Color>
     <Color x:Key="FaintColor">#767676</Color>
     <Color x:Key="AccentColor">#E4A0B3</Color>
+    <Color x:Key="AccentClearColor">#00E4A0B3</Color>
     <Color x:Key="OkColor">#8FC9A5</Color>
     <Color x:Key="WarnColor">#D5AC66</Color>
     <Color x:Key="BadColor">#DF6670</Color>
@@ -58,7 +59,6 @@
     <SolidColorBrush x:Key="TextControlBorderBrush" Color="{StaticResource LineStrongColor}" />
     <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#38FFFFFF" />
 
-    <Geometry x:Key="WarningIcon">M12 9v5M12 17.5v.5M10.3 3.9L2.4 18a1.9 1.9 0 001.7 2.9h15.8a1.9 1.9 0 001.7-2.9L13.7 3.9a1.9 1.9 0 00-3.4 0z</Geometry>
     <Geometry x:Key="FilterOffIcon">M13.4 17.9L11 19.3V13L4.6 5.6H15.4M19.4 5.6L13 13v1M3 3l18 18</Geometry>
     <Geometry x:Key="DownloadIcon">M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3</Geometry>
     <Geometry x:Key="FolderOpenIcon">M6 14l1.5-2.9A2 2 0 019.24 10H20a2 2 0 011.94 2.5l-1.54 6a2 2 0 01-1.95 1.5H4a2 2 0 01-2-2V5a2 2 0 012-2h3.9a2 2 0 011.69.9l.81 1.2a2 2 0 001.67.9H18a2 2 0 012 2v2</Geometry>

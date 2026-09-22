@@ -17,6 +17,7 @@ public sealed partial class MainViewModel : ObservableObject
     private const int StderrTailCapacity = 20;
     private readonly Settings settings;
     private readonly SynchronizationContext? uiContext;
+    private readonly HashSet<QueueItem> watched = [];
     private EngineClient? client;
     private CancellationTokenSource? cancellation;
     private QueueItem? current;
@@ -37,9 +38,13 @@ public sealed partial class MainViewModel : ObservableObject
                               "output");
         IsLogOpen = true;
         StageText = "Idle";
-        RecoveredKeysPath = settings.RecoveredKeysPath;
 
         Items.CollectionChanged += OnItemsChanged;
+
+        if (settings.LoadError is { } error)
+        {
+            AppendLog(error);
+        }
 
         if (engine is null)
         {
@@ -62,7 +67,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public Func<Settings, bool>? ShowSettings { get; set; }
 
-    public Func<string, bool>? ConfirmKeyOverwrite { get; set; }
+    public Func<string, bool>? AnswerQuestion { get; set; }
 
     public Func<UpdateEvent, bool>? ConfirmUpdate { get; set; }
 
@@ -70,7 +75,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public UpdateEvent? LatestUpdate { get; private set; }
 
-    public string RecoveredKeysPath { get; set; }
+    public string RecoveredKeysPath => settings.RecoveredKeysPath;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEngine), nameof(CanRunEngine), nameof(CanSetKey))]
@@ -97,7 +102,7 @@ public sealed partial class MainViewModel : ObservableObject
         nameof(StartCommand), nameof(CancelCommand), nameof(SkipCommand),
         nameof(RetryFailedCommand), nameof(RecoverKeysCommand), nameof(RemoveCheckedCommand),
         nameof(CheckForUpdatesCommand), nameof(OpenFolderCommand), nameof(BrowseFilesCommand))]
-    public partial bool IsRunning { get; set; }
+    public partial bool IsRunning { get; internal set; }
 
     public bool IsIdle => !IsRunning;
 
@@ -183,13 +188,14 @@ public sealed partial class MainViewModel : ObservableObject
                 continue;
             }
 
-            var item = new QueueItem(path);
-            if (Find(item.FileName) is not null)
+            var fileName = Path.GetFileName(path);
+            if (Find(fileName) is not null)
             {
-                AppendLog($"{item.FileName} is already in the queue.");
+                AppendLog($"{fileName} is already in the queue.");
                 continue;
             }
 
+            var item = new QueueItem(path);
             Items.Add(item);
             added.Add(item);
         }
@@ -206,7 +212,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (HasEngine)
         {
-            await RunEngineAsync(["--probe", .. added.Select(item => item.FullPath)], added.Count)
+            await RunEngineAsync(["--probe", .. added.Select(item => item.FullPath)], 0)
                 .ConfigureAwait(true);
         }
     }
@@ -257,25 +263,27 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void EditSettings()
     {
+        var previousPath = EnginePath;
         if (ShowSettings?.Invoke(settings) ?? false)
         {
             SaveSettings();
             OnPropertyChanged(nameof(Summary));
-            ApplyEngineSetting();
+            ApplyEngineSetting(previousPath);
         }
     }
 
-    private void ApplyEngineSetting()
+    // Resolved again even when the path is unchanged, because the file may have appeared there
+    // since the last look.
+    private void ApplyEngineSetting(string previousPath)
     {
         var engine = settings.ResolveEngine();
-        if (engine?.FileName == Engine?.FileName)
+        if (engine?.FileName == Engine?.FileName && EnginePath == previousPath)
         {
             return;
         }
 
         Engine = engine;
         EngineVersion = null;
-        RecoveredKeysPath = settings.RecoveredKeysPath;
         AppendLog(engine is null ? NoEngineMessage : $"Engine: {engine.FileName}");
     }
 
@@ -304,7 +312,7 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ClearSelection()
+    private void UncheckAll()
     {
         foreach (var item in Items)
         {
@@ -371,6 +379,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     private async Task ConvertAsync(List<QueueItem> targets, IReadOnlyList<string> extraArguments)
     {
+        if (string.IsNullOrWhiteSpace(OutputDirectory))
+        {
+            AppendLog("Choose an output folder before converting.");
+            return;
+        }
+
         Enqueue(targets);
         foreach (var item in targets)
         {
@@ -483,7 +497,9 @@ public sealed partial class MainViewModel : ObservableObject
         return false;
     }
 
-    private async Task RunEngineAsync(IReadOnlyList<string> arguments, int fileCount)
+    // jobCount is how many job_start events the run will open, which a probe and an update check
+    // never do. Zero hides the run position and disables Skip.
+    private async Task RunEngineAsync(IReadOnlyList<string> arguments, int jobCount)
     {
         if (Engine is not { } profile)
         {
@@ -500,8 +516,8 @@ public sealed partial class MainViewModel : ObservableObject
         engine.EventReceived += evt => OnUiThread(() => Apply(evt));
 
         // Anything the engine says outside the protocol (a usage error, a Python traceback) lands
-        // on stderr. Only its tail is worth showing, and only when the run failed, because a
-        // healthy run's stderr is the console logger repeating the log events.
+        // on stderr, mixed in with its console logger. Only the tail is worth showing, and only
+        // for a failure no event explained.
         var stderrTail = new Queue<string>();
         engine.StandardErrorReceived += line =>
         {
@@ -517,7 +533,7 @@ public sealed partial class MainViewModel : ObservableObject
         client = engine;
         current = null;
         runIndex = 0;
-        runTotal = fileCount;
+        runTotal = jobCount;
         IsRunning = true;
 
         string? failure = null;
@@ -529,9 +545,16 @@ public sealed partial class MainViewModel : ObservableObject
             {
                 failure = $"engine exited with code {exitCode}";
                 AppendLog($"Engine exited with code {exitCode}.");
-                foreach (var line in stderrTail.Where(line => line.Length > 0))
+
+                // The engine exits 1 after a batch in which any file failed, and those rows
+                // already carry the error events. The tail is for a run that never opened a job
+                // or died inside one.
+                if (current is null or { Status: ItemStatus.Running })
                 {
-                    AppendLog($"  {line}");
+                    foreach (var line in stderrTail.Where(line => line.Length > 0))
+                    {
+                        AppendLog($"  {line}");
+                    }
                 }
             }
         }
@@ -568,9 +591,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    public void Apply(EngineEvent evt)
+    internal void Apply(EngineEvent evt)
     {
-        ArgumentNullException.ThrowIfNull(evt);
         switch (evt)
         {
             case SessionStartEvent session:
@@ -639,7 +661,7 @@ public sealed partial class MainViewModel : ObservableObject
                     failed.Detail = error.Message;
                 }
 
-                AppendLog($"{error.File}: {error.Message}");
+                AppendLog(error.File.Length > 0 ? $"{error.File}: {error.Message}" : error.Message);
                 break;
 
             case JobSkippedEvent skipped when Find(skipped.File) is { } skippedItem:
@@ -647,8 +669,9 @@ public sealed partial class MainViewModel : ObservableObject
                 skippedItem.Detail = skipped.Reason switch
                 {
                     "exists" => "already exists",
+                    "no_key" => "no key",
                     "requested" => "skipped on request",
-                    _ => "no key",
+                    _ => skipped.Reason,
                 };
                 break;
 
@@ -704,7 +727,7 @@ public sealed partial class MainViewModel : ObservableObject
                 break;
 
             case QuestionEvent question:
-                var answer = ConfirmKeyOverwrite?.Invoke(question.Prompt) ?? question.Default;
+                var answer = AnswerQuestion?.Invoke(question.Prompt) ?? question.Default;
                 client?.SendAnswer(question.Id, answer);
                 break;
 
@@ -769,20 +792,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.OldItems is not null)
+        // Clear raises Reset and names no OldItems, which is why the rows are tracked here too.
+        var removed = e.Action == NotifyCollectionChangedAction.Reset
+            ? watched.ToList()
+            : e.OldItems?.Cast<QueueItem>() ?? [];
+        foreach (var item in removed)
         {
-            foreach (QueueItem item in e.OldItems)
-            {
-                item.PropertyChanged -= OnItemPropertyChanged;
-            }
+            item.PropertyChanged -= OnItemPropertyChanged;
+            watched.Remove(item);
         }
 
-        if (e.NewItems is not null)
+        foreach (var item in e.NewItems?.Cast<QueueItem>() ?? [])
         {
-            foreach (QueueItem item in e.NewItems)
-            {
-                item.PropertyChanged += OnItemPropertyChanged;
-            }
+            item.PropertyChanged += OnItemPropertyChanged;
+            watched.Add(item);
         }
 
         OnCheckedChanged();
@@ -793,11 +816,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (sender is not QueueItem item || !Items.Contains(item))
-        {
-            return;
-        }
-
         switch (e.PropertyName)
         {
             case nameof(QueueItem.IsChecked):

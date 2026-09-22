@@ -336,9 +336,9 @@
                     <LinearGradientBrush.RelativeTransform>
                         <TranslateTransform X="-1" />
                     </LinearGradientBrush.RelativeTransform>
-                    <GradientStop Color="#00E4A0B3" Offset="0.3" />
+                    <GradientStop Color="{StaticResource AccentClearColor}" Offset="0.3" />
                     <GradientStop Color="{StaticResource AccentColor}" Offset="0.5" />
-                    <GradientStop Color="#00E4A0B3" Offset="0.7" />
+                    <GradientStop Color="{StaticResource AccentClearColor}" Offset="0.7" />
                 </LinearGradientBrush>
             </Setter.Value>
         </Setter>

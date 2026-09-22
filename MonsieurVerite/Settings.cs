@@ -41,6 +41,10 @@ public sealed class Settings
         Path.Combine(Path.GetDirectoryName(EffectiveEnginePath) ?? AppContext.BaseDirectory,
             "recovered_keys.json");
 
+    /// <summary>Why the file on disk was not used, when it was there but unreadable.</summary>
+    [JsonIgnore]
+    public string? LoadError { get; private set; }
+
     public EngineLaunchProfile? ResolveEngine() =>
         File.Exists(EffectiveEnginePath) ? EngineLaunchProfile.Packaged(EffectiveEnginePath) : null;
 
@@ -60,6 +64,7 @@ public sealed class Settings
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
         {
+            return new Settings { LoadError = $"Could not read {path}, using defaults: {e.Message}" };
         }
 
         return new Settings();
