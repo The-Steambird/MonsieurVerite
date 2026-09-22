@@ -79,11 +79,11 @@ public class RunOptionsTests(ITestOutputHelper output)
         Assert.Equal(RunOptions.DefaultX265ParamsFor("slower").Replace(':', '\n'), options.X265ParamLines);
         options.Preset = "fast";
         Assert.Equal(RunOptions.X265Tuning.Replace(':', '\n'), options.X265ParamLines);
-        Assert.Equal("", options.X265Params);
+        Assert.Null(options.X265Params);
 
         // Writing the tuning back, however spaced, still means "leave it to charlotte".
         options.X265ParamLines = RunOptions.X265Tuning.Replace(":", " \r\n\r\n");
-        Assert.Equal("", options.X265Params);
+        Assert.Null(options.X265Params);
 
         // Anything else is stored colon-joined and comes back one per line.
         options.X265ParamLines = "rd=4\r\n  psy-rd=2.0 \r\n\r\naq-mode=3:no-sao=1\n";
@@ -94,9 +94,25 @@ public class RunOptionsTests(ITestOutputHelper output)
         options.Preset = "slower";
         Assert.Equal("rd=4:psy-rd=2.0:aq-mode=3:no-sao=1", options.X265Params);
 
-        // Cleared, it is charlotte's again.
+        // Cleared means the bare preset, and stays cleared across presets.
         options.X265ParamLines = "";
         Assert.Equal("", options.X265Params);
+        options.Preset = "fast";
+        Assert.Equal("", options.X265ParamLines);
+    }
+
+    [Fact]
+    public void ParamsFlagFollowsTheThreeStates()
+    {
+        var options = new RunOptions { HardSub = true };
+        Assert.DoesNotContain("--x265-params", options.ToArguments());
+
+        options.X265Params = "";
+        Assert.Contains("--x265-params", options.ToArguments());
+        Assert.Equal("", options.ToArguments()[^1]);
+
+        options.X265Params = "rd=6";
+        Assert.Equal(["--x265-params", "rd=6"], options.ToArguments().TakeLast(2));
     }
 
     [Fact]

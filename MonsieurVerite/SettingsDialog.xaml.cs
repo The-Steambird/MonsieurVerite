@@ -26,6 +26,5 @@ public partial class SettingsDialog : Window
     }
 
     private void Reset_Click(object sender, RoutedEventArgs e) => working.CopyFrom(new RunOptions());
-
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

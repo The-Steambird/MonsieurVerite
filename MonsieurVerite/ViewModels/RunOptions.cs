@@ -58,7 +58,6 @@ public sealed partial class RunOptions : ObservableObject
         DefaultSubtitle = "EN";
         AudioCodec = "flac";
         SkipExisting = true;
-        X265Params = "";
         Crf = 13.5;
         Preset = "slower";
     }
@@ -89,24 +88,24 @@ public sealed partial class RunOptions : ObservableObject
 
     [ObservableProperty] public partial string Preset { get; set; }
 
-    [ObservableProperty] public partial string X265Params { get; set; }
+    /// <summary>Null = built-in tuning for the preset. Empty = bare preset.</summary>
+    [ObservableProperty] public partial string? X265Params { get; set; }
 
     [JsonIgnore]
     public string X265ParamLines
     {
-        get => (X265Params.Length == 0 ? DefaultX265ParamsFor(Preset) : X265Params)
-            .Replace(':', '\n');
+        get => (X265Params ?? DefaultX265ParamsFor(Preset)).Replace(':', '\n');
         set
         {
             var joined = string.Join(':',
                 value.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0));
-            X265Params = joined == DefaultX265ParamsFor(Preset) ? "" : joined;
+            X265Params = joined == DefaultX265ParamsFor(Preset) ? null : joined;
         }
     }
 
     partial void OnPresetChanged(string oldValue, string newValue)
     {
-        if (X265Params.Length == 0 && DefaultX265ParamsFor(oldValue) != DefaultX265ParamsFor(newValue))
+        if (X265Params is null && DefaultX265ParamsFor(oldValue) != DefaultX265ParamsFor(newValue))
         {
             OnPropertyChanged(nameof(X265ParamLines));
         }
@@ -176,10 +175,10 @@ public sealed partial class RunOptions : ObservableObject
             arguments.Add(Crf.ToString(CultureInfo.InvariantCulture));
             arguments.Add("--preset");
             arguments.Add(Preset);
-            if (X265Params.Trim() is { Length: > 0 } parameters)
+            if (X265Params is not null)
             {
                 arguments.Add("--x265-params");
-                arguments.Add(parameters);
+                arguments.Add(X265Params);
             }
         }
 
