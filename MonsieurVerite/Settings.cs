@@ -16,8 +16,8 @@ public sealed class Settings
 
     public RunOptions Options { get; set; } = new();
 
-    private static string Folder => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "charlotte");
+    private static string Folder =>
+        ResolveEngine()?.WorkingDirectory ?? AppContext.BaseDirectory;
 
     private static string FilePath => Path.Combine(Folder, "settings.json");
 

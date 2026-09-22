@@ -16,7 +16,6 @@ public partial class SettingsDialog : Window
         target = options;
         working = options.Clone();
         DataContext = working;
-        RecoveredKeysRun.Text = Settings.RecoveredKeysPath;
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
