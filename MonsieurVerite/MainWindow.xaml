@@ -158,7 +158,7 @@
                     <DataGridTemplateColumn Header="VERSION" Width="90" MinWidth="65"
                                             SortMemberPath="VersionOrder"
                                             CellTemplate="{StaticResource QueueVersionCell}" />
-                    <DataGridTemplateColumn Header="KEY" Width="90" MinWidth="60"
+                    <DataGridTemplateColumn Header="KEY" Width="90" MinWidth="80"
                                             SortMemberPath="Key"
                                             CellTemplate="{StaticResource QueueKeyCell}" />
                     <DataGridTemplateColumn Header="SUBTITLES" Width="90" MinWidth="60"

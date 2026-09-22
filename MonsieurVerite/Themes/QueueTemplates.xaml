@@ -67,21 +67,44 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="KeyStateText" TargetType="TextBlock">
+    <Storyboard x:Key="PillFadeIn">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25" />
+    </Storyboard>
+
+    <Style x:Key="KeyPill" TargetType="Border">
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="9,3" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="12" />
         <Setter Property="Visibility" Value="Collapsed" />
+        <Setter Property="Tag" Value="{Binding Key, NotifyOnTargetUpdated=True}" />
         <Style.Triggers>
+            <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
+            </EventTrigger>
             <DataTrigger Binding="{Binding Key}" Value="Missing">
                 <Setter Property="Visibility" Value="Visible" />
-                <Setter Property="Text" Value="missing" />
-                <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
+                <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Key}" Value="Recovered">
                 <Setter Property="Visibility" Value="Visible" />
-                <Setter Property="Text" Value="recovered" />
-                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
                 <Setter Property="ToolTip" Value="{Binding VideoKey, StringFormat='videoKey={0}'}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="KeyStateText" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Key}" Value="Missing">
+                <Setter Property="Text" Value="Missing" />
+                <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Key}" Value="Recovered">
+                <Setter Property="Text" Value="Recovered" />
+                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
             </DataTrigger>
         </Style.Triggers>
     </Style>
@@ -89,7 +112,9 @@
     <DataTemplate x:Key="QueueKeyCell">
         <StackPanel Orientation="Horizontal">
             <Path Style="{StaticResource KeyPresentGlyph}" />
-            <TextBlock Style="{StaticResource KeyStateText}" />
+            <Border Style="{StaticResource KeyPill}">
+                <TextBlock Style="{StaticResource KeyStateText}" />
+            </Border>
         </StackPanel>
     </DataTemplate>
 
@@ -146,10 +171,6 @@
         <TextBlock Text="{Binding Version}" FontSize="12" Foreground="{StaticResource DimBrush}"
                    VerticalAlignment="Center" />
     </DataTemplate>
-
-    <Storyboard x:Key="PillFadeIn">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25" />
-    </Storyboard>
 
     <Style x:Key="StatusPill" TargetType="Border">
         <Setter Property="CornerRadius" Value="10" />
