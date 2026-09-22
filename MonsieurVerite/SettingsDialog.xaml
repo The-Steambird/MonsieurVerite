@@ -105,49 +105,31 @@
                           SelectedItem="{Binding Preset}"
                           ToolTip="x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality." />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" />
-                <Grid Grid.Row="2" Grid.Column="1">
-                    <TextBox x:Name="X265ParamsBox" Style="{StaticResource OptionField}"
-                             Text="{Binding X265Params, UpdateSourceTrigger=PropertyChanged}">
-                        <TextBox.ToolTip>
-                            <TextBlock>
-                                <Run
-                                    Text="Colon-separated x265 parameters. Leave empty to use the default tuning:" />
-                                <LineBreak />
-                                <Run Text="{x:Static vm:RunOptions.DefaultX265ParamsListed}"
-                                     Foreground="{StaticResource DimBrush}"
-                                     FontFamily="Cascadia Mono, Consolas" FontSize="11" />
-                            </TextBlock>
-                        </TextBox.ToolTip>
-                    </TextBox>
-                    <TextBlock Text="{x:Static vm:RunOptions.DefaultX265Params}">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock"
-                                   BasedOn="{StaticResource OptionPlaceholder}">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger
-                                        Binding="{Binding Text.Length, ElementName=X265ParamsBox}"
-                                        Value="0">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" VerticalAlignment="Top"
+                           Margin="0,6,8,8" />
+                <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
+                         Height="140" AcceptsReturn="True" VerticalContentAlignment="Top"
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Cascadia Mono, Consolas"
+                         Text="{Binding X265ParamLines, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improves picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality." />
             </Grid>
 
             <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20">
                 Recovered keys are written to <Run x:Name="RecoveredKeysRun" />.
             </TextBlock>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="OK" Style="{StaticResource PrimaryButton}" IsDefault="True"
-                        Click="Ok_Click" />
-                <Button Content="Cancel" Style="{StaticResource ActionButton}" IsCancel="True"
-                        Margin="8,0,0,0" />
-            </StackPanel>
+            <Grid>
+                <Button Content="Reset to defaults" Style="{StaticResource PrimaryButton}"
+                        HorizontalAlignment="Left" Click="Reset_Click"
+                        ToolTip="Every setting in this dialog back to what a fresh install has. Nothing is saved until OK." />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="OK" Style="{StaticResource PrimaryButton}" IsDefault="True"
+                            Click="Ok_Click" />
+                    <Button Content="Cancel" Style="{StaticResource ActionButton}" IsCancel="True"
+                            Margin="8,0,0,0" />
+                </StackPanel>
+            </Grid>
         </StackPanel>
         <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Close_Click" />
     </Grid>

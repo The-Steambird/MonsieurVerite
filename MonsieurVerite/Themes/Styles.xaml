@@ -611,15 +611,6 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="OptionPlaceholder" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
-        <Setter Property="Margin" Value="11,0,8,8" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        <Setter Property="IsHitTestVisible" Value="False" />
-    </Style>
-
     <Style x:Key="OptionCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="MinHeight" Value="28" />

@@ -36,20 +36,67 @@ public class RunOptionsTests(ITestOutputHelper output)
     [Fact]
     public void DefaultX265ParamsMatchCharlottes()
     {
-        // The placeholder quotes charlotte's built-in tuning, which only its source knows. This
-        // skips like the live tests when the sibling checkout is absent.
+        // The box shows charlotte's built-in tuning, which only its source knows. This skips
+        // like the live tests when the sibling checkout is absent.
         if (Settings.ResolveEngine() is not { } engine)
         {
             output.WriteLine("SKIPPED: no sibling charlotte checkout with main.py found.");
             return;
         }
 
-        // The tuning is the one place ffmpeg_params lists quoted key=value strings, one per line.
         var source = File.ReadAllText(Path.Combine(engine.WorkingDirectory, "stages", "filter.py"));
-        var listed = Regex.Matches(source, """^\s+"([^"=]+=[^"]+)",$""", RegexOptions.Multiline)
-            .Select(match => match.Groups[1].Value);
 
-        Assert.Equal(listed, RunOptions.DefaultX265Params.Split(':'));
+        // encode_args builds `tuning = [...]`, extends it with `tuning += [...]` for the presets
+        // in `preset in (...)`; each is a Python literal of quoted strings.
+        static IEnumerable<string> Quoted(string source, string opener) =>
+            Regex.Matches(Regex.Match(source, opener + "(.*?)[\\])]", RegexOptions.Singleline).Groups[1].Value,
+                    "\"([^\"]+)\"")
+                .Select(match => match.Groups[1].Value);
+
+        Assert.Equal(Quoted(source, @"tuning = \["), RunOptions.X265Tuning.Split(':'));
+        Assert.Equal(Quoted(source, @"tuning \+= \["), RunOptions.X265Effort.Split(':'));
+        Assert.Equal(Quoted(source, @"preset in \("), RunOptions.X265EffortPresets);
+    }
+
+    [Theory]
+    [InlineData("ultrafast", false)]
+    [InlineData("medium", false)]
+    [InlineData("slow", true)]
+    [InlineData("placebo", true)]
+    public void EffortKnobsRideWithTheSlowPresets(string preset, bool effort)
+    {
+        var expected = effort ? $"{RunOptions.X265Tuning}:{RunOptions.X265Effort}" : RunOptions.X265Tuning;
+
+        Assert.Equal(expected, RunOptions.DefaultX265ParamsFor(preset));
+    }
+
+    [Fact]
+    public void ParamLinesShowTheTuningAndStoreOnlyEdits()
+    {
+        var options = new RunOptions();
+
+        // Untouched, the box shows the tuning for the preset and follows the preset.
+        Assert.Equal(RunOptions.DefaultX265ParamsFor("slower").Replace(':', '\n'), options.X265ParamLines);
+        options.Preset = "fast";
+        Assert.Equal(RunOptions.X265Tuning.Replace(':', '\n'), options.X265ParamLines);
+        Assert.Equal("", options.X265Params);
+
+        // Writing the tuning back, however spaced, still means "leave it to charlotte".
+        options.X265ParamLines = RunOptions.X265Tuning.Replace(":", " \r\n\r\n");
+        Assert.Equal("", options.X265Params);
+
+        // Anything else is stored colon-joined and comes back one per line.
+        options.X265ParamLines = "rd=4\r\n  psy-rd=2.0 \r\n\r\naq-mode=3:no-sao=1\n";
+        Assert.Equal("rd=4:psy-rd=2.0:aq-mode=3:no-sao=1", options.X265Params);
+        Assert.Equal("rd=4\npsy-rd=2.0\naq-mode=3\nno-sao=1", options.X265ParamLines);
+
+        // An edited box stays put when the preset changes.
+        options.Preset = "slower";
+        Assert.Equal("rd=4:psy-rd=2.0:aq-mode=3:no-sao=1", options.X265Params);
+
+        // Cleared, it is charlotte's again.
+        options.X265ParamLines = "";
+        Assert.Equal("", options.X265Params);
     }
 
     [Fact]

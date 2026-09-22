@@ -1,14 +1,21 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MonsieurVerite.ViewModels;
 
 public sealed partial class RunOptions : ObservableObject
 {
-    public const string DefaultX265Params =
-        "keyint=300:min-keyint=30:no-open-gop=1:ref=6:bframes=8:lookahead-slices=0:aq-mode=3:aq-strength=0.75:qcomp=0.72:cbqpoffs=-2:crqpoffs=-2:no-cutree=1:rd=4:psy-rd=2.0:psy-rdoq=1.7:max-merge=5:no-strong-intra-smoothing=1:tskip=1:deblock=-2,-2:no-sao=1:no-sao-non-deblock=1";
+    public const string X265Tuning =
+        "keyint=300:min-keyint=30:no-open-gop=1:aq-mode=3:aq-strength=0.75:qcomp=0.72:cbqpoffs=-2:crqpoffs=-2:no-cutree=1:psy-rd=2.0:psy-rdoq=1.7:no-strong-intra-smoothing=1:deblock=-2,-2:no-sao=1:no-sao-non-deblock=1";
 
-    public static string DefaultX265ParamsListed { get; } = DefaultX265Params.Replace(':', '\n');
+    public const string X265Effort = "ref=6:bframes=8:lookahead-slices=0:rd=4:max-merge=5:tskip=1";
+
+    public static IReadOnlyList<string> X265EffortPresets { get; } =
+        ["slow", "slower", "veryslow", "placebo"];
+
+    public static string DefaultX265ParamsFor(string preset) =>
+        X265EffortPresets.Contains(preset) ? $"{X265Tuning}:{X265Effort}" : X265Tuning;
 
     public static IReadOnlyList<Language> AudioLanguages { get; } =
     [
@@ -51,10 +58,9 @@ public sealed partial class RunOptions : ObservableObject
         DefaultSubtitle = "EN";
         AudioCodec = "flac";
         SkipExisting = true;
-        // charlotte's own defaults (DEFAULT_CRF and DEFAULT_PRESET in stages/filter.py).
+        X265Params = "";
         Crf = 13.5;
         Preset = "slower";
-        X265Params = "";
     }
 
     [ObservableProperty] public partial string DefaultAudio { get; set; }
@@ -85,6 +91,27 @@ public sealed partial class RunOptions : ObservableObject
 
     [ObservableProperty] public partial string X265Params { get; set; }
 
+    [JsonIgnore]
+    public string X265ParamLines
+    {
+        get => (X265Params.Length == 0 ? DefaultX265ParamsFor(Preset) : X265Params)
+            .Replace(':', '\n');
+        set
+        {
+            var joined = string.Join(':',
+                value.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0));
+            X265Params = joined == DefaultX265ParamsFor(Preset) ? "" : joined;
+        }
+    }
+
+    partial void OnPresetChanged(string value)
+    {
+        if (X265Params.Length == 0)
+        {
+            OnPropertyChanged(nameof(X265ParamLines));
+        }
+    }
+
     public void CopyFrom(RunOptions other)
     {
         ArgumentNullException.ThrowIfNull(other);
@@ -99,6 +126,7 @@ public sealed partial class RunOptions : ObservableObject
         Crf = other.Crf;
         Preset = other.Preset;
         X265Params = other.X265Params;
+        OnPropertyChanged(nameof(X265ParamLines));
     }
 
     public RunOptions Clone()
