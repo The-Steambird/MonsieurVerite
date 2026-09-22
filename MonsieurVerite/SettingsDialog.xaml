@@ -108,16 +108,12 @@
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" VerticalAlignment="Top"
                            Margin="0,6,8,8" />
                 <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
-                         Height="140" AcceptsReturn="True" VerticalContentAlignment="Top"
+                         Height="118" AcceptsReturn="True" VerticalContentAlignment="Top"
                          VerticalScrollBarVisibility="Auto"
                          FontFamily="Cascadia Mono, Consolas"
                          Text="{Binding X265ParamLines, UpdateSourceTrigger=PropertyChanged}"
                          ToolTip="Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improves picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality." />
             </Grid>
-
-            <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,20">
-                Recovered keys are written to <Run x:Name="RecoveredKeysRun" />.
-            </TextBlock>
 
             <Grid>
                 <Button Content="Reset to defaults" Style="{StaticResource PrimaryButton}"
