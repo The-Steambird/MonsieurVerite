@@ -149,25 +149,25 @@
                                             HeaderTemplate="{StaticResource QueueCheckHeader}"
                                             CellStyle="{StaticResource QueueCheckCellStyle}"
                                             CellTemplate="{StaticResource QueueCheckCell}" />
-                    <DataGridTemplateColumn Header="NAME" Width="*" MinWidth="160"
+                    <DataGridTemplateColumn Header="NAME" Width="*" MinWidth="250"
                                             SortMemberPath="FileName"
                                             CellTemplate="{StaticResource QueueNameCell}" />
-                    <DataGridTemplateColumn Header="SIZE" Width="84" MinWidth="60"
+                    <DataGridTemplateColumn Header="SIZE" Width="90" MinWidth="60"
                                             SortMemberPath="Size"
                                             CellTemplate="{StaticResource QueueSizeCell}" />
-                    <DataGridTemplateColumn Header="VERSION" Width="96" MinWidth="60"
+                    <DataGridTemplateColumn Header="VERSION" Width="90" MinWidth="65"
                                             SortMemberPath="VersionOrder"
                                             CellTemplate="{StaticResource QueueVersionCell}" />
-                    <DataGridTemplateColumn Header="KEY" Width="100" MinWidth="60"
+                    <DataGridTemplateColumn Header="KEY" Width="70" MinWidth="60"
                                             SortMemberPath="Key"
                                             CellTemplate="{StaticResource QueueKeyCell}" />
-                    <DataGridTemplateColumn Header="SUBTITLES" Width="110" MinWidth="60"
+                    <DataGridTemplateColumn Header="SUBTITLES" Width="90" MinWidth="60"
                                             SortMemberPath="HasSubtitles"
                                             CellTemplate="{StaticResource QueueSubtitlesCell}" />
-                    <DataGridTemplateColumn Header="STATUS" Width="124" MinWidth="80"
+                    <DataGridTemplateColumn Header="STATUS" Width="90" MinWidth="80"
                                             SortMemberPath="Status"
                                             CellTemplate="{StaticResource QueueStatusCell}" />
-                    <DataGridTemplateColumn Header="PROGRESS" Width="172" MinWidth="100"
+                    <DataGridTemplateColumn Header="PROGRESS" Width="230" MinWidth="150"
                                             SortMemberPath="Progress"
                                             CellTemplate="{StaticResource QueueProgressCell}" />
                 </DataGrid.Columns>
