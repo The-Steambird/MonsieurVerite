@@ -70,7 +70,7 @@
                     <Button Style="{StaticResource ToolbarIconButton}"
                             Command="{Binding EditSettingsCommand}"
                             ToolTip="Settings (Ctrl+,)">
-                        <Path Style="{StaticResource Icon}" Data="{StaticResource SlidersIcon}" />
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource GearIcon}" />
                     </Button>
                     <Button x:Name="MoreButton" Style="{StaticResource ToolbarIconButton}"
                             Click="More_Click" ToolTip="More">
