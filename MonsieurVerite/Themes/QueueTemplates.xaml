@@ -2,26 +2,13 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:MonsieurVerite">
 
-    <Style x:Key="RowWarningGlyph" TargetType="Path" BasedOn="{StaticResource Icon}">
+    <Style x:Key="MissingVsScriptGlyph" TargetType="Path" BasedOn="{StaticResource Icon}">
         <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="Width" Value="13" />
         <Setter Property="Height" Value="13" />
         <Setter Property="Stroke" Value="{StaticResource WarnBrush}" />
         <Setter Property="StrokeThickness" Value="2" />
         <Setter Property="Visibility" Value="Collapsed" />
-    </Style>
-
-    <Style x:Key="MissingSubtitlesGlyph" TargetType="Path"
-           BasedOn="{StaticResource RowWarningGlyph}">
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding HasSubtitles}" Value="False">
-                <Setter Property="Visibility" Value="Visible" />
-            </DataTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="MissingVsScriptGlyph" TargetType="Path"
-           BasedOn="{StaticResource RowWarningGlyph}">
         <Style.Triggers>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
@@ -53,23 +40,26 @@
     <DataTemplate x:Key="QueueNameCell">
         <StackPanel Orientation="Horizontal">
             <TextBlock Style="{StaticResource FileNameText}" />
-            <Path Style="{StaticResource MissingSubtitlesGlyph}"
-                  Data="{StaticResource WarningIcon}"
-                  ToolTip="No cached subtitles — this file will mux without any subtitle track" />
             <Path Style="{StaticResource MissingVsScriptGlyph}"
                   Data="{StaticResource FilterOffIcon}"
                   ToolTip="No VapourSynth script for this file — it will be muxed unfiltered" />
         </StackPanel>
     </DataTemplate>
 
-    <Style x:Key="KeyPresentGlyph" TargetType="Path" BasedOn="{StaticResource Icon}">
-        <Setter Property="Data" Value="{StaticResource CheckIcon}" />
+    <Style x:Key="StateGlyph" TargetType="Path" BasedOn="{StaticResource Icon}">
         <Setter Property="Width" Value="14" />
         <Setter Property="Height" Value="14" />
         <Setter Property="StrokeThickness" Value="2.25" />
-        <Setter Property="Stroke" Value="{StaticResource OkBrush}" />
-        <Setter Property="ToolTip" Value="Key is in keys.json" />
         <Setter Property="Visibility" Value="Collapsed" />
+    </Style>
+
+    <Style x:Key="PresentGlyph" TargetType="Path" BasedOn="{StaticResource StateGlyph}">
+        <Setter Property="Data" Value="{StaticResource CheckIcon}" />
+        <Setter Property="Stroke" Value="{StaticResource OkBrush}" />
+    </Style>
+
+    <Style x:Key="KeyPresentGlyph" TargetType="Path" BasedOn="{StaticResource PresentGlyph}">
+        <Setter Property="ToolTip" Value="Key is in keys.json" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Key}" Value="Present">
                 <Setter Property="Visibility" Value="Visible" />
@@ -100,6 +90,35 @@
         <StackPanel Orientation="Horizontal">
             <Path Style="{StaticResource KeyPresentGlyph}" />
             <TextBlock Style="{StaticResource KeyStateText}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <Style x:Key="SubtitlesPresentGlyph" TargetType="Path" BasedOn="{StaticResource PresentGlyph}">
+        <Setter Property="ToolTip"
+                Value="{Binding SubtitleLanguages, StringFormat='Cached subtitles: {0}'}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding HasSubtitles}" Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SubtitlesMissingGlyph" TargetType="Path" BasedOn="{StaticResource StateGlyph}">
+        <Setter Property="Data" Value="{StaticResource CrossIcon}" />
+        <Setter Property="Stroke" Value="{StaticResource FaintBrush}" />
+        <Setter Property="ToolTip"
+                Value="No cached subtitles — this file will mux without any subtitle track" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding HasSubtitles}" Value="False">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <DataTemplate x:Key="QueueSubtitlesCell">
+        <StackPanel Orientation="Horizontal">
+            <Path Style="{StaticResource SubtitlesPresentGlyph}" />
+            <Path Style="{StaticResource SubtitlesMissingGlyph}" />
         </StackPanel>
     </DataTemplate>
 

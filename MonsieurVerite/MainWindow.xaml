@@ -158,6 +158,9 @@
                     <DataGridTemplateColumn Header="KEY" Width="100" MinWidth="60"
                                             SortMemberPath="Key"
                                             CellTemplate="{StaticResource QueueKeyCell}" />
+                    <DataGridTemplateColumn Header="SUBTITLES" Width="110" MinWidth="60"
+                                            SortMemberPath="HasSubtitles"
+                                            CellTemplate="{StaticResource QueueSubtitlesCell}" />
                     <DataGridTemplateColumn Header="STATUS" Width="124" MinWidth="80"
                                             SortMemberPath="Status"
                                             CellTemplate="{StaticResource QueueStatusCell}" />

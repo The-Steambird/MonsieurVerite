@@ -28,7 +28,6 @@ public sealed partial class QueueItem : ObservableObject
     {
         FullPath = fullPath;
         FileName = Path.GetFileName(fullPath);
-        HasSubtitles = true;
         HasVsScript = true;
         Detail = "";
     }
@@ -49,7 +48,13 @@ public sealed partial class QueueItem : ObservableObject
         Version is null ? null :
         System.Version.TryParse(Version, out var parsed) ? parsed : new System.Version(0, 0);
 
-    [ObservableProperty] public partial bool HasSubtitles { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSubtitles), nameof(SubtitleLanguages))]
+    public partial IReadOnlyList<string>? Subtitles { get; set; }
+
+    public bool? HasSubtitles => Subtitles is null ? null : Subtitles.Count > 0;
+
+    public string SubtitleLanguages => Subtitles is null ? "" : string.Join(", ", Subtitles);
 
     [ObservableProperty] public partial bool HasVsScript { get; set; }
 

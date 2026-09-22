@@ -121,7 +121,14 @@ public sealed partial class MainViewModel : ObservableObject
         {
             var done = Items.Count(item => item.Status == ItemStatus.Done);
             var missing = Items.Count(item => item.Key == KeyState.Missing);
-            return $"{Items.Count} files · {done} done · {missing} needing key recovery";
+            var unsubtitled = Items.Count(item => item.HasSubtitles == false);
+            var summary = $"{Items.Count} files · {done} done · {missing} missing key · {unsubtitled} without subtitles";
+            if (Options.UseVapourSynth)
+            {
+                summary += $" · {Items.Count(item => !item.HasVsScript)} unfiltered";
+            }
+
+            return summary;
         }
     }
 
@@ -238,6 +245,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (EditOptions?.Invoke(Options) ?? false)
         {
             SaveSettings();
+            OnPropertyChanged(nameof(Summary));
         }
     }
 
@@ -626,7 +634,7 @@ public sealed partial class MainViewModel : ObservableObject
             case ProbeEvent probe when Find(probe.File) is { } probed:
                 probed.Key = probe.Key ? KeyState.Present : KeyState.Missing;
                 probed.Version = probe.Version;
-                probed.HasSubtitles = probe.Subtitles.Count > 0;
+                probed.Subtitles = probe.Subtitles;
                 probed.HasVsScript = probe.VsScript is not null;
                 break;
 
@@ -763,7 +771,8 @@ public sealed partial class MainViewModel : ObservableObject
             case nameof(QueueItem.VideoKey):
                 OnPropertyChanged(nameof(CanCopyVideoKey));
                 break;
-            case nameof(QueueItem.Status) or nameof(QueueItem.Key):
+            case nameof(QueueItem.Status) or nameof(QueueItem.Key)
+                or nameof(QueueItem.Subtitles) or nameof(QueueItem.HasVsScript):
                 OnPropertyChanged(nameof(Summary));
                 RetryFailedCommand.NotifyCanExecuteChanged();
                 break;

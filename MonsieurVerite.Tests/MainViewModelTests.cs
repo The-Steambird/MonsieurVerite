@@ -43,6 +43,7 @@ public class MainViewModelTests
         Assert.Equal(KeyState.Present, keyed.Key);
         Assert.Equal("5.3", keyed.Version);
         Assert.True(keyed.HasSubtitles);
+        Assert.Equal("EN, JP", keyed.SubtitleLanguages);
         Assert.True(keyed.HasVsScript);
 
         Assert.Equal(KeyState.Missing, keyless.Key);
@@ -245,11 +246,24 @@ public class MainViewModelTests
         var viewModel = NewViewModel();
         Add(viewModel, "a.usm").Status = ItemStatus.Done;
         Add(viewModel, "b.usm").Key = KeyState.Missing;
-        Add(viewModel, "c.usm");
+        Add(viewModel, "c.usm").Subtitles = [];
 
         viewModel.Apply(new LogEvent { Level = "info", Message = "tick" });
 
-        Assert.Equal("3 files · 1 done · 1 needing key recovery", viewModel.Summary);
+        Assert.Equal("3 files · 1 done · 1 missing key · 1 without subtitles", viewModel.Summary);
+    }
+
+    [Fact]
+    public void SummaryCountsUnfilteredOnlyWhenVapourSynthIsOn()
+    {
+        var viewModel = NewViewModel();
+        Add(viewModel, "a.usm").HasVsScript = false;
+        Add(viewModel, "b.usm");
+
+        Assert.DoesNotContain("unfiltered", viewModel.Summary, StringComparison.Ordinal);
+
+        viewModel.Options.UseVapourSynth = true;
+        Assert.EndsWith("· 1 unfiltered", viewModel.Summary, StringComparison.Ordinal);
     }
 
     [Fact]
