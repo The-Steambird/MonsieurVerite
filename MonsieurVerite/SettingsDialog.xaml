@@ -46,7 +46,6 @@
                         Margin="8,0,0,8" VerticalAlignment="Top" Click="Browse_Click" />
             </Grid>
 
-            <!-- Two sections per row: each pair is the same number of rows tall, so they line up. -->
             <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -84,7 +83,8 @@
                         <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
                                   ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
                                   DisplayMemberPath="Display"
-                                  SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}"
+                                  SelectedValuePath="Code"
+                                  SelectedValue="{Binding DefaultSubtitle}"
                                   ToolTip="{StaticResource DefaultSubtitleTip}" />
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec"
@@ -113,7 +113,8 @@
 
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,10,0,0">
                     <TextBlock Style="{StaticResource SectionLabel}" Text="VIDEO" />
-                    <CheckBox Style="{StaticResource OptionCheck}" Content="Apply VapourSynth filter"
+                    <CheckBox Style="{StaticResource OptionCheck}"
+                              Content="Apply VapourSynth filter"
                               IsChecked="{Binding UseVapourSynth}"
                               ToolTip="Enable VapourSynth filtering to fix video artifacts (mostly banding) due to Hoyo's poor encoding. Very slow and heavy on CPU, can take up to an hour, varied by video length." />
                     <CheckBox Style="{StaticResource OptionCheck}"
@@ -123,7 +124,8 @@
                 </StackPanel>
 
                 <!-- The x265 settings apply to whichever option re-encodes. -->
-                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,10,0,0" IsEnabled="{Binding Reencodes}">
+                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,10,0,0"
+                            IsEnabled="{Binding Reencodes}">
                     <TextBlock Style="{StaticResource SectionLabel}" Text="X265" />
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -134,7 +136,7 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0" Text="CRF" ToolTip="{StaticResource CrfTip}" />
-                        <TextBox Grid.Column="1" Style="{StaticResource OptionField}" Width="56"
+                        <TextBox Grid.Column="1" Style="{StaticResource OptionField}" Width="88"
                                  Text="{Binding Crf, StringFormat={}{0:0.#}}"
                                  ToolTip="{StaticResource CrfTip}" />
 
