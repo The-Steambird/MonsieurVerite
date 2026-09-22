@@ -104,9 +104,9 @@ public sealed partial class RunOptions : ObservableObject
         }
     }
 
-    partial void OnPresetChanged(string value)
+    partial void OnPresetChanged(string oldValue, string newValue)
     {
-        if (X265Params.Length == 0)
+        if (X265Params.Length == 0 && DefaultX265ParamsFor(oldValue) != DefaultX265ParamsFor(newValue))
         {
             OnPropertyChanged(nameof(X265ParamLines));
         }
