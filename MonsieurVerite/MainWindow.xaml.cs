@@ -102,6 +102,10 @@ public partial class MainWindow : Window
             case buttonDown when wParam == maxButton:
                 handled = true;
                 return IntPtr.Zero;
+            case buttonDown when wParam == caption:
+                // The toolbar is caption, so the click never reaches WPF's mouse events.
+                App.Blur(this);
+                return IntPtr.Zero;
             case buttonUp when wParam == maxButton:
                 handled = true;
                 Maximize_Click(this, new RoutedEventArgs());

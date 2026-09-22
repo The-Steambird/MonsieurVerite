@@ -1,6 +1,9 @@
 using System.Globalization;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace MonsieurVerite;
 
@@ -22,6 +25,31 @@ public partial class App
         WaitForPredecessor(e.Args);
         Updater.DeleteStaleFiles(AppContext.BaseDirectory);
         ThemeMode = ThemeMode.Dark;
+        EventManager.RegisterClassHandler(typeof(Window), UIElement.PreviewMouseDownEvent,
+            new MouseButtonEventHandler(BlurOnClickOutside));
+    }
+
+    private static void BlurOnClickOutside(object sender, MouseButtonEventArgs e)
+    {
+        if (Keyboard.FocusedElement is TextBoxBase box && sender is Window window)
+        {
+            var node = e.OriginalSource as DependencyObject;
+            while (node is not null and not Visual)
+            {
+                node = LogicalTreeHelper.GetParent(node);
+            }
+
+            if (node is not Visual visual || (visual != box && !box.IsAncestorOf(visual)))
+            {
+                Blur(window);
+            }
+        }
+    }
+
+    public static void Blur(Window window)
+    {
+        FocusManager.SetFocusedElement(window, null);
+        Keyboard.Focus(window);
     }
 
     /// <summary>
