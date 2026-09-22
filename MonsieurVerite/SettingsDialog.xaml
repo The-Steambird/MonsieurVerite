@@ -40,14 +40,14 @@
                           ItemsSource="{x:Static vm:RunOptions.AudioLanguages}"
                           DisplayMemberPath="Display"
                           SelectedValuePath="Code" SelectedValue="{Binding DefaultAudio}"
-                          ToolTip="Every dub is muxed; this one is flagged default so players pick it." />
+                          ToolTip="All subtitles are muxed. The selected audio language will be set as default option." />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle" />
                 <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
                           ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
                           DisplayMemberPath="Display"
                           SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}"
-                          ToolTip="Every cached subtitle is muxed; this one is flagged default." />
+                          ToolTip="All subtitles are muxed. The selected subtitle language will be set as default option." />
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec" />
                 <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionCombo}"
@@ -55,7 +55,7 @@
                           HorizontalAlignment="Left"
                           ItemsSource="{x:Static vm:RunOptions.AudioCodecs}"
                           SelectedItem="{Binding AudioCodec}"
-                          ToolTip="flac is lossless, the right default for an archive. opus is 256 kbps VBR: three to five times smaller and transparent in practice, but a re-encode you cannot undo." />
+                          ToolTip="Flac is lossless, best default option archival purposes. Opus is 256 kbps VBR and is 3-5x smaller in size while perceptually transparent, but is still lossy technically." />
             </Grid>
 
             <TextBlock Style="{StaticResource SectionLabel}" Text="RUN" />
@@ -67,14 +67,19 @@
                       ToolTip="Writes each .mkv straight into the output folder instead of giving every cutscene its own subfolder." />
             <CheckBox Style="{StaticResource OptionCheck}" Content="Keep intermediates"
                       IsChecked="{Binding KeepIntermediates}"
-                      ToolTip="Leaves the decrypted .ivf, the per-channel .hca audio and the generated .ass subtitles on disk after muxing, instead of deleting them." />
+                      ToolTip="Leaves the decrypted intermediate files (.ivf, .hca, and .ass) on disk after muxing, instead of deleting them." />
 
-            <TextBlock Style="{StaticResource SectionLabel}" Margin="0,8,0,10" Text="VAPOURSYNTH" />
+            <TextBlock Style="{StaticResource SectionLabel}" Margin="0,8,0,10" Text="VIDEO" />
             <CheckBox Style="{StaticResource OptionCheck}" Content="Apply VapourSynth filter"
                       IsChecked="{Binding UseVapourSynth}"
-                      ToolTip="Runs the matching vs/ script over the video before muxing. Extremely slow: heavy CPU and GPU. Files with no matching script are muxed unfiltered." />
+                      ToolTip="Enable VapourSynth filtering to fix video artifacts (mostly banding) due to Hoyo's poor encoding. Very slow and heavy on CPU, can take up to an hour, varied by video length." />
+            <CheckBox Style="{StaticResource OptionCheck}"
+                      Content="Burn subtitle into video"
+                      IsChecked="{Binding HardSub}"
+                      ToolTip="Burn the subtitle into the video. Good for when you're using it somewhere that doesn't support soft subtitles. Re-encodes the video with the x265 settings below. No soft subtitles will be muxed." />
 
-            <Grid Margin="28,0,0,14" IsEnabled="{Binding UseVapourSynth}">
+            <!-- The x265 settings apply to whichever option re-encodes. -->
+            <Grid Margin="28,0,0,14" IsEnabled="{Binding Reencodes}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="82" />
                     <ColumnDefinition Width="*" />

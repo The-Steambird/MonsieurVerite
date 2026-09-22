@@ -69,7 +69,15 @@ public sealed partial class RunOptions : ObservableObject
 
     [ObservableProperty] public partial bool FlatOutput { get; set; }
 
-    [ObservableProperty] public partial bool UseVapourSynth { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Reencodes))]
+    public partial bool UseVapourSynth { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Reencodes))]
+    public partial bool HardSub { get; set; }
+
+    public bool Reencodes => UseVapourSynth || HardSub;
 
     [ObservableProperty] public partial double Crf { get; set; }
 
@@ -87,6 +95,7 @@ public sealed partial class RunOptions : ObservableObject
         SkipExisting = other.SkipExisting;
         FlatOutput = other.FlatOutput;
         UseVapourSynth = other.UseVapourSynth;
+        HardSub = other.HardSub;
         Crf = other.Crf;
         Preset = other.Preset;
         X265Params = other.X265Params;
@@ -126,6 +135,15 @@ public sealed partial class RunOptions : ObservableObject
         if (UseVapourSynth)
         {
             arguments.Add("--vapoursynth");
+        }
+
+        if (HardSub)
+        {
+            arguments.Add("--hard-sub");
+        }
+
+        if (Reencodes)
+        {
             arguments.Add("--crf");
             arguments.Add(Crf.ToString(CultureInfo.InvariantCulture));
             arguments.Add("--preset");

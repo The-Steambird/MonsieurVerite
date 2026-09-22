@@ -64,30 +64,36 @@ public class RunOptionsTests(ITestOutputHelper output)
             SkipExisting = true,
             FlatOutput = true,
             UseVapourSynth = true,
+            HardSub = true,
         };
 
         Assert.Equal(
             [
                 "--default-audio", "en", "--default-sub", "JP", "--audio-codec", "opus",
                 "--no-cleanup", "--skip-existing", "--flat",
-                "--vapoursynth", "--crf", "13.5", "--preset", "slower",
+                "--vapoursynth", "--hard-sub", "--crf", "13.5", "--preset", "slower",
             ],
             options.ToArguments());
     }
 
-    [Fact]
-    public void EncoderSettingsRideOnlyWithVapourSynth()
+    [Theory]
+    [InlineData(true, false, "--vapoursynth")]
+    [InlineData(false, true, "--hard-sub")]
+    public void EncoderSettingsRideWithWhicheverOptionReencodes(bool vapourSynth, bool hardSub, string flag)
     {
         var options = new RunOptions { Crf = 18, Preset = "medium", X265Params = "aq-mode=3", SkipExisting = false };
 
-        // With VapourSynth off none of them appear, however they are set.
+        // With neither on, none of them appear, however they are set.
         Assert.DoesNotContain("--crf", options.ToArguments());
+        Assert.False(options.Reencodes);
 
-        options.UseVapourSynth = true;
+        options.UseVapourSynth = vapourSynth;
+        options.HardSub = hardSub;
+        Assert.True(options.Reencodes);
         Assert.Equal(
             [
                 "--default-audio", "ja", "--default-sub", "EN", "--audio-codec", "flac",
-                "--vapoursynth", "--crf", "18", "--preset", "medium", "--x265-params", "aq-mode=3",
+                flag, "--crf", "18", "--preset", "medium", "--x265-params", "aq-mode=3",
             ],
             options.ToArguments());
     }
@@ -122,6 +128,7 @@ public class RunOptionsTests(ITestOutputHelper output)
             SkipExisting = false,
             FlatOutput = true,
             UseVapourSynth = true,
+            HardSub = true,
             Crf = 20,
             Preset = "fast",
             X265Params = "x=1",
