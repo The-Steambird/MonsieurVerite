@@ -579,10 +579,12 @@
     </Style>
 
     <Style x:Key="OptionLabel" TargetType="TextBlock">
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Margin" Value="0,0,8,8" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />

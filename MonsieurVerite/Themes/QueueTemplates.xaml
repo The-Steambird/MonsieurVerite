@@ -115,11 +115,31 @@
         </Style.Triggers>
     </Style>
 
+    <Style x:Key="SubtitleCountText" TargetType="TextBlock">
+        <Setter Property="Text" Value="{Binding Subtitles.Count}" />
+        <Setter Property="Margin" Value="6,0,0,0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource FaintBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding HasSubtitles}" Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <DataTemplate x:Key="QueueSubtitlesCell">
         <StackPanel Orientation="Horizontal">
             <Path Style="{StaticResource SubtitlesPresentGlyph}" />
             <Path Style="{StaticResource SubtitlesMissingGlyph}" />
+            <TextBlock Style="{StaticResource SubtitleCountText}" />
         </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="QueueSizeCell">
+        <TextBlock Text="{Binding SizeText}" FontSize="12" Foreground="{StaticResource DimBrush}"
+                   VerticalAlignment="Center" />
     </DataTemplate>
 
     <DataTemplate x:Key="QueueVersionCell">

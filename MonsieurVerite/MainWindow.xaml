@@ -152,6 +152,9 @@
                     <DataGridTemplateColumn Header="NAME" Width="*" MinWidth="160"
                                             SortMemberPath="FileName"
                                             CellTemplate="{StaticResource QueueNameCell}" />
+                    <DataGridTemplateColumn Header="SIZE" Width="84" MinWidth="60"
+                                            SortMemberPath="Size"
+                                            CellTemplate="{StaticResource QueueSizeCell}" />
                     <DataGridTemplateColumn Header="VERSION" Width="96" MinWidth="60"
                                             SortMemberPath="VersionOrder"
                                             CellTemplate="{StaticResource QueueVersionCell}" />

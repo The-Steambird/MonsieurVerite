@@ -240,6 +240,16 @@ public class MainViewModelTests
         Assert.Contains(viewModel.Log, line => line.Contains("something_new", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(0, "")]
+    [InlineData(1, "1 KB")]
+    [InlineData(640L * 1024 * 1024, "640 MB")]
+    [InlineData(1_503_238_553, "1.4 GB")]
+    public void SizeIsFormattedForTheQueue(long bytes, string expected)
+    {
+        Assert.Equal(expected, QueueItem.FormatSize(bytes));
+    }
+
     [Fact]
     public void SummaryCountsDoneAndMissing()
     {

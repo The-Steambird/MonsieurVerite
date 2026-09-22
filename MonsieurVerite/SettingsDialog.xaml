@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:MonsieurVerite.ViewModels"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:RunOptions}"
         Title="Settings" Width="540" SizeToContent="Height" ResizeMode="NoResize"
@@ -20,6 +21,12 @@
         <StackPanel Style="{StaticResource DialogRoot}">
             <StackPanel.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource OptionLabel}" />
+                <sys:String x:Key="DefaultAudioTip">All subtitles are muxed. The selected audio language will be set as default option.</sys:String>
+                <sys:String x:Key="DefaultSubtitleTip">All subtitles are muxed. The selected subtitle language will be set as default option.</sys:String>
+                <sys:String x:Key="AudioCodecTip">Flac is lossless, best default option archival purposes. Opus is 256 kbps VBR and is 3-5x smaller in size while perceptually transparent, but is still lossy technically.</sys:String>
+                <sys:String x:Key="CrfTip">x265 quality, 0 to 51. Lower is better in quality and bigger in size.</sys:String>
+                <sys:String x:Key="PresetTip">x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality.</sys:String>
+                <sys:String x:Key="X265ParamsTip">Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improves picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality.</sys:String>
             </StackPanel.Resources>
 
             <TextBlock Style="{StaticResource DialogTitle}" Text="Settings" Margin="0,0,0,16" />
@@ -35,27 +42,30 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default audio" />
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default audio"
+                           ToolTip="{StaticResource DefaultAudioTip}" />
                 <ComboBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionCombo}"
                           ItemsSource="{x:Static vm:RunOptions.AudioLanguages}"
                           DisplayMemberPath="Display"
                           SelectedValuePath="Code" SelectedValue="{Binding DefaultAudio}"
-                          ToolTip="All subtitles are muxed. The selected audio language will be set as default option." />
+                          ToolTip="{StaticResource DefaultAudioTip}" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle"
+                           ToolTip="{StaticResource DefaultSubtitleTip}" />
                 <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
                           ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
                           DisplayMemberPath="Display"
                           SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}"
-                          ToolTip="All subtitles are muxed. The selected subtitle language will be set as default option." />
+                          ToolTip="{StaticResource DefaultSubtitleTip}" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec"
+                           ToolTip="{StaticResource AudioCodecTip}" />
                 <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionCombo}"
                           Width="120"
                           HorizontalAlignment="Left"
                           ItemsSource="{x:Static vm:RunOptions.AudioCodecs}"
                           SelectedItem="{Binding AudioCodec}"
-                          ToolTip="Flac is lossless, best default option archival purposes. Opus is 256 kbps VBR and is 3-5x smaller in size while perceptually transparent, but is still lossy technically." />
+                          ToolTip="{StaticResource AudioCodecTip}" />
             </Grid>
 
             <TextBlock Style="{StaticResource SectionLabel}" Text="RUN" />
@@ -90,29 +100,32 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="CRF" />
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="CRF"
+                           ToolTip="{StaticResource CrfTip}" />
                 <TextBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionField}"
                          Width="72"
                          HorizontalAlignment="Left"
                          Text="{Binding Crf, StringFormat={}{0:0.#}}"
-                         ToolTip="x265 quality, 0 to 51. Lower is better in quality and bigger in size." />
+                         ToolTip="{StaticResource CrfTip}" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset"
+                           ToolTip="{StaticResource PresetTip}" />
                 <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
                           Width="140"
                           HorizontalAlignment="Left"
                           ItemsSource="{x:Static vm:RunOptions.Presets}"
                           SelectedItem="{Binding Preset}"
-                          ToolTip="x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality." />
+                          ToolTip="{StaticResource PresetTip}" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params" VerticalAlignment="Top"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params"
+                           ToolTip="{StaticResource X265ParamsTip}" VerticalAlignment="Top"
                            Margin="0,6,8,8" />
                 <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
                          Height="118" AcceptsReturn="True" VerticalContentAlignment="Top"
                          VerticalScrollBarVisibility="Auto"
                          FontFamily="Cascadia Mono, Consolas"
                          Text="{Binding X265ParamLines, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improves picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality." />
+                         ToolTip="{StaticResource X265ParamsTip}" />
             </Grid>
 
             <Grid>

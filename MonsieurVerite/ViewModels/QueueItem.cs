@@ -28,6 +28,7 @@ public sealed partial class QueueItem : ObservableObject
     {
         FullPath = fullPath;
         FileName = Path.GetFileName(fullPath);
+        Size = new FileInfo(fullPath) is { Exists: true } info ? info.Length : 0;
         HasVsScript = true;
         Detail = "";
     }
@@ -35,6 +36,18 @@ public sealed partial class QueueItem : ObservableObject
     public string FullPath { get; }
 
     public string FileName { get; }
+
+    public long Size { get; }
+
+    public string SizeText => FormatSize(Size);
+
+    public static string FormatSize(long bytes) => bytes switch
+    {
+        0 => "",
+        < 1L << 20 => $"{Math.Max(1, bytes >> 10)} KB",
+        < 1L << 30 => $"{bytes / (double)(1L << 20):0} MB",
+        _ => $"{bytes / (double)(1L << 30):0.0} GB",
+    };
 
     [ObservableProperty] public partial bool IsChecked { get; set; }
 
