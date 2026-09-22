@@ -7,7 +7,7 @@
         xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:RunOptions}"
-        Title="Settings" Width="540" SizeToContent="Height" ResizeMode="NoResize"
+        Title="Settings" Width="600" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
         UseLayoutRounding="True">
@@ -46,102 +46,115 @@
                         Margin="8,0,0,8" VerticalAlignment="Top" Click="Browse_Click" />
             </Grid>
 
-            <TextBlock Style="{StaticResource SectionLabel}" Text="MKV" />
+            <!-- Two sections per row: each pair is the same number of rows tall, so they line up. -->
             <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="24" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Default audio"
-                           ToolTip="{StaticResource DefaultAudioTip}" />
-                <ComboBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionCombo}"
-                          ItemsSource="{x:Static vm:RunOptions.AudioLanguages}"
-                          DisplayMemberPath="Display"
-                          SelectedValuePath="Code" SelectedValue="{Binding DefaultAudio}"
-                          ToolTip="{StaticResource DefaultAudioTip}" />
+                <StackPanel Grid.Row="0" Grid.Column="0">
+                    <TextBlock Style="{StaticResource SectionLabel}" Text="MKV" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle"
-                           ToolTip="{StaticResource DefaultSubtitleTip}" />
-                <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
-                          ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
-                          DisplayMemberPath="Display"
-                          SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}"
-                          ToolTip="{StaticResource DefaultSubtitleTip}" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Default audio"
+                                   ToolTip="{StaticResource DefaultAudioTip}" />
+                        <ComboBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                                  ItemsSource="{x:Static vm:RunOptions.AudioLanguages}"
+                                  DisplayMemberPath="Display"
+                                  SelectedValuePath="Code" SelectedValue="{Binding DefaultAudio}"
+                                  ToolTip="{StaticResource DefaultAudioTip}" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec"
-                           ToolTip="{StaticResource AudioCodecTip}" />
-                <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionCombo}"
-                          Width="120"
-                          HorizontalAlignment="Left"
-                          ItemsSource="{x:Static vm:RunOptions.AudioCodecs}"
-                          SelectedItem="{Binding AudioCodec}"
-                          ToolTip="{StaticResource AudioCodecTip}" />
-            </Grid>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Default subtitle"
+                                   ToolTip="{StaticResource DefaultSubtitleTip}" />
+                        <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                                  ItemsSource="{x:Static vm:RunOptions.SubtitleLanguages}"
+                                  DisplayMemberPath="Display"
+                                  SelectedValuePath="Code" SelectedValue="{Binding DefaultSubtitle}"
+                                  ToolTip="{StaticResource DefaultSubtitleTip}" />
 
-            <TextBlock Style="{StaticResource SectionLabel}" Text="RUN" />
-            <CheckBox Style="{StaticResource OptionCheck}" Content="Skip existing"
-                      IsChecked="{Binding SkipExisting}"
-                      ToolTip="Skips any file whose .mkv is already in the output folder. Useful for resuming an interrupted batch." />
-            <CheckBox Style="{StaticResource OptionCheck}" Content="Flat output"
-                      IsChecked="{Binding FlatOutput}"
-                      ToolTip="Writes each .mkv straight into the output folder instead of giving every cutscene its own subfolder." />
-            <CheckBox Style="{StaticResource OptionCheck}" Content="Keep intermediates"
-                      IsChecked="{Binding KeepIntermediates}"
-                      ToolTip="Leaves the decrypted intermediate files (.ivf, .hca, and .ass) on disk after muxing, instead of deleting them." />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio codec"
+                                   ToolTip="{StaticResource AudioCodecTip}" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionCombo}"
+                                  Width="100"
+                                  HorizontalAlignment="Left"
+                                  ItemsSource="{x:Static vm:RunOptions.AudioCodecs}"
+                                  SelectedItem="{Binding AudioCodec}"
+                                  ToolTip="{StaticResource AudioCodecTip}" />
+                    </Grid>
+                </StackPanel>
 
-            <TextBlock Style="{StaticResource SectionLabel}" Margin="0,8,0,10" Text="VIDEO" />
-            <CheckBox Style="{StaticResource OptionCheck}" Content="Apply VapourSynth filter"
-                      IsChecked="{Binding UseVapourSynth}"
-                      ToolTip="Enable VapourSynth filtering to fix video artifacts (mostly banding) due to Hoyo's poor encoding. Very slow and heavy on CPU, can take up to an hour, varied by video length." />
-            <CheckBox Style="{StaticResource OptionCheck}"
-                      Content="Burn subtitle into video"
-                      IsChecked="{Binding HardSub}"
-                      ToolTip="Burn the subtitle into the video. Good for when you're using it somewhere that doesn't support soft subtitles. Re-encodes the video with the x265 settings below. No soft subtitles will be muxed." />
+                <StackPanel Grid.Row="0" Grid.Column="2">
+                    <TextBlock Style="{StaticResource SectionLabel}" Text="RUN" />
+                    <CheckBox Style="{StaticResource OptionCheck}" Content="Skip existing"
+                              IsChecked="{Binding SkipExisting}"
+                              ToolTip="Skips any file whose .mkv is already in the output folder. Useful for resuming an interrupted batch." />
+                    <CheckBox Style="{StaticResource OptionCheck}" Content="Flat output"
+                              IsChecked="{Binding FlatOutput}"
+                              ToolTip="Writes each .mkv straight into the output folder instead of giving every cutscene its own subfolder." />
+                    <CheckBox Style="{StaticResource OptionCheck}" Content="Keep intermediates"
+                              IsChecked="{Binding KeepIntermediates}"
+                              ToolTip="Leaves the decrypted intermediate files (.ivf, .hca, and .ass) on disk after muxing, instead of deleting them." />
+                </StackPanel>
 
-            <!-- The x265 settings apply to whichever option re-encodes. -->
-            <Grid Margin="28,0,0,14" IsEnabled="{Binding Reencodes}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="82" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,10,0,0">
+                    <TextBlock Style="{StaticResource SectionLabel}" Text="VIDEO" />
+                    <CheckBox Style="{StaticResource OptionCheck}" Content="Apply VapourSynth filter"
+                              IsChecked="{Binding UseVapourSynth}"
+                              ToolTip="Enable VapourSynth filtering to fix video artifacts (mostly banding) due to Hoyo's poor encoding. Very slow and heavy on CPU, can take up to an hour, varied by video length." />
+                    <CheckBox Style="{StaticResource OptionCheck}"
+                              Content="Burn subtitle into video"
+                              IsChecked="{Binding HardSub}"
+                              ToolTip="Burn the subtitle into the video. Good for when you're using it somewhere that doesn't support soft subtitles. Re-encodes the video with the x265 settings to the right. No soft subtitles will be muxed." />
+                </StackPanel>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="CRF"
-                           ToolTip="{StaticResource CrfTip}" />
-                <TextBox Grid.Row="0" Grid.Column="1" Style="{StaticResource OptionField}"
-                         Width="72"
-                         HorizontalAlignment="Left"
-                         Text="{Binding Crf, StringFormat={}{0:0.#}}"
-                         ToolTip="{StaticResource CrfTip}" />
+                <!-- The x265 settings apply to whichever option re-encodes. -->
+                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,10,0,0" IsEnabled="{Binding Reencodes}">
+                    <TextBlock Style="{StaticResource SectionLabel}" Text="X265" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset"
-                           ToolTip="{StaticResource PresetTip}" />
-                <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource OptionCombo}"
-                          Width="140"
-                          HorizontalAlignment="Left"
-                          ItemsSource="{x:Static vm:RunOptions.Presets}"
-                          SelectedItem="{Binding Preset}"
-                          ToolTip="{StaticResource PresetTip}" />
+                        <TextBlock Grid.Column="0" Text="CRF" ToolTip="{StaticResource CrfTip}" />
+                        <TextBox Grid.Column="1" Style="{StaticResource OptionField}" Width="56"
+                                 Text="{Binding Crf, StringFormat={}{0:0.#}}"
+                                 ToolTip="{StaticResource CrfTip}" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="x265 params"
-                           ToolTip="{StaticResource X265ParamsTip}" VerticalAlignment="Top"
-                           Margin="0,6,8,8" />
-                <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource OptionField}"
-                         Height="118" AcceptsReturn="True" VerticalContentAlignment="Top"
-                         VerticalScrollBarVisibility="Auto"
-                         FontFamily="Cascadia Mono, Consolas"
-                         Text="{Binding X265ParamLines, UpdateSourceTrigger=PropertyChanged}"
-                         ToolTip="{StaticResource X265ParamsTip}" />
+                        <TextBlock Grid.Column="2" Text="Preset" Margin="12,0,8,8"
+                                   ToolTip="{StaticResource PresetTip}" />
+                        <ComboBox Grid.Column="3" Style="{StaticResource OptionCombo}"
+                                  ItemsSource="{x:Static vm:RunOptions.Presets}"
+                                  SelectedItem="{Binding Preset}"
+                                  ToolTip="{StaticResource PresetTip}" />
+                    </Grid>
+
+                    <TextBlock Text="x265 params" Margin="0,0,0,6"
+                               ToolTip="{StaticResource X265ParamsTip}" />
+                    <TextBox Style="{StaticResource OptionField}"
+                             Height="118" AcceptsReturn="True" VerticalContentAlignment="Top"
+                             VerticalScrollBarVisibility="Auto"
+                             FontFamily="Cascadia Mono, Consolas"
+                             Text="{Binding X265ParamLines, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="{StaticResource X265ParamsTip}" />
+                </StackPanel>
             </Grid>
 
             <Grid>

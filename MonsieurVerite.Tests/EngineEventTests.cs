@@ -3,16 +3,14 @@ using MonsieurVerite.Engine;
 namespace MonsieurVerite.Tests;
 
 /// <summary>
-/// Pins the wire format. There is no schema file, and charlotte's utils/reporter/json.py and
-/// Engine/EngineEvent.cs together are the protocol spec, which leaves these tests as the only
-/// thing keeping the two halves honest at the field level.
+/// There is no schema file, which leaves these and charlotte's utils/reporter/json.py as the
+/// only field-level check on the protocol.
 /// </summary>
 public class EngineEventTests
 {
     /// <summary>
-    /// Every kind the engine can emit, with the full field set it sends. That includes fields the
-    /// records do not declare, which proves they are ignored rather than fatal. A new kind must
-    /// be added here and to the parser.
+    /// Every kind with the full field set the engine sends, including fields the records do not
+    /// declare, which must be ignored rather than fatal.
     /// </summary>
     public static TheoryData<string, Type> KnownKinds() => new()
     {
@@ -36,15 +34,12 @@ public class EngineEventTests
     [MemberData(nameof(KnownKinds))]
     public void ParsesEveryKnownKindIntoItsOwnRecord(string line, Type expected)
     {
-        var parsed = EngineEvent.Parse(line);
-        Assert.IsType(expected, parsed);
+        Assert.IsType(expected, EngineEvent.Parse(line));
     }
 
     [Fact]
     public void ProbeKeyIsABooleanNotTheKeyItself()
     {
-        // probe_usm sends `find_key_from_file(...) is not None`, which means this field answers
-        // "does keys.json have an entry" and never "what is the key".
         var probe = Assert.IsType<ProbeEvent>(EngineEvent.Parse(
             """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":["EN","JP"],"vs_script":"vs/a.py"}"""));
 
@@ -57,9 +52,6 @@ public class EngineEventTests
     [Fact]
     public void CrackVideoKeyIsUnsignedAndTheCombinedKeyIsIgnored()
     {
-        // The combined key uses the full 64 bits and is not declared on the record. It must be
-        // skipped rather than choke the parse. The videoKey is 56 bits, which fits ulong and
-        // never long.
         const ulong combined = 0xFFFF_FFFF_FFFF_FFFEUL;
         var crack = Assert.IsType<CrackEvent>(EngineEvent.Parse(
             $$"""{"type":"crack","file":"a.usm","stem":"a","key":{{combined}},"video_key":72057594037927934,"reason":""}"""));
@@ -71,14 +63,13 @@ public class EngineEventTests
     [Fact]
     public void UnknownKindFallsThroughInsteadOfThrowing()
     {
-        // Event kinds are additive because a newer engine must not break an older GUI.
-        var parsed = EngineEvent.Parse("""{"type":"something_new","whatever":1}""");
+        var unknown = Assert.IsType<UnknownEvent>(EngineEvent.Parse("""{"type":"something_new","whatever":1}"""));
 
-        var unknown = Assert.IsType<UnknownEvent>(parsed);
         Assert.Equal("something_new", unknown.Type);
     }
 
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("not json at all")]
@@ -87,21 +78,8 @@ public class EngineEventTests
     [InlineData("\"a bare string\"")]
     [InlineData("{\"no_type_field\":1}")]
     [InlineData("{\"type\":42}")]
-    public void MalformedLinesBecomeUnknownRatherThanThrowing(string line)
+    public void MalformedLinesBecomeUnknownRatherThanThrowing(string? line)
     {
         Assert.IsType<UnknownEvent>(EngineEvent.Parse(line));
-    }
-
-    [Fact]
-    public void NullLineIsTolerated()
-    {
-        Assert.IsType<UnknownEvent>(EngineEvent.Parse(null));
-    }
-
-    [Fact]
-    public void ProtocolVersionMatchesTheEngine()
-    {
-        // Bumped only on incompatible changes. Additive kinds keep it at 1.
-        Assert.Equal(1, EngineEvent.ProtocolVersion);
     }
 }

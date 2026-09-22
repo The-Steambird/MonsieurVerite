@@ -4,24 +4,24 @@ using System.IO.Compression;
 namespace MonsieurVerite.Tests;
 
 /// <summary>
-/// The install half of updating, against a scratch folder. The network half is two GET calls
-/// that are not worth mocking, and PickZipUrl covers the parsing.
+/// Only the install half is covered, because the network half is two GET calls that are not
+/// worth mocking and PickZipUrl covers the parsing.
 /// </summary>
 public class UpdaterTests : IDisposable
 {
-    private readonly string folder = Path.Combine(Path.GetTempPath(), "MonsieurVerite.Tests", Path.GetRandomFileName());
+    private readonly ScratchFolder scratch = new();
 
-    public UpdaterTests() => Directory.CreateDirectory(folder);
+    public UpdaterTests() => Directory.CreateDirectory(App(""));
 
     public void Dispose()
     {
-        Directory.Delete(folder, recursive: true);
+        scratch.Dispose();
         GC.SuppressFinalize(this);
     }
 
     private string Zip(params (string Name, string Content)[] entries)
     {
-        var path = Path.Combine(folder, Path.GetRandomFileName() + ".zip");
+        var path = scratch.File(Path.GetRandomFileName() + ".zip");
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
         foreach (var (name, content) in entries)
         {
@@ -32,7 +32,7 @@ public class UpdaterTests : IDisposable
         return path;
     }
 
-    private string App(string relative) => Path.Combine(folder, "app", relative);
+    private string App(string relative) => scratch.File(Path.Combine("app", relative));
 
     [Fact]
     public void PicksTheZipAssetAndIgnoresTheRest()
@@ -49,9 +49,8 @@ public class UpdaterTests : IDisposable
     }
 
     [Fact]
-    public void InstallReplacesFilesAndKeepsTheOldOnesAside()
+    public void InstallReplacesFilesAndKeepsTheOldOnesAsideUntilTheNextLaunch()
     {
-        Directory.CreateDirectory(App(""));
         File.WriteAllText(App("charlotte-gui.exe"), "old gui");
         File.WriteAllText(App("charlotte-cli.exe"), "old engine");
         var zip = Zip(("charlotte-gui.exe", "new gui"), ("charlotte-cli.exe", "new engine"), ("extra.dll", "lib"));
@@ -62,8 +61,6 @@ public class UpdaterTests : IDisposable
         Assert.Equal("new gui", File.ReadAllText(App("charlotte-gui.exe")));
         Assert.Equal("new engine", File.ReadAllText(App("charlotte-cli.exe")));
         Assert.Equal("lib", File.ReadAllText(App("extra.dll")));
-        // The replaced binaries are renamed rather than deleted, because a running exe can only
-        // be renamed. The next launch removes them.
         Assert.Equal("old gui", File.ReadAllText(App("charlotte-gui.exe.old")));
         Assert.Equal("old engine", File.ReadAllText(App("charlotte-cli.exe.old")));
 
@@ -76,9 +73,6 @@ public class UpdaterTests : IDisposable
     [Fact]
     public void AnAppFolderWithATrailingSeparatorIsStillTheAppFolder()
     {
-        // AppContext.BaseDirectory, the real caller's argument, ends in a separator. The
-        // containment check must not turn that into "C:\app\\" and refuse every entry.
-        Directory.CreateDirectory(App(""));
         var zip = Zip(("charlotte-cli.exe", "engine"));
 
         Updater.Install(zip, App("") + Path.DirectorySeparatorChar);
@@ -86,11 +80,14 @@ public class UpdaterTests : IDisposable
         Assert.Equal("engine", File.ReadAllText(App("charlotte-cli.exe")));
     }
 
-    [Fact]
-    public void ASingleWrappingFolderIsStripped()
+    [Theory]
+    [InlineData('/')]
+    [InlineData('\\')]
+    public void ASingleWrappingFolderIsStrippedWhicheverSeparatorTheArchiverWrote(char separator)
     {
-        Directory.CreateDirectory(App(""));
-        var zip = Zip(("charlotte-1.2/charlotte-cli.exe", "engine"), ("charlotte-1.2/font/ja.ttf", "font"));
+        var zip = Zip(
+            ($"charlotte-1.2{separator}charlotte-cli.exe", "engine"),
+            ($"charlotte-1.2{separator}font{separator}ja.ttf", "font"));
 
         Updater.Install(zip, App(""));
 
@@ -100,40 +97,21 @@ public class UpdaterTests : IDisposable
     }
 
     [Fact]
-    public void BackslashEntriesAreUnwrappedLikeSlashOnes()
-    {
-        // Windows archivers are known to write backslashes where the zip spec says slash. Read
-        // literally, "charlotte-1.2\charlotte-cli.exe" would be one flat file with a backslash
-        // in its name.
-        Directory.CreateDirectory(App(""));
-        var zip = Zip((@"charlotte-1.2\charlotte-cli.exe", "engine"), (@"charlotte-1.2\font\ja.ttf", "font"));
-
-        Updater.Install(zip, App(""));
-
-        Assert.Equal("engine", File.ReadAllText(App("charlotte-cli.exe")));
-        Assert.Equal("font", File.ReadAllText(App(Path.Combine("font", "ja.ttf"))));
-    }
-
-    [Fact]
     public void AnEntryEscapingTheAppFolderIsRefusedAndNothingChanges()
     {
-        Directory.CreateDirectory(App(""));
         File.WriteAllText(App("charlotte-cli.exe"), "old engine");
         var zip = Zip(("charlotte-cli.exe", "new engine"), ("../outside.txt", "escape"));
 
         Assert.Throws<InvalidDataException>(() => Updater.Install(zip, App("")));
 
-        // The first entry had already been swapped when the second was refused, and the swap is
-        // rolled back.
         Assert.Equal("old engine", File.ReadAllText(App("charlotte-cli.exe")));
         Assert.False(File.Exists(App("charlotte-cli.exe.old")));
-        Assert.False(File.Exists(Path.Combine(folder, "outside.txt")));
+        Assert.False(File.Exists(scratch.File("outside.txt")));
     }
 
     [Fact]
     public void AnEmptyArchiveIsAnError()
     {
-        Directory.CreateDirectory(App(""));
         Assert.Throws<InvalidDataException>(() => Updater.Install(Zip(), App("")));
     }
 }

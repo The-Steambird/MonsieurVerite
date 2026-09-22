@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- TargetFramework, Nullable, ImplicitUsings and the analyzer settings are inherited from
-       ../Directory.Build.props. UseWPF is needed to reference the WPF app project. -->
+  <!-- UseWPF is needed to reference the WPF app project. -->
   <PropertyGroup>
     <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>

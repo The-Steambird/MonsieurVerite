@@ -7,29 +7,19 @@ using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
 
-/// <summary>
-/// Drives a real charlotte run end to end. The hand-written JSON in
-/// <see cref="EngineEventTests"/> can drift from what the engine actually emits, and only a live
-/// run catches that, which is why this exists despite depending on the environment.
-/// <para>
-/// Skips itself unless a charlotte-cli.exe sits beside the test binary, the app's own default
-/// location, and the sibling charlotte checkout has the test cutscene. The suite then still
-/// passes on a machine that has only this repo.
-/// </para>
-/// </summary>
 public class EngineClientTests(ITestOutputHelper output)
 {
     private const string TestCutscene = "USM/6.3/Cs_NodKrai_AQ60161901_BSHMO_Boy.usm";
 
+    /// <summary>
+    /// The hand-written JSON in <see cref="EngineEventTests"/> can drift from what the engine
+    /// actually emits, and only a live run catches that.
+    /// </summary>
     [Fact]
     public async Task ProbeRunParsesCleanlyAgainstTheRealEngine()
     {
-        // A skipped run is otherwise indistinguishable from a passing one, which would quietly
-        // turn the drift guard into a no-op. The lines written here show up under
-        // `dotnet test -v n`.
-        if (new Settings().ResolveEngine() is not { } engine)
+        if (Charlotte.LiveEngine(output) is not { } engine)
         {
-            output.WriteLine($"SKIPPED: no engine at {Settings.DefaultEnginePath}");
             return;
         }
 
@@ -42,21 +32,17 @@ public class EngineClientTests(ITestOutputHelper output)
             return;
         }
 
-        output.WriteLine($"Running against {engine.Description}");
-
         var events = new ConcurrentQueue<EngineEvent>();
 
         using var client = new EngineClient(engine);
         client.EventReceived += events.Enqueue;
 
-        // A hard deadline rather than a cancellation token, because the token would only ask the
-        // engine to stop politely and a hung engine would hang the test forever instead of
-        // failing it. On timeout the client's disposal kills the process through its job object.
+        // A deadline rather than a cancellation token, because the token only asks the engine to
+        // stop and a hung engine would hang the test instead of failing it.
         var exitCode = await client.RunAsync(["--probe", "--json", cutscene]).WaitAsync(TimeSpan.FromMinutes(3));
 
         Assert.Equal(0, exitCode);
 
-        // The engine announces itself first. A mismatch here means the protocol moved under us.
         var start = Assert.IsType<SessionStartEvent>(events.FirstOrDefault(e => e is SessionStartEvent));
         Assert.Equal(EngineEvent.ProtocolVersion, start.Protocol);
         Assert.Matches(@"^\d+\.\d+\.\d+", start.Version);
@@ -64,8 +50,6 @@ public class EngineClientTests(ITestOutputHelper output)
         var probe = Assert.IsType<ProbeEvent>(events.FirstOrDefault(e => e is ProbeEvent));
         Assert.Equal(Path.GetFileName(cutscene), probe.File);
 
-        // This is the drift guard. Anything the engine emitted that this client could not name
-        // fails here.
         var unrecognised = events.OfType<UnknownEvent>()
             .Where(e => !string.IsNullOrEmpty(e.Type))
             .Select(e => e.Type)
@@ -75,7 +59,7 @@ public class EngineClientTests(ITestOutputHelper output)
             unrecognised.Count == 0,
             $"Engine emitted event kinds this client does not handle: {string.Join(", ", unrecognised)}");
 
-        // Malformed lines would land as UnknownEvent with no Type at all.
+        // A malformed line lands as an UnknownEvent with no Type at all.
         Assert.DoesNotContain(events, e => e is UnknownEvent { Type: "" });
     }
 
@@ -85,10 +69,8 @@ public class EngineClientTests(ITestOutputHelper output)
     [InlineData("we\"ird\\id\n", true)]
     public void AnswerCommandIsOneJsonObjectTheEngineCanParse(string id, bool value)
     {
-        // json.py matches `cmd.get("type") == "answer" and cmd.get("id") == question_id`, which
-        // makes the three keys and their spelling the contract. Ids are engine-generated ("q0",
-        // "q1"…) today, but the encoding must not depend on that. The command is also one line,
-        // because the engine reads stdin line by line.
+        // json.py matches `cmd.get("type") == "answer" and cmd.get("id") == question_id` on one
+        // line of stdin, which makes the three keys and the single line the contract.
         var command = EngineClient.AnswerCommand(id, value);
 
         Assert.DoesNotContain('\n', command);
@@ -104,7 +86,7 @@ public class EngineClientTests(ITestOutputHelper output)
     public void SkipCommandNamesTheFileTheEngineMustMatch(string file)
     {
         // json.py honors a skip only while `cmd.get("file")` equals the file its last job_start
-        // announced, so the name goes over verbatim, on one line.
+        // announced.
         var command = EngineClient.SkipCommand(file);
 
         Assert.DoesNotContain('\n', command);
