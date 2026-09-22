@@ -37,15 +37,18 @@ public sealed partial class MainViewModel : ObservableObject
                               "output");
         IsLogOpen = true;
         StageText = "Idle";
-        RecoveredKeysPath = Settings.RecoveredKeysPath;
+        RecoveredKeysPath = settings.RecoveredKeysPath;
 
         Items.CollectionChanged += OnItemsChanged;
 
         if (engine is null)
         {
-            AppendLog("No engine found. charlotte-cli.exe must sit next to charlotte-gui.exe.");
+            AppendLog(NoEngineMessage);
         }
     }
+
+    private string NoEngineMessage =>
+        $"No engine at {EnginePath}. Point Settings > Engine at charlotte-cli.exe.";
 
     public ObservableCollection<QueueItem> Items { get; } = [];
 
@@ -57,7 +60,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public Func<string, IReadOnlyList<string>?>? PickFiles { get; set; }
 
-    public Func<RunOptions, bool>? EditOptions { get; set; }
+    public Func<Settings, bool>? ShowSettings { get; set; }
 
     public Func<string, bool>? ConfirmKeyOverwrite { get; set; }
 
@@ -69,9 +72,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     public string RecoveredKeysPath { get; set; }
 
-    public EngineLaunchProfile? Engine { get; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEngine), nameof(CanRunEngine), nameof(CanSetKey))]
+    [NotifyCanExecuteChangedFor(
+        nameof(StartCommand), nameof(RetryFailedCommand), nameof(RecoverKeysCommand),
+        nameof(CheckForUpdatesCommand))]
+    public partial EngineLaunchProfile? Engine { get; private set; }
 
     public bool HasEngine => Engine is not null;
+
+    /// <summary>Where the engine is expected, whether or not it is there.</summary>
+    public string EnginePath => settings.EffectiveEnginePath;
+
+    /// <summary>Null until the engine has run once, because only session_start carries it.</summary>
+    public string? EngineVersion { get; private set; }
 
     [ObservableProperty] public partial string SourceDirectory { get; set; }
 
@@ -122,7 +136,8 @@ public sealed partial class MainViewModel : ObservableObject
             var done = Items.Count(item => item.Status == ItemStatus.Done);
             var missing = Items.Count(item => item.Key == KeyState.Missing);
             var unsubtitled = Items.Count(item => item.HasSubtitles == false);
-            var summary = $"{Items.Count} files · {done} done · {missing} missing key · {unsubtitled} without subtitles";
+            var summary =
+                $"{Items.Count} files · {done} done · {missing} missing key · {unsubtitled} without subtitles";
             if (Options.UseVapourSynth)
             {
                 summary += $" · {Items.Count(item => !item.HasVsScript)} unfiltered";
@@ -242,11 +257,26 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void EditSettings()
     {
-        if (EditOptions?.Invoke(Options) ?? false)
+        if (ShowSettings?.Invoke(settings) ?? false)
         {
             SaveSettings();
             OnPropertyChanged(nameof(Summary));
+            ApplyEngineSetting();
         }
+    }
+
+    private void ApplyEngineSetting()
+    {
+        var engine = settings.ResolveEngine();
+        if (engine?.FileName == Engine?.FileName)
+        {
+            return;
+        }
+
+        Engine = engine;
+        EngineVersion = null;
+        RecoveredKeysPath = settings.RecoveredKeysPath;
+        AppendLog(engine is null ? NoEngineMessage : $"Engine: {engine.FileName}");
     }
 
     public void SaveSettings()
@@ -543,9 +573,14 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(evt);
         switch (evt)
         {
-            case SessionStartEvent session when session.Protocol != EngineEvent.ProtocolVersion:
-                AppendLog(
-                    $"Engine speaks protocol {session.Protocol}; this GUI expects {EngineEvent.ProtocolVersion}.");
+            case SessionStartEvent session:
+                EngineVersion = session.Version;
+                if (session.Protocol != EngineEvent.ProtocolVersion)
+                {
+                    AppendLog(
+                        $"Engine speaks protocol {session.Protocol}; this GUI expects {EngineEvent.ProtocolVersion}.");
+                }
+
                 break;
 
             case LogEvent log:

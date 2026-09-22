@@ -1,0 +1,111 @@
+<Window x:Class="MonsieurVerite.AboutDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About charlotte" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        UseLayoutRounding="True"
+        Hyperlink.RequestNavigate="Link_RequestNavigate">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" GlassFrameThickness="-1" ResizeBorderThickness="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource FaintBrush}" />
+            <Setter Property="Margin" Value="0,0,16,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style x:Key="Value" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style TargetType="Hyperlink" BasedOn="{StaticResource {x:Type Hyperlink}}">
+            <Setter Property="TextDecorations" Value="{x:Null}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="TextDecorations" Value="Underline" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <StackPanel Style="{StaticResource DialogRoot}">
+            <TextBlock x:Name="TitleText" Style="{StaticResource DialogTitle}" />
+            <TextBlock Style="{StaticResource DialogBody}"
+                       Text="Monsieur Verite, the front end for Charlotte, the Genshin Impact cutscene decryption tool." />
+
+            <Border Margin="0,14,0,0" Padding="12,10"
+                    Background="{StaticResource LayerBrush}"
+                    BorderBrush="{StaticResource LineStrongBrush}"
+                    BorderThickness="1" CornerRadius="6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="20" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Label}"
+                               Text="Build" />
+                    <TextBlock x:Name="BuildText" Grid.Row="0" Grid.Column="1"
+                               Style="{StaticResource Value}"
+                               FontFamily="Cascadia Mono, Consolas" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource Label}"
+                               Text="Engine" />
+                    <TextBlock x:Name="EngineText" Grid.Row="1" Grid.Column="1"
+                               Style="{StaticResource Value}" />
+                </Grid>
+            </Border>
+
+            <TextBlock Style="{StaticResource DialogBody}" Margin="0,16,0,0">
+                Powered by
+                <Hyperlink NavigateUri="https://ffmpeg.org">ffmpeg</Hyperlink> and
+                <Hyperlink NavigateUri="https://www.vapoursynth.com">VapourSynth</Hyperlink>.
+                Special credits to
+                <Hyperlink NavigateUri="https://github.com/ToaHartor/GI-cutscenes">GI‑cutscenes</Hyperlink>
+                and
+                <Hyperlink NavigateUri="https://github.com/Senkin219/UsmDiviner">UsmDiviner</Hyperlink>
+                for inspiring me.
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource DialogBody}" Margin="0,12,0,0">
+                <Run FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"
+                     Foreground="{StaticResource AccentBrush}" BaselineAlignment="Center"
+                     Text="&#xEB52;" />
+                If you like my work, consider
+                <Hyperlink NavigateUri="https://github.com/sponsors/lunarmint">sponsoring</Hyperlink>
+                to keep the project alive.
+            </TextBlock>
+
+            <TextBlock Style="{StaticResource DialogCaption}" Margin="0,16,0,0"
+                       Text="© 2026 lunarmint. Free software under the GNU GPL v3, distributed without any warranty." />
+
+            <Grid Margin="0,14,0,0">
+                <TextBlock VerticalAlignment="Center" FontSize="12">
+                    <Hyperlink NavigateUri="https://github.com/The-Steambird/charlotte">GitHub</Hyperlink>
+                    <Run Foreground="{StaticResource FaintBrush}"> · </Run>
+                    <Hyperlink NavigateUri="https://github.com/The-Steambird/charlotte/issues">Report an issue</Hyperlink>
+                    <Run Foreground="{StaticResource FaintBrush}"> · </Run>
+                    <Hyperlink
+                        NavigateUri="https://github.com/The-Steambird/charlotte/blob/master/LICENSE">
+                        License
+                    </Hyperlink>
+                </TextBlock>
+                <Button Content="OK" Style="{StaticResource PrimaryButton}"
+                        HorizontalAlignment="Right"
+                        IsDefault="True" IsCancel="True" />
+            </Grid>
+        </StackPanel>
+        <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Close_Click" />
+    </Grid>
+</Window>

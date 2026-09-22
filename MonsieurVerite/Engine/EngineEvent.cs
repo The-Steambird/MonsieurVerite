@@ -64,6 +64,8 @@ public abstract record EngineEvent
 public sealed record SessionStartEvent : EngineEvent
 {
     public int Protocol { get; init; }
+
+    public string? Version { get; init; }
 }
 
 public sealed record LogEvent : EngineEvent

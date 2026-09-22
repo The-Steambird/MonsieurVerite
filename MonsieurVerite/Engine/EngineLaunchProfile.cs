@@ -13,13 +13,6 @@ public sealed record EngineLaunchProfile
     public string Description =>
         BaseArguments.Count == 0 ? FileName : $"{FileName} {string.Join(' ', BaseArguments)} in {WorkingDirectory}";
 
-    public static EngineLaunchProfile Dev(string repositoryPath) => new()
-    {
-        FileName = "uv",
-        BaseArguments = ["run", "main.py"],
-        WorkingDirectory = repositoryPath,
-    };
-
     public static EngineLaunchProfile Packaged(string executablePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);

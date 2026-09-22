@@ -19,7 +19,7 @@ public class MainViewModelTests
     private static MainViewModel NewViewModel(EngineLaunchProfile? engine) =>
         new(engine, new Settings(), uiContext: null) { RecoveredKeysPath = ScratchKeysPath() };
 
-    private static MainViewModel NewViewModel() => NewViewModel(EngineLaunchProfile.Dev(Path.GetTempPath()));
+    private static MainViewModel NewViewModel() => NewViewModel(EngineLaunchProfile.Packaged(Path.Combine(Path.GetTempPath(), "charlotte-cli.exe")));
 
     private static MainViewModel NewEnginelessViewModel() => NewViewModel(null);
 
@@ -522,12 +522,12 @@ public class MainViewModelTests
     [Fact]
     public async Task LoadingAFolderProbesEveryFile()
     {
-        if (Settings.ResolveEngine() is not { } engine)
+        if (new Settings().ResolveEngine() is not { } engine || Charlotte.Checkout is not { } checkout)
         {
             return;
         }
 
-        var folder = Path.Combine(engine.WorkingDirectory, "USM", "6.3");
+        var folder = Path.Combine(checkout, "USM", "6.3");
         if (!Directory.Exists(folder))
         {
             return;

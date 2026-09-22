@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using MonsieurVerite.Engine;
 using MonsieurVerite.ViewModels;
 
@@ -10,21 +11,38 @@ public sealed class Settings
     private static readonly JsonSerializerOptions
         SerializerOptions = new() { WriteIndented = true };
 
+    public static string DefaultEnginePath { get; } =
+        Path.Combine(AppContext.BaseDirectory, "charlotte-cli.exe");
+
+    private static string FilePath => Path.Combine(AppContext.BaseDirectory, "settings.json");
+
     public string? SourceDirectory { get; set; }
 
     public string? OutputDirectory { get; set; }
 
+    /// <summary>Null means the default, charlotte-cli.exe beside charlotte-gui.exe.</summary>
+    public string? EnginePath
+    {
+        get;
+        set => field = string.IsNullOrWhiteSpace(value)
+                       || string.Equals(value, DefaultEnginePath,
+                           StringComparison.OrdinalIgnoreCase)
+            ? null
+            : value;
+    }
+
     public RunOptions Options { get; set; } = new();
 
-    private static string Folder =>
-        ResolveEngine()?.WorkingDirectory ?? AppContext.BaseDirectory;
+    [JsonIgnore] public string EffectiveEnginePath => EnginePath ?? DefaultEnginePath;
 
-    private static string FilePath => Path.Combine(Folder, "settings.json");
+    /// <summary>Beside the engine, which is where keys.json is.</summary>
+    [JsonIgnore]
+    public string RecoveredKeysPath =>
+        Path.Combine(Path.GetDirectoryName(EffectiveEnginePath) ?? AppContext.BaseDirectory,
+            "recovered_keys.json");
 
-    public static string RecoveredKeysPath => Path.Combine(Folder, "recovered_keys.json");
-
-    public static string BundledEnginePath =>
-        Path.Combine(AppContext.BaseDirectory, "charlotte-cli.exe");
+    public EngineLaunchProfile? ResolveEngine() =>
+        File.Exists(EffectiveEnginePath) ? EngineLaunchProfile.Packaged(EffectiveEnginePath) : null;
 
     public static Settings Load() => Load(FilePath);
 
@@ -58,33 +76,5 @@ public sealed class Settings
         }
 
         File.WriteAllText(path, JsonSerializer.Serialize(this, SerializerOptions));
-    }
-
-    public static EngineLaunchProfile? ResolveEngine()
-    {
-        if (File.Exists(BundledEnginePath))
-        {
-            return EngineLaunchProfile.Packaged(BundledEnginePath);
-        }
-
-        return FindSiblingCharlotte() is { } sibling ? EngineLaunchProfile.Dev(sibling) : null;
-    }
-
-    private static string? FindSiblingCharlotte()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null &&
-               !File.Exists(Path.Combine(directory.FullName, "MonsieurVerite.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        if (directory?.Parent is not { } parent)
-        {
-            return null;
-        }
-
-        var sibling = Path.Combine(parent.FullName, "charlotte");
-        return File.Exists(Path.Combine(sibling, "main.py")) ? sibling : null;
     }
 }

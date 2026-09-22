@@ -7,7 +7,14 @@ namespace MonsieurVerite;
 public partial class App
 {
     public static string Version { get; } =
-        Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "dev";
+        Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+
+    public static string? Build { get; } =
+        Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion is { } text && text.IndexOf('+') is > 0 and var plus
+            ? text[(plus + 1)..Math.Min(text.Length, plus + 8)]
+            : null;
 
     protected override void OnStartup(StartupEventArgs e)
     {

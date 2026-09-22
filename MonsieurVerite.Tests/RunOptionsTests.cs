@@ -38,13 +38,13 @@ public class RunOptionsTests(ITestOutputHelper output)
     {
         // The box shows charlotte's built-in tuning, which only its source knows. This skips
         // like the live tests when the sibling checkout is absent.
-        if (Settings.ResolveEngine() is not { } engine)
+        if (Charlotte.Checkout is not { } checkout)
         {
-            output.WriteLine("SKIPPED: no sibling charlotte checkout with main.py found.");
+            output.WriteLine("SKIPPED: no sibling charlotte checkout found.");
             return;
         }
 
-        var source = File.ReadAllText(Path.Combine(engine.WorkingDirectory, "stages", "filter.py"));
+        var source = File.ReadAllText(Path.Combine(checkout, "stages", "filter.py"));
 
         // encode_args builds `tuning = [...]`, extends it with `tuning += [...]` for the presets
         // in `preset in (...)`; each is a Python literal of quoted strings.

@@ -12,8 +12,9 @@ namespace MonsieurVerite.Tests;
 /// <see cref="EngineEventTests"/> can drift from what the engine actually emits, and only a live
 /// run catches that, which is why this exists despite depending on the environment.
 /// <para>
-/// Skips itself when the sibling charlotte checkout or its test cutscene is absent. The suite
-/// then still passes on a machine that has only this repo.
+/// Skips itself unless a charlotte-cli.exe sits beside the test binary, the app's own default
+/// location, and the sibling charlotte checkout has the test cutscene. The suite then still
+/// passes on a machine that has only this repo.
 /// </para>
 /// </summary>
 public class EngineClientTests(ITestOutputHelper output)
@@ -25,18 +26,19 @@ public class EngineClientTests(ITestOutputHelper output)
     {
         // A skipped run is otherwise indistinguishable from a passing one, which would quietly
         // turn the drift guard into a no-op. The lines written here show up under
-        // `dotnet test -v n`. Nothing sits beside the test binary, and ResolveEngine only ever
-        // finds the sibling checkout.
-        if (Settings.ResolveEngine() is not { } engine)
+        // `dotnet test -v n`.
+        if (new Settings().ResolveEngine() is not { } engine)
         {
-            output.WriteLine("SKIPPED: no sibling charlotte checkout with main.py found.");
+            output.WriteLine($"SKIPPED: no engine at {Settings.DefaultEnginePath}");
             return;
         }
 
-        var cutscene = Path.Combine(engine.WorkingDirectory, TestCutscene.Replace('/', Path.DirectorySeparatorChar));
+        var cutscene = Charlotte.Checkout is { } checkout
+            ? Path.Combine(checkout, TestCutscene.Replace('/', Path.DirectorySeparatorChar))
+            : null;
         if (!File.Exists(cutscene))
         {
-            output.WriteLine($"SKIPPED: test cutscene missing at {cutscene}");
+            output.WriteLine($"SKIPPED: test cutscene missing at {cutscene ?? "../charlotte"}");
             return;
         }
 
@@ -57,6 +59,7 @@ public class EngineClientTests(ITestOutputHelper output)
         // The engine announces itself first. A mismatch here means the protocol moved under us.
         var start = Assert.IsType<SessionStartEvent>(events.FirstOrDefault(e => e is SessionStartEvent));
         Assert.Equal(EngineEvent.ProtocolVersion, start.Protocol);
+        Assert.Matches(@"^\d+\.\d+\.\d+", start.Version);
 
         var probe = Assert.IsType<ProbeEvent>(events.FirstOrDefault(e => e is ProbeEvent));
         Assert.Equal(Path.GetFileName(cutscene), probe.File);

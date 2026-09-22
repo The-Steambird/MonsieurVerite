@@ -26,10 +26,26 @@
                 <sys:String x:Key="AudioCodecTip">Flac is lossless, best default option archival purposes. Opus is 256 kbps VBR and is 3-5x smaller in size while perceptually transparent, but is still lossy technically.</sys:String>
                 <sys:String x:Key="CrfTip">x265 quality, 0 to 51. Lower is better in quality and bigger in size.</sys:String>
                 <sys:String x:Key="PresetTip">x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality.</sys:String>
+                <sys:String x:Key="EngineTip">The charlotte-cli.exe to run. The default is the one beside charlotte-gui.exe, which is how the release ships.</sys:String>
                 <sys:String x:Key="X265ParamsTip">Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improves picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality.</sys:String>
             </StackPanel.Resources>
 
             <TextBlock Style="{StaticResource DialogTitle}" Text="Settings" Margin="0,0,0,16" />
+            <TextBlock Style="{StaticResource SectionLabel}" Text="ENGINE" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Engine" ToolTip="{StaticResource EngineTip}" />
+                <TextBox x:Name="EngineBox" Grid.Column="1" Style="{StaticResource OptionField}"
+                         ToolTip="{StaticResource EngineTip}" />
+                <Button Grid.Column="2" Content="Browse…" Style="{StaticResource ActionButton}"
+                        Margin="8,0,0,8" VerticalAlignment="Top" Click="Browse_Click" />
+            </Grid>
+
             <TextBlock Style="{StaticResource SectionLabel}" Text="MKV" />
             <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>

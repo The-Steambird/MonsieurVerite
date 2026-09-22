@@ -32,12 +32,13 @@ public partial class MainWindow : Window
         Width = Math.Min(Width, area.Width - 48);
         Height = Math.Min(Height, area.Height - 48);
 
-        viewModel = new MainViewModel(Settings.ResolveEngine(), Settings.Load(),
+        var settings = Settings.Load();
+        viewModel = new MainViewModel(settings.ResolveEngine(), settings,
             SynchronizationContext.Current)
         {
             PickFolder = PickFolder,
             PickFiles = PickFiles,
-            EditOptions = EditOptions,
+            ShowSettings = ShowSettings,
             ConfirmKeyOverwrite =
                 prompt => MessageDialog.Show(this, "charlotte", prompt, "Yes", "No"),
             ConfirmUpdate = ConfirmUpdate,
@@ -222,8 +223,8 @@ public partial class MainWindow : Window
             MessageDialog.Show(
                 this,
                 "Could not find charlotte",
-                "charlotte-cli.exe has to sit beside charlotte-gui.exe. Converting and key recovery are unavailable until it does.",
-                detail: $"Expected: {Settings.BundledEnginePath}");
+                "Converting and key recovery are unavailable until charlotte-cli.exe is where the engine setting points. Pick it under Settings > Engine, or put it beside charlotte-gui.exe.",
+                detail: $"Expected: {viewModel.EnginePath}");
         }
     }
 
@@ -297,20 +298,13 @@ public partial class MainWindow : Window
         return dialog.ShowDialog(this) == true ? dialog.FileNames : null;
     }
 
-    private bool EditOptions(RunOptions options) =>
-        new SettingsDialog(options) { Owner = this }.ShowDialog() == true;
+    private bool ShowSettings(Settings settings) =>
+        new SettingsDialog(settings) { Owner = this }.ShowDialog() == true;
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void About_Click(object sender, RoutedEventArgs e)
-    {
-        var engine = viewModel.Engine?.Description ?? "none found";
-        MessageDialog.Show(
-            this,
-            $"charlotte {App.Version}",
-            "MonsieurVerite, the front end for charlotte, the Genshin Impact cutscene converter.",
-            detail: $"Engine: {engine}");
-    }
+    private void About_Click(object sender, RoutedEventArgs e) =>
+        new AboutDialog(viewModel) { Owner = this }.ShowDialog();
 
     private bool ConfirmUpdate(UpdateEvent update)
     {
