@@ -30,9 +30,8 @@ public static partial class Chrome
     /// </summary>
     public static void Frost(Window dialog)
     {
+        Solid(dialog);
         var hwnd = new WindowInteropHelper(dialog).Handle;
-        var backdrop = BackdropNone;
-        _ = DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int));
         _ = SetWindowLongPtrW(hwnd, Style, GetWindowLongPtrW(hwnd, Style) & ~SystemMenu);
         _ = SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, FrameChanged);
 

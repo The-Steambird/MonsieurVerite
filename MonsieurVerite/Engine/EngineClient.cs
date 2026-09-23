@@ -116,13 +116,9 @@ public sealed class EngineClient : IDisposable
                 target.StandardInput.Write(json + "\n");
                 target.StandardInput.Flush();
             }
-            catch (IOException)
+            catch (Exception e) when (e is IOException or ObjectDisposedException)
             {
-                // Engine already exited and closed the pipe.
-            }
-            catch (ObjectDisposedException)
-            {
-                // Same here.
+                // The engine already exited and closed the pipe.
             }
         }
     }
