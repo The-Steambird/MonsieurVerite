@@ -332,20 +332,37 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void OpenOutputFolder()
     {
-        var item = Items.FirstOrDefault(item => item.IsChecked && item.OutputPath is not null);
-        if (item is not null)
+        var output = Items.FirstOrDefault(item => item.IsChecked && File.Exists(item.OutputPath))
+            ?.OutputPath;
+        if (output is not null)
         {
-            Process.Start("explorer.exe", $"/select,\"{item.OutputPath}\"");
+            Explore($"/select,\"{output}\"");
         }
         else if (Directory.Exists(OutputDirectory))
         {
-            Process.Start("explorer.exe", $"\"{OutputDirectory}\"");
+            Explore($"\"{OutputDirectory}\"");
         }
         else
         {
             AppendLog($"Output folder does not exist yet: {OutputDirectory}");
         }
     }
+
+    [RelayCommand]
+    private void ShowRecoveredKeys()
+    {
+        if (File.Exists(RecoveredKeysPath))
+        {
+            Explore($"/select,\"{RecoveredKeysPath}\"");
+        }
+        else
+        {
+            AppendLog($"No keys recovered yet. They will be written to {RecoveredKeysPath}");
+        }
+    }
+
+    private static void Explore(string arguments) =>
+        Process.Start("explorer.exe", arguments)?.Dispose();
 
     [RelayCommand(CanExecute = nameof(CanStart))]
     private async Task StartAsync()

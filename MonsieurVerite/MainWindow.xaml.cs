@@ -239,8 +239,17 @@ public partial class MainWindow : Window
         }
     }
 
+    // Chrome.Modal keeps this window enabled under a dialog so its caption can be dragged, which
+    // also leaves its system menu able to close it.
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
+        if (Dialog is { } dialog)
+        {
+            e.Cancel = true;
+            dialog.Activate();
+            return;
+        }
+
         if (viewModel.IsRunning)
         {
             var quit = MessageDialog.Show(
@@ -260,19 +269,6 @@ public partial class MainWindow : Window
     }
 
     private void More_Click(object sender, RoutedEventArgs e) => MoreMenu.IsOpen = true;
-
-    private void ShowRecoveredKeys_Click(object sender, RoutedEventArgs e)
-    {
-        var path = viewModel.RecoveredKeysPath;
-        if (File.Exists(path))
-        {
-            Process.Start("explorer.exe", $"/select,\"{path}\"");
-        }
-        else
-        {
-            viewModel.AppendLog($"No keys recovered yet. They will be written to {path}");
-        }
-    }
 
     private string? PickFolder(string initial)
     {
@@ -343,7 +339,7 @@ public partial class MainWindow : Window
             {
                 WorkingDirectory = AppContext.BaseDirectory,
             };
-            Process.Start(successor);
+            Process.Start(successor)?.Dispose();
         }
 
         Close();
@@ -494,6 +490,8 @@ public partial class MainWindow : Window
         }
     }
 
+    // ScrollIntoView looks the item up by value, which would send a repeated log line to its
+    // first occurrence instead of the bottom.
     private void OnLogChanged(object sender, ItemsChangedEventArgs e)
     {
         if (e.Action != NotifyCollectionChangedAction.Add)
@@ -501,12 +499,24 @@ public partial class MainWindow : Window
             return;
         }
 
-        logScroller ??= LogList.Template.FindName("PART_ContentHost", LogList) as ScrollViewer;
-        var wasAtBottom = logScroller is null
-                          || logScroller.VerticalOffset >= logScroller.ScrollableHeight - 1;
-        if (wasAtBottom)
+        logScroller ??= FindDescendant<ScrollViewer>(LogList);
+        if (logScroller is { } scroller && scroller.VerticalOffset >= scroller.ScrollableHeight - 1)
         {
-            LogList.ScrollIntoView(LogList.Items[^1]);
+            scroller.ScrollToEnd();
         }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject node) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+        {
+            var child = VisualTreeHelper.GetChild(node, i);
+            if ((child as T ?? FindDescendant<T>(child)) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 }
