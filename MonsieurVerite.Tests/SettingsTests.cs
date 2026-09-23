@@ -65,6 +65,16 @@ public class SettingsTests : IDisposable
         Assert.Null(loaded.SourceDirectory);
         Assert.Equal("ja", loaded.Options.DefaultAudio);
         Assert.True(loaded.Options.SkipExisting);
+        Assert.True(loaded.CheckForUpdatesOnStartup);
+    }
+
+    [Fact]
+    public void AFileFromBeforeTheUpdateCheckSettingStillChecks()
+    {
+        var path = scratch.File("settings.json");
+        File.WriteAllText(path, """{ "SourceDirectory": null }""");
+
+        Assert.True(Settings.Load(path).CheckForUpdatesOnStartup);
     }
 
     [Fact]

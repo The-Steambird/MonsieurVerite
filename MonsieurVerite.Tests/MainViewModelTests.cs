@@ -142,6 +142,44 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
         Assert.Contains(viewModel.Log, line => line.Contains("1.1 is available", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task StartupCheckAsksOnlyWhenAReleaseIsOut(bool available, bool asked)
+    {
+        var engine = FakeEngine(
+            $$"""@echo {"type":"update","current":"1.0","latest":"1.1","available":{{available.ToString().ToLowerInvariant()}}}""");
+        var viewModel = NewViewModel(engine);
+        var confirmed = false;
+        viewModel.ConfirmUpdate = _ =>
+        {
+            confirmed = true;
+            return false;
+        };
+
+        await viewModel.CheckForUpdatesOnStartupAsync();
+
+        Assert.NotNull(viewModel.LatestUpdate);
+        Assert.Equal(asked, confirmed);
+    }
+
+    [Fact]
+    public async Task StartupCheckCanBeTurnedOff()
+    {
+        var engine = FakeEngine(
+            """@echo {"type":"update","current":"1.0","latest":"1.1","available":true}""");
+        var settings = new Settings
+        {
+            EnginePath = scratch.File("charlotte-cli.exe"),
+            CheckForUpdatesOnStartup = false,
+        };
+        var viewModel = new MainViewModel(engine, settings, uiContext: null);
+
+        await viewModel.CheckForUpdatesOnStartupAsync();
+
+        Assert.Null(viewModel.LatestUpdate);
+    }
+
     [Fact]
     public void SetKeyNeedsExactlyOneCheckedRow()
     {

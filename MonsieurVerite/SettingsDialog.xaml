@@ -38,12 +38,20 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
                 <TextBlock Grid.Column="0" Text="Engine" ToolTip="{StaticResource EngineTip}" />
                 <TextBox x:Name="EngineBox" Grid.Column="1" Style="{StaticResource OptionField}"
                          ToolTip="{StaticResource EngineTip}" />
                 <Button Grid.Column="2" Content="Browse…" Style="{StaticResource ActionButton}"
                         Margin="8,0,0,8" VerticalAlignment="Top" Click="Browse_Click" />
+                <CheckBox x:Name="UpdateCheck" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                          Style="{StaticResource OptionCheck}"
+                          Content="Check for updates on startup"
+                          ToolTip="Checks for a new Charlotte release each time the app opens." />
             </Grid>
 
             <Grid Margin="0,0,0,10">

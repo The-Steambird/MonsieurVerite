@@ -253,6 +253,8 @@ public partial class MainWindow : Window
         {
             await viewModel.LoadSourceAsync(viewModel.SourceDirectory);
         }
+
+        await viewModel.CheckForUpdatesOnStartupAsync();
     }
 
     // Chrome.Modal keeps this window enabled under a dialog so its caption can be dragged, which
@@ -343,7 +345,7 @@ public partial class MainWindow : Window
             this,
             $"charlotte {update.Latest} is available",
             $"You have {update.Current}. Download and install the new release now? The app restarts afterwards.",
-            "Install", "Not now", notes);
+            "Update", "Cancel", notes);
     }
 
     private void Restart()

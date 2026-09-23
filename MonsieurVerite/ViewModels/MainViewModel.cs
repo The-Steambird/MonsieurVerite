@@ -464,13 +464,27 @@ public sealed partial class MainViewModel : ObservableObject
     public void Shutdown() => cancellation?.Cancel();
 
     [RelayCommand(CanExecute = nameof(CanRunEngine))]
-    private async Task CheckForUpdatesAsync()
+    private Task CheckForUpdatesAsync() => RunUpdateCheckAsync(quiet: false);
+
+    public Task CheckForUpdatesOnStartupAsync() =>
+        settings.CheckForUpdatesOnStartup && CanRunEngine
+            ? RunUpdateCheckAsync(quiet: true)
+            : Task.CompletedTask;
+
+    // Quiet leaves "up to date" and "could not check" to the log, so an offline start is not
+    // met with a dialog every time.
+    private async Task RunUpdateCheckAsync(bool quiet)
     {
         LatestUpdate = null;
         await RunEngineAsync(["--update"], 0).ConfigureAwait(true);
         if (LatestUpdate is not { } update)
         {
             AppendLog("The engine did not report an update result.");
+            return;
+        }
+
+        if (quiet && !update.Available)
+        {
             return;
         }
 

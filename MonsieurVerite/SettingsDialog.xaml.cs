@@ -19,12 +19,14 @@ public partial class SettingsDialog : Window
         working = settings.Options.Clone();
         DataContext = working;
         EngineBox.Text = settings.EffectiveEnginePath;
+        UpdateCheck.IsChecked = settings.CheckForUpdatesOnStartup;
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         settings.Options.CopyFrom(working);
         settings.EnginePath = EngineBox.Text.Trim();
+        settings.CheckForUpdatesOnStartup = UpdateCheck.IsChecked == true;
         DialogResult = true;
     }
 
@@ -32,6 +34,7 @@ public partial class SettingsDialog : Window
     {
         working.CopyFrom(new RunOptions());
         EngineBox.Text = Settings.DefaultEnginePath;
+        UpdateCheck.IsChecked = true;
     }
 
     private void Browse_Click(object sender, RoutedEventArgs e)

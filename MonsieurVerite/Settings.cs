@@ -31,6 +31,8 @@ public sealed class Settings
             : value;
     }
 
+    public bool CheckForUpdatesOnStartup { get; set; } = true;
+
     public RunOptions Options { get; set; } = new();
 
     [JsonIgnore] public string EffectiveEnginePath => EnginePath ?? DefaultEnginePath;
