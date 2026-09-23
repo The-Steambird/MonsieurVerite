@@ -55,6 +55,7 @@ public partial class MainWindow : Window
                 PopupPrimaryAxis.Horizontal)
         ];
 
+        Dispatcher.UnhandledException += OnUnhandledException;
         Loaded += OnLoaded;
         ContentRendered += OnContentRendered;
         Closing += OnClosing;
@@ -228,6 +229,21 @@ public partial class MainWindow : Window
                 "Could not find charlotte",
                 "Converting and key recovery are unavailable until charlotte-cli.exe is where the engine setting points. Pick it under Settings > Engine, or put it beside charlotte-gui.exe.",
                 detail: $"Expected: {viewModel.EnginePath}");
+        }
+    }
+
+    // An exception from an async void handler or an engine event lands here, and without this
+    // it closes the app with no trace. Only the log takes it while a dialog is open, because a
+    // failure that repeats would otherwise stack error dialogs.
+    private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        e.Handled = true;
+        Debug.WriteLine(e.Exception);
+        viewModel.AppendLog($"Unexpected error: {e.Exception.GetType().Name}: {e.Exception.Message}");
+        if (Dialog is null)
+        {
+            MessageDialog.Show(this, "Something went wrong", e.Exception.Message,
+                detail: e.Exception.ToString());
         }
     }
 
