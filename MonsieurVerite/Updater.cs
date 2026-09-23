@@ -27,12 +27,7 @@ public static class Updater
         var zipPath = Path.Combine(Path.GetTempPath(), "charlotte-update.zip");
         try
         {
-            await DownloadAsync(
-                url, zipPath,
-                (done, total) => status.Report(total is { } bytes
-                    ? $"Downloading · {done * 100 / bytes}%"
-                    : $"Downloading · {done / (1024 * 1024)} MB"),
-                cancellationToken).ConfigureAwait(false);
+            await DownloadAsync(url, zipPath, status, cancellationToken).ConfigureAwait(false);
 
             status.Report("Installing…");
             return Install(zipPath, appDirectory);
@@ -79,36 +74,35 @@ public static class Updater
     }
 
     private static async Task DownloadAsync(
-        string url, string destination, Action<long, long?> onProgress,
+        string url, string destination, IProgress<string> status,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            using var response = await Http
-                .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            var total = response.Content.Headers.ContentLength;
+        using var response = await Http
+            .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        var total = response.Content.Headers.ContentLength;
 
-            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken)
-                .ConfigureAwait(false);
-            await using var file = File.Create(destination);
-            var buffer = new byte[64 * 1024];
-            long done = 0;
-            int read;
-            while ((read = await body.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) >
-                   0)
-            {
-                await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken)
-                    .ConfigureAwait(false);
-                done += read;
-                onProgress(done, total);
-            }
-        }
-        catch
+        await using var body = await response.Content.ReadAsStreamAsync(cancellationToken)
+            .ConfigureAwait(false);
+        await using var file = File.Create(destination);
+        var buffer = new byte[64 * 1024];
+        long done = 0;
+        var shown = "";
+        int read;
+        while ((read = await body.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
         {
-            File.Delete(destination);
-            throw;
+            await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken)
+                .ConfigureAwait(false);
+            done += read;
+            var text = total is { } bytes
+                ? $"Downloading · {done * 100 / bytes}%"
+                : $"Downloading · {done >> 20} MB";
+            if (text != shown)
+            {
+                shown = text;
+                status.Report(text);
+            }
         }
     }
 
