@@ -79,7 +79,7 @@
                                 <MenuItem Header="Open output folder"
                                           Command="{Binding OpenOutputFolderCommand}" />
                                 <MenuItem Header="Show recovered keys"
-                                          Click="ShowRecoveredKeys_Click" />
+                                          Command="{Binding ShowRecoveredKeysCommand}" />
                                 <Separator />
                                 <MenuItem Header="Check for updates…"
                                           Command="{Binding CheckForUpdatesCommand}" />
