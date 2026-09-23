@@ -21,13 +21,13 @@
         <StackPanel Style="{StaticResource DialogRoot}">
             <StackPanel.Resources>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource OptionLabel}" />
-                <sys:String x:Key="DefaultAudioTip">All subtitles are muxed. The selected audio language will be set as default option.</sys:String>
+                <sys:String x:Key="DefaultAudioTip">All audio tracks are muxed. The selected audio language will be set as default option.</sys:String>
                 <sys:String x:Key="DefaultSubtitleTip">All subtitles are muxed. The selected subtitle language will be set as default option.</sys:String>
-                <sys:String x:Key="AudioCodecTip">Flac is lossless, best default option archival purposes. Opus is 256 kbps VBR and is 3-5x smaller in size while perceptually transparent, but is still lossy technically.</sys:String>
+                <sys:String x:Key="AudioCodecTip">Flac is lossless, the best default option for archival purposes. Opus is 256 kbps VBR and is 3-5x smaller in size while perceptually transparent, but is still lossy technically.</sys:String>
                 <sys:String x:Key="CrfTip">x265 quality, 0 to 51. Lower is better in quality and bigger in size.</sys:String>
                 <sys:String x:Key="PresetTip">x265 speed against efficiency. Slower presets take longer for a smaller file at the same quality.</sys:String>
                 <sys:String x:Key="EngineTip">Path to charlotte-cli.exe.</sys:String>
-                <sys:String x:Key="X265ParamsTip">Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improves picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality.</sys:String>
+                <sys:String x:Key="X265ParamsTip">Built-in tuning for the preset. 'ultrafast' to 'medium' uses the same neutral tuning parameters that improve picture quality without affecting encode speed. 'slow' to 'placebo' uses the same but with added parameters for better quality.</sys:String>
             </StackPanel.Resources>
 
             <TextBlock Style="{StaticResource DialogTitle}" Text="Settings" Margin="0,0,0,16" />
@@ -123,7 +123,6 @@
                               ToolTip="Burn the subtitle into the video. Good for when you're using it somewhere that doesn't support soft subtitles. Re-encodes the video with the x265 settings to the right. No soft subtitles will be muxed." />
                 </StackPanel>
 
-                <!-- The x265 settings apply to whichever option re-encodes. -->
                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,10,0,0"
                             IsEnabled="{Binding Reencodes}">
                     <TextBlock Style="{StaticResource SectionLabel}" Text="X265" />

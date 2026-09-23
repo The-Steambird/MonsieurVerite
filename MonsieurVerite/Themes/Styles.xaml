@@ -109,7 +109,6 @@
         <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
     </Style>
 
-    <!-- The output bar's and the dialogs' buttons: one plain, one accent. -->
     <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="MinWidth" Value="92" />
         <Setter Property="MinHeight" Value="32" />
