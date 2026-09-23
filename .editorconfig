@@ -11,19 +11,20 @@ indent_size = 4
 [*.{json,yml,yaml}]
 indent_size = 2
 
-# Analyzer severities — the [tool.ruff.lint] analogue. TreatWarningsAsErrors is on, so
-# anything set to `warning` here fails the build. Keep this list short and deliberate.
+# These analyzer severities are the [tool.ruff.lint] analogue. Anything set to `warning` here
+# fails the build because TreatWarningsAsErrors is on. Keep this list short and deliberate.
 [*.cs]
-# Unused usings (ruff F401). Needs GenerateDocumentationFile, set in Directory.Build.props.
+# IDE0005 is ruff's F401 for unused usings, and it needs the GenerateDocumentationFile that
+# Directory.Build.props sets.
 dotnet_diagnostic.IDE0005.severity = warning
 
-# Match the style the code already uses, so the formatter never fights the codebase.
+# These match the style the code already uses, which keeps the formatter from fighting it.
 csharp_style_namespace_declarations = file_scoped:warning
 csharp_using_directive_placement = outside_namespace:warning
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
-# Judgement calls, surfaced but never fatal.
+# These are judgement calls, which are surfaced but never fatal.
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_prefer_braces = true:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
