@@ -687,6 +687,7 @@ public sealed partial class MainViewModel : ObservableObject
                 {
                     "exists" => "already exists",
                     "no_key" => "no key",
+                    "unsupported" => "7.1 encryption not supported",
                     "requested" => "skipped on request",
                     _ => skipped.Reason,
                 };
