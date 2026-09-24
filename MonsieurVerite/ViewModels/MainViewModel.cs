@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -388,10 +387,11 @@ public sealed partial class MainViewModel : ObservableObject
     private bool CanRetryFailed() =>
         CanRunEngine && Items.Any(item => item.Status == ItemStatus.Error);
 
-    public Task ConvertWithKeyAsync(QueueItem item, ulong videoKey)
+    public Task ConvertWithKeyAsync(QueueItem item, string key)
     {
         ArgumentNullException.ThrowIfNull(item);
-        return ConvertAsync([item], ["--key", videoKey.ToString(CultureInfo.InvariantCulture)]);
+        ArgumentNullException.ThrowIfNull(key);
+        return ConvertAsync([item], ["--key", key]);
     }
 
     private async Task ConvertAsync(List<QueueItem> targets, IReadOnlyList<string> extraArguments)
@@ -419,13 +419,21 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRecoverKeys))]
     private async Task RecoverKeysAsync()
     {
-        var targets = Items.Where(item => item.IsChecked).ToList();
+        var targets = Items.Where(IsRecoverable).ToList();
+        var leftOut = Items.Count(item => item.IsChecked && item.StreamCipher);
+        if (leftOut > 0)
+        {
+            AppendLog($"Left out {leftOut} 7.1 file(s), whose keys cannot be recovered.");
+        }
+
         Enqueue(targets);
         await RunEngineAsync(["--crack", .. targets.Select(item => item.FullPath)], targets.Count)
             .ConfigureAwait(true);
     }
 
-    private bool CanRecoverKeys() => CanRunEngine && Items.Any(item => item.IsChecked);
+    private bool CanRecoverKeys() => CanRunEngine && Items.Any(IsRecoverable);
+
+    private static bool IsRecoverable(QueueItem item) => item.IsChecked && !item.StreamCipher;
 
     private static void Enqueue(IEnumerable<QueueItem> targets)
     {
@@ -701,7 +709,6 @@ public sealed partial class MainViewModel : ObservableObject
                 {
                     "exists" => "already exists",
                     "no_key" => "no key",
-                    "unsupported" => "7.1 encryption not supported",
                     "requested" => "skipped on request",
                     _ => skipped.Reason,
                 };
@@ -726,6 +733,7 @@ public sealed partial class MainViewModel : ObservableObject
                 probed.Version = probe.Version;
                 probed.Subtitles = probe.Subtitles;
                 probed.HasVsScript = probe.VsScript is not null;
+                probed.StreamCipher = probe.StreamCipher;
                 break;
 
             case CrackEvent crack when Find(crack.File) is { } cracked:
@@ -738,7 +746,13 @@ public sealed partial class MainViewModel : ObservableObject
                 }
                 else
                 {
-                    cracked.Key = KeyState.Missing;
+                    // A key the probe found in keys.json stays, because a decline says nothing
+                    // about keys.json.
+                    if (cracked.Key == KeyState.Unknown)
+                    {
+                        cracked.Key = KeyState.Missing;
+                    }
+
                     AppendLog($"{crack.File}: key not recoverable — {crack.Reason}");
                 }
 

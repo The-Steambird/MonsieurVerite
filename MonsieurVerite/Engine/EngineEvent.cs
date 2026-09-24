@@ -131,6 +131,8 @@ public sealed record ProbeEvent : EngineEvent
 
     public IReadOnlyList<string> Subtitles { get; init; } = [];
     public string? VsScript { get; init; }
+
+    public bool StreamCipher { get; init; }
 }
 
 public sealed record CrackEvent : EngineEvent

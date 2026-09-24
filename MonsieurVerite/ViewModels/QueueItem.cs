@@ -71,6 +71,8 @@ public sealed partial class QueueItem : ObservableObject
 
     [ObservableProperty] public partial bool HasVsScript { get; set; }
 
+    [ObservableProperty] public partial bool StreamCipher { get; set; }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasProgress), nameof(StatusLabel))]
     public partial ItemStatus Status { get; set; }

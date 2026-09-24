@@ -41,12 +41,13 @@ public class EngineEventTests
     public void ProbeKeyIsABooleanNotTheKeyItself()
     {
         var probe = Assert.IsType<ProbeEvent>(EngineEvent.Parse(
-            """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":["EN","JP"],"vs_script":"vs/a.py"}"""));
+            """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":["EN","JP"],"vs_script":"vs/a.py","stream_cipher":true}"""));
 
         Assert.True(probe.Key);
         Assert.Equal("5.3", probe.Version);
         Assert.Equal(["EN", "JP"], probe.Subtitles);
         Assert.Equal("vs/a.py", probe.VsScript);
+        Assert.True(probe.StreamCipher);
     }
 
     [Fact]

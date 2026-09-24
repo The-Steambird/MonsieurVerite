@@ -396,10 +396,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        var dialog = new KeyDialog(item.FileName) { Owner = this };
+        var dialog = new KeyDialog(item.FileName, item.StreamCipher) { Owner = this };
         if (dialog.ShowDialog() == true)
         {
-            await viewModel.ConvertWithKeyAsync(item, dialog.VideoKey);
+            await viewModel.ConvertWithKeyAsync(item, dialog.Key);
         }
     }
 

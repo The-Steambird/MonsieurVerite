@@ -59,18 +59,20 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
         var keyless = Add(viewModel, "b.usm");
 
         viewModel.Apply(new ProbeEvent { File = "a.usm", Key = true, Version = "5.3", Subtitles = ["EN", "JP"], VsScript = "vs/a.py" });
-        viewModel.Apply(new ProbeEvent { File = "b.usm", Key = false, Subtitles = [], VsScript = null });
+        viewModel.Apply(new ProbeEvent { File = "b.usm", Key = false, Subtitles = [], VsScript = null, StreamCipher = true });
 
         Assert.Equal(KeyState.Present, keyed.Key);
         Assert.Equal("5.3", keyed.Version);
         Assert.True(keyed.HasSubtitles);
         Assert.Equal("EN, JP", keyed.SubtitleLanguages);
         Assert.True(keyed.HasVsScript);
+        Assert.False(keyed.StreamCipher);
 
         Assert.Equal(KeyState.Missing, keyless.Key);
         Assert.Null(keyless.Version);
         Assert.False(keyless.HasSubtitles);
         Assert.False(keyless.HasVsScript);
+        Assert.True(keyless.StreamCipher);
     }
 
     [Fact]
@@ -225,6 +227,33 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
 
         Assert.Equal(KeyState.Missing, item.Key);
         Assert.Contains(viewModel.Log, line => line.Contains("single distinct payload", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void FailedRecoveryKeepsAKeyTheProbeFound()
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+        item.Key = KeyState.Present;
+
+        viewModel.Apply(new CrackEvent { File = "a.usm", Stem = "a", VideoKey = null, Reason = "x" });
+
+        Assert.Equal(KeyState.Present, item.Key);
+    }
+
+    [Fact]
+    public void RecoverKeyIgnoresStreamCipherFiles()
+    {
+        var viewModel = NewViewModel();
+        var old = Add(viewModel, "a.usm");
+        var streamCipher = Add(viewModel, "b.usm");
+        viewModel.Apply(new ProbeEvent { File = "b.usm", StreamCipher = true });
+
+        streamCipher.IsChecked = true;
+        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
+
+        old.IsChecked = true;
+        Assert.True(viewModel.RecoverKeysCommand.CanExecute(null));
     }
 
     [Theory]
