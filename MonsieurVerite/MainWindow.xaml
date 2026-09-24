@@ -131,8 +131,8 @@
                         <MenuItem Header="Remove from queue"
                                   Command="{Binding RemoveCheckedCommand}" />
                         <MenuItem Header="Recover key" Command="{Binding RecoverKeysCommand}" />
-                        <MenuItem Header="Set key and convert…" Command="{Binding SetKeyCommand}" />
-                        <MenuItem Header="Copy videoKey" Command="{Binding CopyVideoKeyCommand}" />
+                        <MenuItem Header="Set key manually..." Command="{Binding SetKeyCommand}" />
+                        <MenuItem Header="Copy video key" Command="{Binding CopyVideoKeyCommand}" />
                         <MenuItem Header="Retry failed" Command="{Binding RetryFailedCommand}" />
                         <Separator />
                         <MenuItem Header="Open output folder"
