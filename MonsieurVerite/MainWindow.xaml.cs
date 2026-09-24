@@ -39,6 +39,8 @@ public partial class MainWindow : Window
             PickFolder = PickFolder,
             PickFiles = PickFiles,
             ShowSettings = ShowSettings,
+            PromptKey = PromptKey,
+            CopyText = CopyToClipboard,
             AnswerQuestion = prompt => MessageDialog.Show(this, "charlotte", prompt, "Yes", "No"),
             ConfirmUpdate = ConfirmUpdate,
             RestartRequested = Restart,
@@ -318,6 +320,12 @@ public partial class MainWindow : Window
     private bool ShowSettings(Settings settings) =>
         new SettingsDialog(settings) { Owner = this }.ShowDialog() == true;
 
+    private string? PromptKey(QueueItem item)
+    {
+        var dialog = new KeyDialog(item.FileName, item.StreamCipher) { Owner = this };
+        return dialog.ShowDialog() == true ? dialog.Key : null;
+    }
+
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
     private void About_Click(object sender, RoutedEventArgs e) =>
@@ -387,28 +395,6 @@ public partial class MainWindow : Window
         }
 
         return null;
-    }
-
-    private async void SetKey_Click(object sender, RoutedEventArgs e)
-    {
-        if (viewModel.SingleChecked is not { } item)
-        {
-            return;
-        }
-
-        var dialog = new KeyDialog(item.FileName, item.StreamCipher) { Owner = this };
-        if (dialog.ShowDialog() == true)
-        {
-            await viewModel.ConvertWithKeyAsync(item, dialog.Key);
-        }
-    }
-
-    private void CopyVideoKey_Click(object sender, RoutedEventArgs e)
-    {
-        if (viewModel.SingleChecked?.VideoKey is { } videoKey)
-        {
-            CopyToClipboard(videoKey.ToString(CultureInfo.InvariantCulture));
-        }
     }
 
     private void OutputBox_KeyDown(object sender, KeyEventArgs e)

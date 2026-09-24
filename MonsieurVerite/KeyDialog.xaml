@@ -1,16 +1,18 @@
-<Window x:Class="MonsieurVerite.KeyDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Set key" Width="460" SizeToContent="Height" ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
-        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
-        UseLayoutRounding="True"
-        FocusManager.FocusedElement="{Binding ElementName=KeyBox}">
+<local:DialogWindow x:Class="MonsieurVerite.KeyDialog"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:MonsieurVerite"
+                    Title="Set key" Width="460"
+                    FocusManager.FocusedElement="{Binding ElementName=KeyBox}">
 
-    <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="0" GlassFrameThickness="-1" ResizeBorderThickness="0"
-                      UseAeroCaptionButtons="False" />
-    </WindowChrome.WindowChrome>
+    <local:DialogWindow.Resources>
+        <Style x:Key="KeyField" TargetType="TextBox" BasedOn="{StaticResource OptionField}">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+    </local:DialogWindow.Resources>
 
     <Grid>
         <StackPanel Style="{StaticResource DialogRoot}">
@@ -19,17 +21,15 @@
 
             <TextBlock x:Name="KeyLabel" Style="{StaticResource OptionLabel}" Text="Video key"
                        Margin="0,0,0,4" />
-            <TextBox x:Name="KeyBox" Style="{StaticResource OptionField}"
-                     FontFamily="Cascadia Mono, Consolas" FontSize="13" MinHeight="32"
-                     Margin="0,0,0,8" TextChanged="KeyBox_TextChanged" />
+            <TextBox x:Name="KeyBox" Style="{StaticResource KeyField}"
+                     TextChanged="KeyBox_TextChanged" />
             <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,16"
                        Text="Format: decimal integer. Example: 6542161829131848" />
 
             <StackPanel x:Name="AesKeyPanel" Visibility="Collapsed">
                 <TextBlock Style="{StaticResource OptionLabel}" Text="Video key" Margin="0,0,0,4" />
-                <TextBox x:Name="AesKeyBox" Style="{StaticResource OptionField}"
-                         FontFamily="Cascadia Mono, Consolas" FontSize="13" MinHeight="32"
-                         Margin="0,0,0,8" TextChanged="KeyBox_TextChanged" />
+                <TextBox x:Name="AesKeyBox" Style="{StaticResource KeyField}"
+                         TextChanged="KeyBox_TextChanged" />
                 <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,16"
                            Text="Format: 32 hexadecimal characters. Example: f9e9e1c5cf3a68deffa0a4d3df665836" />
             </StackPanel>
@@ -41,6 +41,6 @@
                         Margin="8,0,0,0" />
             </StackPanel>
         </StackPanel>
-        <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Close_Click" />
+        <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Dismiss" />
     </Grid>
-</Window>
+</local:DialogWindow>

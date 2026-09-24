@@ -4,14 +4,13 @@ using System.Windows.Controls;
 
 namespace MonsieurVerite;
 
-public partial class KeyDialog : Window
+public partial class KeyDialog : DialogWindow
 {
     private readonly bool streamCipher;
 
     public KeyDialog(string fileName, bool streamCipher)
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Frost(this);
         this.streamCipher = streamCipher;
         Caption.Text = $"Apply your own key to {fileName}.";
         if (streamCipher)
@@ -42,6 +41,4 @@ public partial class KeyDialog : Window
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e) => DialogResult = true;
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

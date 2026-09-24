@@ -5,16 +5,15 @@ using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite;
 
-public partial class SettingsDialog : Window
+public partial class SettingsDialog : DialogWindow
 {
     private readonly Settings settings;
-    private readonly RunOptions working;
+    private RunOptions working;
 
     public SettingsDialog(Settings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Frost(this);
         this.settings = settings;
         working = settings.Options.Clone();
         DataContext = working;
@@ -24,7 +23,7 @@ public partial class SettingsDialog : Window
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
-        settings.Options.CopyFrom(working);
+        settings.Options = working;
         settings.EnginePath = EngineBox.Text.Trim();
         settings.CheckForUpdatesOnStartup = UpdateCheck.IsChecked == true;
         DialogResult = true;
@@ -32,7 +31,8 @@ public partial class SettingsDialog : Window
 
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
-        working.CopyFrom(new RunOptions());
+        working = new RunOptions();
+        DataContext = working;
         EngineBox.Text = Settings.DefaultEnginePath;
         UpdateCheck.IsChecked = true;
     }
@@ -54,6 +54,4 @@ public partial class SettingsDialog : Window
             EngineBox.Text = dialog.FileName;
         }
     }
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

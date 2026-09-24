@@ -3,12 +3,11 @@ using System.Windows.Input;
 
 namespace MonsieurVerite;
 
-public partial class MessageDialog : Window
+public partial class MessageDialog : DialogWindow
 {
     private MessageDialog()
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Frost(this);
     }
 
     public static bool Show(
@@ -45,6 +44,4 @@ public partial class MessageDialog : Window
             Close();
         }
     }
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

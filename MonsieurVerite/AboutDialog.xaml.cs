@@ -1,16 +1,14 @@
-using System.Windows;
 using System.Windows.Navigation;
 using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite;
 
-public partial class AboutDialog
+public partial class AboutDialog : DialogWindow
 {
     public AboutDialog(MainViewModel viewModel)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         InitializeComponent();
-        SourceInitialized += (_, _) => Chrome.Frost(this);
 
         TitleText.Text = $"charlotte {App.Version}";
         BuildText.Text = App.Build ?? "unknown";
@@ -24,6 +22,4 @@ public partial class AboutDialog
         Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
         e.Handled = true;
     }
-
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }

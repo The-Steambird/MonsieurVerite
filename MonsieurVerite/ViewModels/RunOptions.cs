@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -111,29 +112,8 @@ public sealed partial class RunOptions : ObservableObject
         }
     }
 
-    public void CopyFrom(RunOptions other)
-    {
-        ArgumentNullException.ThrowIfNull(other);
-        DefaultAudio = other.DefaultAudio;
-        DefaultSubtitle = other.DefaultSubtitle;
-        AudioCodec = other.AudioCodec;
-        KeepIntermediates = other.KeepIntermediates;
-        SkipExisting = other.SkipExisting;
-        FlatOutput = other.FlatOutput;
-        UseVapourSynth = other.UseVapourSynth;
-        HardSub = other.HardSub;
-        Crf = other.Crf;
-        Preset = other.Preset;
-        X265Params = other.X265Params;
-        OnPropertyChanged(nameof(X265ParamLines));
-    }
-
-    public RunOptions Clone()
-    {
-        var copy = new RunOptions();
-        copy.CopyFrom(this);
-        return copy;
-    }
+    public RunOptions Clone() =>
+        JsonSerializer.Deserialize<RunOptions>(JsonSerializer.Serialize(this))!;
 
     public IReadOnlyList<string> ToArguments()
     {

@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="charlotte" Height="802" Width="1120" MinHeight="520" MinWidth="860"
-        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        FontFamily="{StaticResource UiFont}" FontSize="13"
         UseLayoutRounding="True"
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver"
         DragLeave="Window_DragLeave" Drop="Window_Drop">
@@ -131,10 +131,8 @@
                         <MenuItem Header="Remove from queue"
                                   Command="{Binding RemoveCheckedCommand}" />
                         <MenuItem Header="Recover key" Command="{Binding RecoverKeysCommand}" />
-                        <MenuItem Header="Set key and convert…" IsEnabled="{Binding CanSetKey}"
-                                  Click="SetKey_Click" />
-                        <MenuItem Header="Copy videoKey" IsEnabled="{Binding CanCopyVideoKey}"
-                                  Click="CopyVideoKey_Click" />
+                        <MenuItem Header="Set key and convert…" Command="{Binding SetKeyCommand}" />
+                        <MenuItem Header="Copy videoKey" Command="{Binding CopyVideoKeyCommand}" />
                         <MenuItem Header="Retry failed" Command="{Binding RetryFailedCommand}" />
                         <Separator />
                         <MenuItem Header="Open output folder"
@@ -206,7 +204,7 @@
                              VerticalAlignment="Top" BorderThickness="0" Background="Transparent"
                              Padding="0"
                              ItemContainerStyle="{StaticResource LogLine}"
-                             FontFamily="Cascadia Mono, Consolas" FontSize="11.5"
+                             FontFamily="{StaticResource MonoFont}" FontSize="11.5"
                              SelectionMode="Extended"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ContextMenu>

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -66,6 +67,10 @@ public sealed partial class MainViewModel : ObservableObject
 
     public Func<Settings, bool>? ShowSettings { get; set; }
 
+    public Func<QueueItem, string?>? PromptKey { get; set; }
+
+    public Action<string>? CopyText { get; set; }
+
     public Func<string, bool>? AnswerQuestion { get; set; }
 
     public Func<UpdateEvent, bool>? ConfirmUpdate { get; set; }
@@ -77,10 +82,10 @@ public sealed partial class MainViewModel : ObservableObject
     public string RecoveredKeysPath => settings.RecoveredKeysPath;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasEngine), nameof(CanRunEngine), nameof(CanSetKey))]
+    [NotifyPropertyChangedFor(nameof(HasEngine), nameof(CanRunEngine))]
     [NotifyCanExecuteChangedFor(
         nameof(StartCommand), nameof(RetryFailedCommand), nameof(RecoverKeysCommand),
-        nameof(CheckForUpdatesCommand))]
+        nameof(SetKeyCommand), nameof(CheckForUpdatesCommand))]
     public partial EngineLaunchProfile? Engine { get; private set; }
 
     public bool HasEngine => Engine is not null;
@@ -96,10 +101,11 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] public partial string OutputDirectory { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsIdle), nameof(CanRunEngine), nameof(CanSetKey))]
+    [NotifyPropertyChangedFor(nameof(IsIdle), nameof(CanRunEngine))]
     [NotifyCanExecuteChangedFor(
         nameof(StartCommand), nameof(CancelCommand), nameof(SkipCommand),
-        nameof(RetryFailedCommand), nameof(RecoverKeysCommand), nameof(RemoveCheckedCommand),
+        nameof(RetryFailedCommand), nameof(RecoverKeysCommand), nameof(SetKeyCommand),
+        nameof(RemoveCheckedCommand),
         nameof(CheckForUpdatesCommand), nameof(OpenFolderCommand), nameof(BrowseFilesCommand))]
     public partial bool IsRunning { get; internal set; }
 
@@ -117,10 +123,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     public QueueItem? SingleChecked =>
         Items.Where(item => item.IsChecked).Take(2).ToList() is [var only] ? only : null;
-
-    public bool CanSetKey => CanRunEngine && SingleChecked is not null;
-
-    public bool CanCopyVideoKey => SingleChecked?.VideoKey is not null;
 
     public string StartLabel
     {
@@ -266,6 +268,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (ShowSettings?.Invoke(settings) ?? false)
         {
             SaveSettings();
+            OnPropertyChanged(nameof(Options));
             OnPropertyChanged(nameof(Summary));
             ApplyEngineSetting(previousPath);
         }
@@ -387,12 +390,27 @@ public sealed partial class MainViewModel : ObservableObject
     private bool CanRetryFailed() =>
         CanRunEngine && Items.Any(item => item.Status == ItemStatus.Error);
 
-    public Task ConvertWithKeyAsync(QueueItem item, string key)
+    [RelayCommand(CanExecute = nameof(CanSetKey))]
+    private async Task SetKeyAsync()
     {
-        ArgumentNullException.ThrowIfNull(item);
-        ArgumentNullException.ThrowIfNull(key);
-        return ConvertAsync([item], ["--key", key]);
+        if (SingleChecked is { } item && PromptKey?.Invoke(item) is { } key)
+        {
+            await ConvertAsync([item], ["--key", key]).ConfigureAwait(true);
+        }
     }
+
+    private bool CanSetKey() => CanRunEngine && SingleChecked is not null;
+
+    [RelayCommand(CanExecute = nameof(CanCopyVideoKey))]
+    private void CopyVideoKey()
+    {
+        if (SingleChecked?.VideoKey is { } videoKey)
+        {
+            CopyText?.Invoke(videoKey.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private bool CanCopyVideoKey() => SingleChecked?.VideoKey is not null;
 
     private async Task ConvertAsync(List<QueueItem> targets, IReadOnlyList<string> extraArguments)
     {
@@ -868,7 +886,7 @@ public sealed partial class MainViewModel : ObservableObject
                 OnCheckedChanged();
                 break;
             case nameof(QueueItem.VideoKey):
-                OnPropertyChanged(nameof(CanCopyVideoKey));
+                CopyVideoKeyCommand.NotifyCanExecuteChanged();
                 break;
             case nameof(QueueItem.Status) or nameof(QueueItem.Key)
                 or nameof(QueueItem.Subtitles) or nameof(QueueItem.HasVsScript):
@@ -884,8 +902,8 @@ public sealed partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(CheckState));
         OnPropertyChanged(nameof(StartLabel));
         OnPropertyChanged(nameof(SingleChecked));
-        OnPropertyChanged(nameof(CanSetKey));
-        OnPropertyChanged(nameof(CanCopyVideoKey));
         RecoverKeysCommand.NotifyCanExecuteChanged();
+        SetKeyCommand.NotifyCanExecuteChanged();
+        CopyVideoKeyCommand.NotifyCanExecuteChanged();
     }
 }

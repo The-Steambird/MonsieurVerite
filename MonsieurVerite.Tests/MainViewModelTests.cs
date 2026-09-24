@@ -188,15 +188,32 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
         var viewModel = NewViewModel();
         var first = Add(viewModel, "a.usm");
         var second = Add(viewModel, "b.usm");
-        Assert.False(viewModel.CanSetKey);
+        Assert.False(viewModel.SetKeyCommand.CanExecute(null));
 
         first.IsChecked = true;
-        Assert.True(viewModel.CanSetKey);
+        Assert.True(viewModel.SetKeyCommand.CanExecute(null));
         Assert.Same(first, viewModel.SingleChecked);
 
         second.IsChecked = true;
-        Assert.False(viewModel.CanSetKey);
+        Assert.False(viewModel.SetKeyCommand.CanExecute(null));
         Assert.Null(viewModel.SingleChecked);
+    }
+
+    [Fact]
+    public void CopyVideoKeyWaitsForARecoveredKey()
+    {
+        var viewModel = NewViewModel();
+        var item = Add(viewModel, "a.usm");
+        string? copied = null;
+        viewModel.CopyText = text => copied = text;
+        item.IsChecked = true;
+        Assert.False(viewModel.CopyVideoKeyCommand.CanExecute(null));
+
+        viewModel.Apply(new CrackEvent { File = "a.usm", Stem = "a", VideoKey = 7, Reason = "" });
+        Assert.True(viewModel.CopyVideoKeyCommand.CanExecute(null));
+
+        viewModel.CopyVideoKeyCommand.Execute(null);
+        Assert.Equal("7", copied);
     }
 
     [Fact]
