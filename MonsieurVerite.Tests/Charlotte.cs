@@ -7,10 +7,8 @@ using Xunit.Abstractions;
 namespace MonsieurVerite.Tests;
 
 /// <summary>
-/// The live tests need a charlotte-cli.exe beside the test binary, the app's own default
-/// location, and the sibling charlotte checkout for its test cutscenes. They skip themselves
-/// without either, which keeps the suite passing on a machine that has only this repo, and say
-/// so under <c>dotnet test -v n</c> because a silent skip looks like a pass.
+/// Without a charlotte-cli.exe beside the test binary and the sibling charlotte checkout, the live
+/// tests skip and say so under <c>dotnet test -v n</c>, because a silent skip looks like a pass.
 /// </summary>
 internal static class Charlotte
 {

@@ -5,7 +5,7 @@ namespace MonsieurVerite.Tests;
 
 /// <summary>
 /// Only the install half is covered, because the network half is two GET calls that are not
-/// worth mocking and PickZipUrl covers the parsing.
+/// worth mocking and PickZip covers the parsing.
 /// </summary>
 public class UpdaterTests : IDisposable
 {
@@ -39,13 +39,22 @@ public class UpdaterTests : IDisposable
     {
         const string release = """
             {"tag_name":"v1.2","assets":[
-              {"name":"charlotte-cli.exe","browser_download_url":"https://x/charlotte-cli.exe"},
-              {"name":"charlotte-1.2.zip","browser_download_url":"https://x/bundle.zip"}]}
+              {"name":"charlotte-cli.exe","browser_download_url":"https://x/charlotte-cli.exe","digest":"sha256:00"},
+              {"name":"charlotte-1.2.zip","browser_download_url":"https://x/bundle.zip","digest":"sha256:ab12"}]}
             """;
 
-        Assert.Equal("https://x/bundle.zip", Updater.PickZipUrl(release));
-        Assert.Null(Updater.PickZipUrl("""{"assets":[{"name":"charlotte-cli.exe","browser_download_url":"u"}]}"""));
-        Assert.Null(Updater.PickZipUrl("{}"));
+        Assert.Equal(new Updater.ReleaseAsset("https://x/bundle.zip", "ab12"), Updater.PickZip(release));
+        Assert.Null(Updater.PickZip("""{"assets":[{"name":"charlotte-cli.exe","browser_download_url":"u"}]}"""));
+        Assert.Null(Updater.PickZip("{}"));
+    }
+
+    [Theory]
+    [InlineData("""{"name":"a.zip","browser_download_url":"u"}""")]
+    [InlineData("""{"name":"a.zip","browser_download_url":"u","digest":null}""")]
+    [InlineData("""{"name":"a.zip","browser_download_url":"u","digest":"md5:ab12"}""")]
+    public void AZipWithoutASha256DigestHasNothingToVerifyAgainst(string asset)
+    {
+        Assert.Equal(new Updater.ReleaseAsset("u", null), Updater.PickZip($$"""{"assets":[{{asset}}]}"""));
     }
 
     [Fact]

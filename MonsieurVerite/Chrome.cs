@@ -13,7 +13,6 @@ public static partial class Chrome
     private const int SystemBackdropType = 38;
     private const int Style = -16;
     private const long SystemMenu = 0x00080000;
-    private const long Resizable = 0x00050000; // WS_THICKFRAME | WS_MAXIMIZEBOX
     private const uint FrameChanged = 0x0027; // SWP_FRAMECHANGED | NOZORDER | NOMOVE | NOSIZE
     private const int BackdropNone = 1;
 
@@ -24,10 +23,6 @@ public static partial class Chrome
         _ = DwmSetWindowAttribute(hwnd, SystemBackdropType, ref backdrop, sizeof(int));
     }
 
-    /// <summary>
-    /// DWM acrylic composes its first frame unfrosted and drops the material when the window is
-    /// inactive, so the glass is a blurred snapshot of the owner taken once at open.
-    /// </summary>
     public static void Frost(Window dialog)
     {
         Solid(dialog);
@@ -133,21 +128,6 @@ public static partial class Chrome
     private static byte Dither(byte from, byte to, double mix, Random noise) =>
         (byte)Math.Round(from + (to - from) * mix + noise.NextDouble() - 0.5);
 
-    /// <summary>
-    /// ShowDialog disables the owner, and the resize styles are what let a drag snap it or a
-    /// double click maximize it under the dialog.
-    /// </summary>
-    public static void Modal(Window owner, bool open)
-    {
-        var hwnd = new WindowInteropHelper(owner).Handle;
-        var style = GetWindowLongPtrW(hwnd, Style);
-        _ = SetWindowLongPtrW(hwnd, Style, open ? style & ~Resizable : style | Resizable);
-        if (open)
-        {
-            _ = EnableWindow(hwnd, true);
-        }
-    }
-
     public static Thickness MaximizedInset(DpiScale dpi)
     {
         const int sizeFrame = 32, paddedBorder = 92;
@@ -156,11 +136,6 @@ public static partial class Chrome
                      + GetSystemMetricsForDpi(paddedBorder, pixelDpi);
         return new Thickness(pixels / dpi.DpiScaleX);
     }
-
-    [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool EnableWindow(
-        IntPtr hwnd, [MarshalAs(UnmanagedType.Bool)] bool enable);
 
     [LibraryImport("user32.dll")]
     private static partial int GetSystemMetricsForDpi(int index, uint dpi);

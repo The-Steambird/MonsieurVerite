@@ -1,15 +1,21 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace MonsieurVerite.Engine;
 
 public sealed class EngineClient : IDisposable
 {
+    private const int StandardErrorTailCapacity = 20;
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
     private readonly EngineLaunchProfile profile;
     private readonly JobObject job = new();
     private readonly Lock stdinGate = new();
+    private readonly Queue<string> standardErrorTail = new();
+
+    private readonly Channel<EngineEvent> events = Channel.CreateUnbounded<EngineEvent>(
+        new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
     private Process? process;
     private bool disposed;
@@ -20,12 +26,17 @@ public sealed class EngineClient : IDisposable
         this.profile = profile;
     }
 
-    public event Action<EngineEvent>? EventReceived;
-    public event Action<string>? StandardErrorReceived;
+    /// <summary>Completes once the engine has exited and both of its pipes are drained.</summary>
+    public ChannelReader<EngineEvent> Events => events.Reader;
 
-    public async Task<int> RunAsync(
-        IReadOnlyList<string> arguments,
-        CancellationToken cancellationToken = default)
+    /// <summary>
+    /// The last lines the engine wrote outside the protocol, which are final only once
+    /// <see cref="Start"/>'s task has completed.
+    /// </summary>
+    public IReadOnlyList<string> StandardErrorTail => [.. standardErrorTail];
+
+    /// <returns>The exit code, completing after the last event has been written.</returns>
+    public Task<int> Start(IReadOnlyList<string> arguments)
     {
         ArgumentNullException.ThrowIfNull(arguments);
         ObjectDisposedException.ThrowIf(disposed, this);
@@ -57,15 +68,7 @@ public sealed class EngineClient : IDisposable
             ?? throw new InvalidOperationException($"Could not start '{profile.FileName}'.");
         process = started;
         job.Assign(started);
-
-        await using var registration = cancellationToken.Register(SendCancel).ConfigureAwait(false);
-
-        var stdout = PumpStandardOutputAsync(started);
-        var stderr = PumpStandardErrorAsync(started);
-        await Task.WhenAll(stdout, stderr).ConfigureAwait(false);
-        await started.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-
-        return started.ExitCode;
+        return PumpAsync(started);
     }
 
     public void SendAnswer(string id, bool value)
@@ -87,6 +90,9 @@ public sealed class EngineClient : IDisposable
 
     internal static string SkipCommand(string file) =>
         JsonSerializer.Serialize(new { type = "skip", file });
+
+    /// <summary>Ends the engine and everything it started.</summary>
+    public void Kill() => job.Terminate();
 
     public void Dispose()
     {
@@ -123,11 +129,23 @@ public sealed class EngineClient : IDisposable
         }
     }
 
-    private async Task PumpStandardOutputAsync(Process target)
+    private async Task<int> PumpAsync(Process target)
     {
-        while (await target.StandardOutput.ReadLineAsync().ConfigureAwait(false) is { } line)
+        try
         {
-            EventReceived?.Invoke(EngineEvent.Parse(line));
+            var stderr = PumpStandardErrorAsync(target);
+            while (await target.StandardOutput.ReadLineAsync().ConfigureAwait(false) is { } line)
+            {
+                events.Writer.TryWrite(EngineEvent.Parse(line));
+            }
+
+            await stderr.ConfigureAwait(false);
+            await target.WaitForExitAsync().ConfigureAwait(false);
+            return target.ExitCode;
+        }
+        finally
+        {
+            events.Writer.TryComplete();
         }
     }
 
@@ -135,7 +153,12 @@ public sealed class EngineClient : IDisposable
     {
         while (await target.StandardError.ReadLineAsync().ConfigureAwait(false) is { } line)
         {
-            StandardErrorReceived?.Invoke(line);
+            Debug.WriteLine(line);
+            standardErrorTail.Enqueue(line);
+            if (standardErrorTail.Count > StandardErrorTailCapacity)
+            {
+                standardErrorTail.Dequeue();
+            }
         }
     }
 }

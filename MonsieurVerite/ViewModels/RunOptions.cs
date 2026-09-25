@@ -83,7 +83,7 @@ public sealed partial class RunOptions : ObservableObject
     [NotifyPropertyChangedFor(nameof(Reencodes))]
     public partial bool HardSub { get; set; }
 
-    public bool Reencodes => UseVapourSynth || HardSub;
+    [JsonIgnore] public bool Reencodes => UseVapourSynth || HardSub;
 
     [ObservableProperty] public partial double Crf { get; set; }
 

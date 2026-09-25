@@ -258,7 +258,7 @@
                         </StackPanel.Style>
                         <Button Content="Skip file" Command="{Binding SkipCommand}"
                                 ToolTip="Drop the file being converted and carry on with the rest" />
-                        <Button Content="Cancel" Command="{Binding CancelCommand}"
+                        <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}"
                                 Margin="8,0,0,0" />
                     </StackPanel>
                 </StackPanel>
@@ -304,7 +304,6 @@
             </TextBlock>
         </DockPanel>
 
-        <!-- Dims the window under a dialog, whose own frost blurs what shows through. -->
         <Rectangle x:Name="ModalShade" Grid.RowSpan="5" Fill="{StaticResource ShadeBrush}"
                    Opacity="0" IsHitTestVisible="False" />
 

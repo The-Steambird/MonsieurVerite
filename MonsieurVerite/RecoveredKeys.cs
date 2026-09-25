@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -9,12 +10,13 @@ public static class RecoveredKeys
     private static readonly JsonSerializerOptions
         SerializerOptions = new() { WriteIndented = true };
 
-    public static void Add(string path, string stem, ulong videoKey)
+    /// <returns>Where an unreadable file was moved aside, or null.</returns>
+    public static string? Add(string path, string stem, ulong videoKey)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentException.ThrowIfNullOrWhiteSpace(stem);
 
-        var root = Load(path);
+        var (root, setAside) = Load(path);
         if (root["list"] is not JsonArray list)
         {
             list = [];
@@ -61,28 +63,36 @@ public static class RecoveredKeys
             }
         }
 
-        if (Path.GetDirectoryName(path) is { Length: > 0 } directory)
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        File.WriteAllText(path, root.ToJsonString(SerializerOptions));
+        AtomicFile.WriteAllText(path, root.ToJsonString(SerializerOptions));
+        return setAside;
     }
 
-    private static JsonObject Load(string path)
+    private static (JsonObject Root, string? SetAside) Load(string path)
     {
         if (!File.Exists(path))
         {
-            return [];
+            return ([], null);
         }
 
+        JsonNode? parsed;
         try
         {
-            return JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? [];
+            parsed = JsonNode.Parse(File.ReadAllText(path));
         }
         catch (JsonException)
         {
-            return [];
+            parsed = null;
         }
+
+        if (parsed is JsonObject root)
+        {
+            return (root, null);
+        }
+
+        var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+        var setAside = Path.Combine(Path.GetDirectoryName(path) ?? "",
+            $"{Path.GetFileNameWithoutExtension(path)}.unreadable-{stamp}{Path.GetExtension(path)}");
+        File.Move(path, setAside);
+        return ([], setAside);
     }
 }

@@ -53,9 +53,8 @@ public partial class App
     }
 
     /// <summary>
-    /// After an update the old instance launches this one before it has exited, and its exe is
-    /// one of the *.old files. Waiting for it lets the sweep delete that file now instead of on
-    /// the launch after this one.
+    /// After an update the old instance starts this one before exiting, and its exe is one of the
+    /// *.old files. Waiting lets the sweep delete it now rather than on the next launch.
     /// </summary>
     private static void WaitForPredecessor(string[] args)
     {

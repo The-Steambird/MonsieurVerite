@@ -1,7 +1,5 @@
 <Project>
 
-    <!-- Per-project files carry only what is genuinely per-project, such as OutputType and UseWPF. -->
-
     <PropertyGroup>
         <TargetFramework>net10.0-windows</TargetFramework>
         <LangVersion>latest</LangVersion>
@@ -16,26 +14,21 @@
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
-        <!-- IDE0005, ruff's F401 for unused usings, silently does nothing unless the XML doc file
-             is generated. Generating it raises CS1591 for every public member without an XML
-             comment, which TreatWarningsAsErrors would make fatal. -->
+        <!-- IDE0005 (unused usings) does nothing unless the XML doc file is generated, and
+             generating it raises CS1591 for every public member without an XML comment. -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);CS1591</NoWarn>
 
-        <!-- ThemeMode, the Fluent theme switch, is [Experimental] and is an error without this.
-             App.xaml.cs sets it from C# because the same attribute in App.xaml is flagged by
-             ReSharper's XAML engine, which NoWarn cannot reach. -->
+        <!-- ThemeMode is [Experimental]. App.xaml.cs sets it from C# because ReSharper flags the
+             attribute in App.xaml, and NoWarn cannot reach ReSharper. -->
         <NoWarn>$(NoWarn);WPF0001</NoWarn>
 
-        <!-- NuGet writes packages.lock.json, the uv.lock analogue, only when this opts in. -->
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- The WindowsDesktop SDK's implicit usings do not cover System.Diagnostics. System.IO
-             cannot be added here because the WPF SDK props remove it after this file is imported,
-             since System.IO.Path collides with System.Windows.Shapes.Path. Files that need it
-             carry an explicit `using System.IO;` instead. -->
+        <!-- System.IO cannot be a global using here, because the WPF SDK removes it after this
+             file to avoid the Path collision with System.Windows.Shapes. -->
         <Using Include="System.Diagnostics" />
     </ItemGroup>
 

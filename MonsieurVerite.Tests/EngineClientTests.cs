@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.IO;
 
 using MonsieurVerite.Engine;
@@ -32,16 +31,17 @@ public class EngineClientTests(ITestOutputHelper output)
             return;
         }
 
-        var events = new ConcurrentQueue<EngineEvent>();
-
+        var events = new List<EngineEvent>();
         using var client = new EngineClient(engine);
-        client.EventReceived += events.Enqueue;
+        using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(3));
 
-        // A deadline rather than a cancellation token, because the token only asks the engine to
-        // stop and a hung engine would hang the test instead of failing it.
-        var exitCode = await client.RunAsync(["--probe", "--json", cutscene]).WaitAsync(TimeSpan.FromMinutes(3));
+        var exit = client.Start(["--probe", "--json", cutscene]);
+        await foreach (var evt in client.Events.ReadAllAsync(deadline.Token))
+        {
+            events.Add(evt);
+        }
 
-        Assert.Equal(0, exitCode);
+        Assert.Equal(0, await exit);
 
         var start = Assert.IsType<SessionStartEvent>(events.FirstOrDefault(e => e is SessionStartEvent));
         Assert.Equal(EngineEvent.ProtocolVersion, start.Protocol);

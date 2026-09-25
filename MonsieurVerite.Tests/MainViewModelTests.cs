@@ -7,12 +7,6 @@ using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
 
-/// <summary>
-/// Every view model here gets no SynchronizationContext, which applies engine events on the
-/// thread that read them and lets each assertion follow its call directly. xUnit installs a
-/// context of its own on the test thread, and capturing that one would post the events to the
-/// thread pool and race the assertions.
-/// </summary>
 public class MainViewModelTests(ITestOutputHelper output) : IDisposable
 {
     private readonly ScratchFolder scratch = new();
@@ -23,10 +17,9 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    // The engine path puts recovered_keys.json in the scratch folder, beside where the engine
-    // would be.
+    // Pointing the engine path into the scratch folder puts recovered_keys.json there too.
     private MainViewModel NewViewModel(EngineLaunchProfile? engine) =>
-        new(engine, new Settings { EnginePath = scratch.File("charlotte-cli.exe") }, uiContext: null);
+        new(engine, new Settings { EnginePath = scratch.File("charlotte-cli.exe") });
 
     private MainViewModel NewViewModel() => NewViewModel(EngineLaunchProfile.Packaged(scratch.File("charlotte-cli.exe")));
 
@@ -175,7 +168,7 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
             EnginePath = scratch.File("charlotte-cli.exe"),
             CheckForUpdatesOnStartup = false,
         };
-        var viewModel = new MainViewModel(engine, settings, uiContext: null);
+        var viewModel = new MainViewModel(engine, settings);
 
         await viewModel.CheckForUpdatesOnStartupAsync();
 
@@ -536,8 +529,8 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
     [InlineData(0, ItemStatus.Pending, "")]
     public async Task ARowTheEngineLeftRunningIsSettledByHowTheEngineEnded(int exitCode, ItemStatus expected, string detail)
     {
-        // A clean exit that never closed the job is --crack, whose outcome is the Key column, and
-        // the row goes back to resting rather than to Error.
+        // A clean exit that never closed the job is how --crack ends, which is why the row rests
+        // instead of going to Error.
         var engine = FakeEngine(
             """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
             $"@exit /b {exitCode}");
@@ -592,12 +585,69 @@ public class MainViewModelTests(ITestOutputHelper output) : IDisposable
     }
 
     [Fact]
+    public async Task ASecondCancelKillsAnEngineThatIgnoresTheFirst()
+    {
+        // The cancel goes unanswered because cmd never reads stdin, and ping is a child the kill
+        // has to reach through the job object.
+        var engine = FakeEngine(
+            """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
+            "@ping -n 60 127.0.0.1 >nul");
+        var viewModel = NewViewModel(engine);
+        var running = Add(viewModel, "a.usm");
+        var queued = Add(viewModel, "b.usm");
+        // Without asynchronous continuations the cancels below would run inside Apply.
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        running.PropertyChanged += (_, _) =>
+        {
+            if (running.Status == ItemStatus.Running)
+            {
+                started.TrySetResult();
+            }
+        };
+
+        var run = viewModel.StartCommand.ExecuteAsync(null);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        viewModel.CancelCommand.Execute(null);
+        Assert.Equal("Force stop", viewModel.CancelLabel);
+        viewModel.CancelCommand.Execute(null);
+        await run.WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.False(viewModel.IsRunning);
+        Assert.Equal("Cancel", viewModel.CancelLabel);
+        Assert.Equal(ItemStatus.Cancelled, running.Status);
+        Assert.Equal(ItemStatus.Cancelled, queued.Status);
+        Assert.Contains(viewModel.Log, line => line == "Engine stopped.");
+    }
+
+    [Fact]
+    public async Task AnErrorInApplyEndsTheRunAndMarksTheRunningRow()
+    {
+        // The ping would hold the run for a minute if the throw did not also end the engine.
+        var engine = FakeEngine(
+            """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
+            """@echo {"type":"question","id":"q0","prompt":"overwrite?","default":false}""",
+            "@ping -n 60 127.0.0.1 >nul");
+        var viewModel = NewViewModel(engine);
+        viewModel.AnswerQuestion = _ => throw new InvalidOperationException("boom");
+        var running = Add(viewModel, "a.usm");
+        var queued = Add(viewModel, "b.usm");
+
+        var run = viewModel.StartCommand.ExecuteAsync(null);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => run.WaitAsync(TimeSpan.FromSeconds(30)));
+
+        Assert.False(viewModel.IsRunning);
+        Assert.Equal(ItemStatus.Error, running.Status);
+        Assert.Equal("stopped by an unexpected error", running.Detail);
+        Assert.Equal(ItemStatus.Pending, queued.Status);
+    }
+
+    [Fact]
     public void AnUnreadableSettingsFileIsReportedInTheLog()
     {
         var path = scratch.File("settings.json");
         File.WriteAllText(path, "{ not json");
 
-        var viewModel = new MainViewModel(null, Settings.Load(path), uiContext: null);
+        var viewModel = new MainViewModel(null, Settings.Load(path));
 
         Assert.Contains(viewModel.Log, line => line.Contains("using defaults", StringComparison.Ordinal));
     }

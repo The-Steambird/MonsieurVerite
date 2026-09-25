@@ -22,8 +22,6 @@ public partial class MainWindow : Window
     private readonly MainViewModel viewModel;
     private ScrollViewer? logScroller;
     private int dragDepth;
-    private bool moving;
-    private Vector offset;
 
     public MainWindow()
     {
@@ -33,8 +31,7 @@ public partial class MainWindow : Window
         Height = Math.Min(Height, area.Height - 48);
 
         var settings = Settings.Load();
-        viewModel = new MainViewModel(settings.ResolveEngine(), settings,
-            SynchronizationContext.Current)
+        viewModel = new MainViewModel(settings.ResolveEngine(), settings)
         {
             PickFolder = PickFolder,
             PickFiles = PickFiles,
@@ -61,9 +58,6 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         ContentRendered += OnContentRendered;
         Closing += OnClosing;
-        Activated += OnActivated;
-        Deactivated += OnDeactivated;
-        LocationChanged += OnLocationChanged;
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -74,28 +68,13 @@ public partial class MainWindow : Window
         PaintBleed(VisualTreeHelper.GetDpi(this));
     }
 
-    /// <summary>
-    /// Snap layouts need the maximize button reported as HTMAXBUTTON. While a dialog is open, the
-    /// toolbar is caption and the rest is border, so the app can be dragged but nothing else.
-    /// </summary>
+    /// <summary>Snap layouts need the maximize button reported as HTMAXBUTTON.</summary>
     private IntPtr Caption(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int mouseActivate = 0x0021,
-            hitTest = 0x0084,
-            buttonDown = 0x00A1,
-            buttonUp = 0x00A2,
-            enterSizeMove = 0x0231,
-            exitSizeMove = 0x0232,
-            mouseLeave = 0x02A2;
-        const int caption = 2, noActivate = 3, maxButton = 9, border = 18;
+        const int hitTest = 0x0084, buttonDown = 0x00A1, buttonUp = 0x00A2, mouseLeave = 0x02A2;
+        const int caption = 2, maxButton = 9;
         switch (msg)
         {
-            case hitTest when Dialog is not null:
-                handled = true;
-                return Over(Toolbar, lParam) ? caption : border;
-            case mouseActivate when Dialog is not null:
-                handled = true;
-                return noActivate;
             case hitTest when MaximizeButton.IsVisible:
                 var over = Over(MaximizeButton, lParam);
                 MaximizeButton.Tag = over ? "hot" : null;
@@ -105,7 +84,7 @@ public partial class MainWindow : Window
                 handled = true;
                 return IntPtr.Zero;
             case buttonDown when wParam == caption:
-                // The toolbar is caption, so the click never reaches WPF's mouse events.
+                // The click never reaches WPF's mouse events, because the toolbar is caption.
                 App.Blur(this);
                 return IntPtr.Zero;
             case buttonUp when wParam == maxButton:
@@ -114,17 +93,6 @@ public partial class MainWindow : Window
                 return IntPtr.Zero;
             case mouseLeave:
                 MaximizeButton.Tag = null;
-                return IntPtr.Zero;
-            case enterSizeMove:
-                moving = true;
-                return IntPtr.Zero;
-            case exitSizeMove:
-                moving = false;
-                if (Dialog is not null)
-                {
-                    Refocus();
-                }
-
                 return IntPtr.Zero;
             default:
                 return IntPtr.Zero;
@@ -141,60 +109,7 @@ public partial class MainWindow : Window
     private Window? Dialog =>
         OwnedWindows.Cast<Window>().FirstOrDefault(window => window.IsVisible);
 
-    private void OnDeactivated(object? sender, EventArgs e)
-    {
-        if (Dialog is not { } dialog)
-        {
-            return;
-        }
-
-        Fade(ModalShade, true);
-        Chrome.Modal(this, true);
-        offset = new Vector(dialog.Left - Left, dialog.Top - Top);
-    }
-
-    /// <summary>
-    /// A caption drag activates this window first. Activating the dialog mid-drag would cancel the
-    /// drag, so the hand-back waits until the drag ends.
-    /// </summary>
-    private void OnActivated(object? sender, EventArgs e)
-    {
-        if (Dialog is null)
-        {
-            Refocus();
-        }
-        else
-        {
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, Refocus);
-        }
-    }
-
-    private void Refocus()
-    {
-        if (moving)
-        {
-            return;
-        }
-
-        if (Dialog is { } dialog)
-        {
-            dialog.Activate();
-        }
-        else
-        {
-            Fade(ModalShade, false);
-            Chrome.Modal(this, false);
-        }
-    }
-
-    private void OnLocationChanged(object? sender, EventArgs e)
-    {
-        if (Dialog is { } dialog)
-        {
-            dialog.Left = Left + offset.X;
-            dialog.Top = Top + offset.Y;
-        }
-    }
+    internal void UpdateShade() => Fade(ModalShade, Dialog is not null);
 
     private void Minimize_Click(object sender, RoutedEventArgs e) =>
         WindowState = WindowState.Minimized;
@@ -234,9 +149,8 @@ public partial class MainWindow : Window
         }
     }
 
-    // An exception from an async void handler or an engine event lands here, and without this
-    // it closes the app with no trace. Only the log takes it while a dialog is open, because a
-    // failure that repeats would otherwise stack error dialogs.
+    // Without this, an exception from an async void handler or a command closes the app with no
+    // trace. Only the log takes it under a dialog, because a repeating failure would stack them.
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;
@@ -259,8 +173,8 @@ public partial class MainWindow : Window
         await viewModel.CheckForUpdatesOnStartupAsync();
     }
 
-    // Chrome.Modal keeps this window enabled under a dialog so its caption can be dragged, which
-    // also leaves its system menu able to close it.
+    // A dialog disables this window, but a WM_CLOSE from outside (taskkill without /f) still
+    // arrives, and closing here would pull the dialog out from under its ShowDialog caller.
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (Dialog is { } dialog)
@@ -352,7 +266,7 @@ public partial class MainWindow : Window
         return MessageDialog.Show(
             this,
             $"charlotte {update.Latest} is available",
-            $"You have {update.Current}. Download and install the new release now? The app restarts afterwards.",
+            $"Update from {update.Current} → {update.Latest}? Charlotte will automatically restart when done.",
             "Update", "Cancel", notes);
     }
 
@@ -474,8 +388,7 @@ public partial class MainWindow : Window
         CopyToClipboard(string.Join(Environment.NewLine, viewModel.Log));
 
     /// <summary>
-    /// The clipboard is a shared resource, and Clipboard.SetText throws when another process is
-    /// holding it, even after WPF's own retries.
+    /// Clipboard.SetText throws while another process holds the clipboard, despite WPF's retries.
     /// </summary>
     private void CopyToClipboard(string text)
     {

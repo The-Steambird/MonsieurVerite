@@ -14,22 +14,19 @@ namespace MonsieurVerite.ViewModels;
 public sealed partial class MainViewModel : ObservableObject
 {
     private const int LogCapacity = 2000;
-    private const int StderrTailCapacity = 20;
     private readonly Settings settings;
-    private readonly SynchronizationContext? uiContext;
     private readonly HashSet<QueueItem> watched = [];
     private EngineClient? client;
     private CancellationTokenSource? cancellation;
+    private bool forceStopped;
     private QueueItem? current;
     private int runIndex;
     private int runTotal;
 
-    public MainViewModel(EngineLaunchProfile? engine, Settings settings,
-        SynchronizationContext? uiContext)
+    public MainViewModel(EngineLaunchProfile? engine, Settings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         this.settings = settings;
-        this.uiContext = uiContext;
         Engine = engine;
 
         SourceDirectory = settings.SourceDirectory ?? "";
@@ -110,6 +107,13 @@ public sealed partial class MainViewModel : ObservableObject
     public partial bool IsRunning { get; internal set; }
 
     public bool IsIdle => !IsRunning;
+
+    /// <summary>An engine run was asked to cancel, which makes a second press kill it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CancelLabel))]
+    public partial bool CanForceStop { get; private set; }
+
+    public string CancelLabel => CanForceStop ? "Force stop" : "Cancel";
 
     public bool CanRunEngine => HasEngine && !IsRunning;
 
@@ -466,10 +470,22 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsRunning))]
     private void Cancel()
     {
-        if (cancellation is { IsCancellationRequested: false } source)
+        if (cancellation is not { } source)
+        {
+            return;
+        }
+
+        if (!source.IsCancellationRequested)
         {
             source.Cancel();
+            CanForceStop = client is not null;
             StageText = "Cancelling…";
+        }
+        else if (client is { } engine && !forceStopped)
+        {
+            forceStopped = true;
+            engine.Kill();
+            StageText = "Stopping…";
         }
     }
 
@@ -497,8 +513,8 @@ public sealed partial class MainViewModel : ObservableObject
             ? RunUpdateCheckAsync(quiet: true)
             : Task.CompletedTask;
 
-    // Quiet leaves "up to date" and "could not check" to the log, so an offline start is not
-    // met with a dialog every time.
+    // Quiet leaves "up to date" and "could not check" to the log, because an offline start would
+    // otherwise meet a dialog every time.
     private async Task RunUpdateCheckAsync(bool quiet)
     {
         LatestUpdate = null;
@@ -523,92 +539,107 @@ public sealed partial class MainViewModel : ObservableObject
 
     private async Task<bool> InstallUpdateAsync()
     {
+        var installed = false;
+        await RunExclusiveAsync(async token =>
+        {
+            try
+            {
+                var status = new Progress<string>(text => StageText = text);
+                var written = await Updater
+                    .InstallLatestAsync(AppContext.BaseDirectory, status, token)
+                    .ConfigureAwait(true);
+                AppendLog($"Installed {written.Count} file(s). Restarting.");
+                installed = true;
+            }
+            catch (OperationCanceledException)
+            {
+                AppendLog(token.IsCancellationRequested ? "Update cancelled." : "Update timed out.");
+            }
+            catch (Exception e) when (e is HttpRequestException or IOException
+                                          or InvalidDataException or UnauthorizedAccessException
+                                          or JsonException)
+            {
+                AppendLog($"Update failed: {e.Message}");
+            }
+        }).ConfigureAwait(true);
+        return installed;
+    }
+
+    /// <summary>The one owner of <see cref="IsRunning"/>, the cancellation source and Cancel.</summary>
+    private async Task RunExclusiveAsync(Func<CancellationToken, Task> work)
+    {
+        if (IsRunning)
+        {
+            throw new InvalidOperationException("A run is already in progress.");
+        }
+
         using var source = new CancellationTokenSource();
         cancellation = source;
+        forceStopped = false;
         IsRunning = true;
         try
         {
-            var status = new Progress<string>(text => StageText = text);
-            var written = await Updater
-                .InstallLatestAsync(AppContext.BaseDirectory, status, source.Token)
-                .ConfigureAwait(true);
-            AppendLog($"Installed {written.Count} file(s). Restarting.");
-            return true;
-        }
-        catch (OperationCanceledException)
-        {
-            AppendLog(source.IsCancellationRequested ? "Update cancelled." : "Update timed out.");
-        }
-        catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException
-                                      or UnauthorizedAccessException or JsonException)
-        {
-            AppendLog($"Update failed: {e.Message}");
+            await work(source.Token).ConfigureAwait(true);
         }
         finally
         {
             cancellation = null;
+            CanForceStop = false;
             IsRunning = false;
             StageText = "Idle";
         }
-
-        return false;
     }
 
     // jobCount is how many job_start events the run will open, which a probe and an update check
     // never do. Zero hides the run position and disables Skip.
-    private async Task RunEngineAsync(IReadOnlyList<string> arguments, int jobCount)
+    private Task RunEngineAsync(IReadOnlyList<string> arguments, int jobCount)
     {
         if (Engine is not { } profile)
         {
             throw new InvalidOperationException("No engine is configured.");
         }
 
-        if (IsRunning)
-        {
-            throw new InvalidOperationException("An engine run is already in progress.");
-        }
+        return RunExclusiveAsync(token => DriveEngineAsync(profile, arguments, jobCount, token));
+    }
 
-        using var source = new CancellationTokenSource();
+    private async Task DriveEngineAsync(
+        EngineLaunchProfile profile, IReadOnlyList<string> arguments, int jobCount,
+        CancellationToken cancellationToken)
+    {
         using var engine = new EngineClient(profile);
-        engine.EventReceived += evt => OnUiThread(() => Apply(evt));
-
-        // Anything the engine says outside the protocol (a usage error, a Python traceback) lands
-        // on stderr, mixed in with its console logger. Only the tail is worth showing, and only
-        // for a failure no event explained.
-        var stderrTail = new Queue<string>();
-        engine.StandardErrorReceived += line =>
-        {
-            Debug.WriteLine(line);
-            stderrTail.Enqueue(line);
-            if (stderrTail.Count > StderrTailCapacity)
-            {
-                stderrTail.Dequeue();
-            }
-        };
-
-        cancellation = source;
+        using var registration = cancellationToken.Register(engine.SendCancel);
         client = engine;
         current = null;
         runIndex = 0;
         runTotal = jobCount;
-        IsRunning = true;
 
         string? failure = null;
         try
         {
-            var exitCode = await engine.RunAsync(["--json", .. arguments], source.Token)
-                .ConfigureAwait(true);
-            if (exitCode != 0)
+            var exit = engine.Start(["--json", .. arguments]);
+            // The token only asks the engine to stop, and its events are read until it has.
+            await foreach (var evt in engine.Events.ReadAllAsync(CancellationToken.None)
+                               .ConfigureAwait(true))
+            {
+                Apply(evt);
+            }
+
+            var exitCode = await exit.ConfigureAwait(true);
+            if (forceStopped)
+            {
+                AppendLog("Engine stopped.");
+            }
+            else if (exitCode != 0)
             {
                 failure = $"engine exited with code {exitCode}";
                 AppendLog($"Engine exited with code {exitCode}.");
 
                 // The engine exits 1 after a batch in which any file failed, and those rows
-                // already carry the error events. The tail is for a run that never opened a job
-                // or died inside one.
+                // already carry the error events. The stderr tail is for a run that never opened
+                // a job or died inside one.
                 if (current is null or { Status: ItemStatus.Running })
                 {
-                    foreach (var line in stderrTail.Where(line => line.Length > 0))
+                    foreach (var line in engine.StandardErrorTail.Where(line => line.Length > 0))
                     {
                         AppendLog($"  {line}");
                     }
@@ -620,13 +651,17 @@ public sealed partial class MainViewModel : ObservableObject
             failure = "engine could not be started";
             AppendLog($"Could not start the engine '{profile.FileName}': {e.Message}");
         }
+        catch (Exception)
+        {
+            // A bug in Apply ends the run, and disposing the client kills the engine. The
+            // unhandled-error dialog shows the exception.
+            failure = "stopped by an unexpected error";
+            throw;
+        }
         finally
         {
-            cancellation = null;
             client = null;
             current = null;
-            IsRunning = false;
-            StageText = "Idle";
             SettleRows(failure);
         }
     }
@@ -638,7 +673,11 @@ public sealed partial class MainViewModel : ObservableObject
             switch (item.Status)
             {
                 case ItemStatus.Queued:
-                    item.Status = ItemStatus.Pending;
+                    item.Status = forceStopped ? ItemStatus.Cancelled : ItemStatus.Pending;
+                    break;
+                case ItemStatus.Running when forceStopped:
+                    item.Status = ItemStatus.Cancelled;
+                    item.Detail = "";
                     break;
                 case ItemStatus.Running:
                     item.Status = failure is null ? ItemStatus.Pending : ItemStatus.Error;
@@ -667,8 +706,8 @@ public sealed partial class MainViewModel : ObservableObject
                 break;
 
             case JobStartEvent job:
-                // --crack never closes a job. Outcome is the Key column, and the next
-                // job_start is the only signal that the previous file is done.
+                // --crack never closes a job, and the next job_start is the only sign that the
+                // previous file is done.
                 if (current is { Status: ItemStatus.Running } previous)
                 {
                     previous.Status = ItemStatus.Pending;
@@ -816,7 +855,10 @@ public sealed partial class MainViewModel : ObservableObject
     {
         try
         {
-            RecoveredKeys.Add(RecoveredKeysPath, stem, videoKey);
+            if (RecoveredKeys.Add(RecoveredKeysPath, stem, videoKey) is { } setAside)
+            {
+                AppendLog($"{RecoveredKeysPath} could not be read. It is now {setAside}, and a new file was started.");
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -841,18 +883,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void ClearLog() => Log.Clear();
-
-    private void OnUiThread(Action action)
-    {
-        if (uiContext is null)
-        {
-            action();
-        }
-        else
-        {
-            uiContext.Post(_ => action(), null);
-        }
-    }
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {

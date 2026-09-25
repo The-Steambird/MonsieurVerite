@@ -78,13 +78,18 @@ public class RecoveredKeysTests : IDisposable
         Assert.Equal(42UL, list[1]!["videoKey"]!.GetValue<ulong>());
     }
 
-    [Fact]
-    public void ACorruptFileIsReplacedNotFatal()
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("[]")]
+    public void AnUnreadableFileIsSetAsideNotOverwritten(string corrupt)
     {
-        File.WriteAllText(path, "{ not json");
+        File.WriteAllText(path, corrupt);
 
-        RecoveredKeys.Add(path, "Cs_Boy", 42);
+        var setAside = RecoveredKeys.Add(path, "Cs_Boy", 42);
 
+        Assert.NotNull(setAside);
+        Assert.Equal(corrupt, File.ReadAllText(setAside));
         Assert.Single(List());
+        Assert.Null(RecoveredKeys.Add(path, "Cs_Girl", 7));
     }
 }

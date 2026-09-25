@@ -8,10 +8,7 @@ namespace MonsieurVerite.Tests;
 /// </summary>
 public class EngineEventTests
 {
-    /// <summary>
-    /// Every kind with the full field set the engine sends, including fields the records do not
-    /// declare, which must be ignored rather than fatal.
-    /// </summary>
+    /// <summary>Carries fields the records do not declare, which must be ignored.</summary>
     public static TheoryData<string, Type> KnownKinds() => new()
     {
         { """{"type":"session_start","protocol":1,"version":"1.0.0"}""", typeof(SessionStartEvent) },

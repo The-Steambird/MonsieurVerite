@@ -74,14 +74,6 @@ public sealed class Settings
 
     public void Save() => Save(FilePath);
 
-    public void Save(string path)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        if (Path.GetDirectoryName(path) is { Length: > 0 } directory)
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        File.WriteAllText(path, JsonSerializer.Serialize(this, SerializerOptions));
-    }
+    public void Save(string path) =>
+        AtomicFile.WriteAllText(path, JsonSerializer.Serialize(this, SerializerOptions));
 }

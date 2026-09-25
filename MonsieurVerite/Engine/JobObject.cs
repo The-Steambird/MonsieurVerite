@@ -57,6 +57,14 @@ public sealed partial class JobObject : IDisposable
         }
     }
 
+    public void Terminate()
+    {
+        if (!disposed)
+        {
+            _ = TerminateJobObject(handle, 1);
+        }
+    }
+
     public void Dispose()
     {
         if (disposed)
@@ -80,6 +88,10 @@ public sealed partial class JobObject : IDisposable
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool TerminateJobObject(IntPtr job, uint exitCode);
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
