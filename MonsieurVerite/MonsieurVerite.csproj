@@ -32,5 +32,16 @@
     <ItemGroup>
         <InternalsVisibleTo Include="MonsieurVerite.Tests" />
     </ItemGroup>
+    
+    <Target Name="VersionFromGitTag" BeforeTargets="GetAssemblyVersion" Condition="'$(Version)' == '1.0.0'">
+        <Exec Command="git describe --tags --abbrev=0 --match &quot;[0-9]*&quot;" ConsoleToMSBuild="true" IgnoreExitCode="true"
+              StandardOutputImportance="low" StandardErrorImportance="low">
+            <Output TaskParameter="ConsoleOutput" PropertyName="GitTag" />
+            <Output TaskParameter="ExitCode" PropertyName="GitExitCode" />
+        </Exec>
+        <PropertyGroup Condition="'$(GitExitCode)' == '0'">
+            <Version>$(GitTag)</Version>
+        </PropertyGroup>
+    </Target>
 
 </Project>
