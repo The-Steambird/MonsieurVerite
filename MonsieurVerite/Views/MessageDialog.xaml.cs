@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace MonsieurVerite.Views;
 
@@ -12,13 +13,20 @@ public partial class MessageDialog : DialogWindow
 
     public static bool Show(
         Window owner, string title, string message,
-        string? primary = null, string? secondary = null, string? detail = null)
+        string? primary = null, string? secondary = null, string? detail = null,
+        string? imageUri = null)
     {
         var dialog = new MessageDialog { Owner = owner, Title = title };
         dialog.TitleText.Text = title;
         dialog.MessageText.Text = message;
         dialog.PrimaryButton.Content = primary ?? Strings.OK;
-
+        
+        if (imageUri is not null)
+        {
+            dialog.Banner.Source = new BitmapImage(new Uri(imageUri, UriKind.Absolute));
+            dialog.Banner.Visibility = Visibility.Visible;
+        }
+        
         if (secondary is not null)
         {
             dialog.SecondaryButton.Content = secondary;

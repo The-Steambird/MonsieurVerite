@@ -37,7 +37,7 @@ public partial class MainWindow : Window
             PromptKey = PromptKey,
             CopyText = CopyToClipboard,
             ShowMessage = message => MessageDialog.Show(this, message.Title, message.Text,
-                message.Primary, message.Secondary, message.Detail),
+                message.Primary, message.Secondary, message.Detail, message.ImageUri),
             CloseWindow = Close,
         };
         DataContext = viewModel;

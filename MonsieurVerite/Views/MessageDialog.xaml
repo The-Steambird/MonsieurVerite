@@ -12,12 +12,14 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <TextBlock x:Name="TitleText" Grid.Row="0" Style="{StaticResource DialogTitle}" />
-            <TextBlock x:Name="MessageText" Grid.Row="1" Style="{StaticResource DialogBody}" />
+            <Image x:Name="Banner" Grid.Row="1" Height="140" Margin="0,0,0,12" Stretch="Uniform" Visibility="Collapsed" />
+            <TextBlock x:Name="MessageText" Grid.Row="2" Style="{StaticResource DialogBody}" />
 
-            <Border x:Name="DetailPanel" Grid.Row="2" Margin="0,14,0,0" Padding="12,10"
+            <Border x:Name="DetailPanel" Grid.Row="3" Margin="0,14,0,0" Padding="12,10"
                     Background="{StaticResource LayerBrush}"
                     BorderBrush="{StaticResource LineStrongBrush}"
                     BorderThickness="1" CornerRadius="6" Visibility="Collapsed">
@@ -28,7 +30,7 @@
                 </ScrollViewer>
             </Border>
 
-            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
                         Margin="0,22,0,0">
                 <Button x:Name="PrimaryButton" Style="{StaticResource PrimaryButton}"
                         IsDefault="True" Click="Primary_Click" />
