@@ -51,14 +51,14 @@ public static class Translations
             return false;
         }
 
-        var listing = await Updater.Http.GetStringAsync(ListingApi, cancellationToken)
+        var listing = await GitHub.Http.GetStringAsync(ListingApi, cancellationToken)
             .ConfigureAwait(false);
         if (Pick(listing, culture) is not { } translation)
         {
             return false;
         }
 
-        var json = await Updater.Http.GetStringAsync(translation.Url, cancellationToken)
+        var json = await GitHub.Http.GetStringAsync(translation.Url, cancellationToken)
             .ConfigureAwait(false);
         return Save(appDirectory, translation.Language, json);
     }
@@ -76,9 +76,9 @@ public static class Translations
         var urls = new Dictionary<string, string>();
         foreach (var file in document.RootElement.EnumerateArray())
         {
-            var name = Updater.Text(file, "name");
+            var name = GitHub.Text(file, "name");
             var language = Path.GetFileNameWithoutExtension(name);
-            var url = Updater.Text(file, "download_url");
+            var url = GitHub.Text(file, "download_url");
             if (Path.GetExtension(name) == ".json" && url.Length > 0 && IsCulture(language))
             {
                 urls[language] = url;

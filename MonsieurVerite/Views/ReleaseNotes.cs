@@ -333,7 +333,7 @@ internal static partial class ReleaseNotes
     {
         try
         {
-            var bytes = await Updater.Http.GetByteArrayAsync(source).ConfigureAwait(true);
+            var bytes = await GitHub.Http.GetByteArrayAsync(source).ConfigureAwait(true);
             var width = BitmapDecoder.Create(new MemoryStream(bytes), BitmapCreateOptions.DelayCreation,
                 BitmapCacheOption.None).Frames[0].PixelWidth;
             var bitmap = new BitmapImage();

@@ -2,7 +2,6 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -14,8 +13,6 @@ public static class Updater
         "https://api.github.com/repos/The-Steambird/charlotte/releases/latest";
 
     private const string BundleFolder = "charlotte/";
-
-    internal static readonly HttpClient Http = CreateClient();
 
     public static async Task<IReadOnlyList<string>> InstallLatestAsync(
         string appDirectory, IProgress<string> status, CancellationToken cancellationToken)
@@ -52,7 +49,7 @@ public static class Updater
     private static async Task<ReleaseAsset?> FindZipAsync(CancellationToken cancellationToken)
     {
         using var response =
-            await Http.GetAsync(LatestReleaseApi, cancellationToken).ConfigureAwait(false);
+            await GitHub.Http.GetAsync(LatestReleaseApi, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -70,11 +67,11 @@ public static class Updater
 
         foreach (var asset in assets.EnumerateArray())
         {
-            if (Text(asset, "name").EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
-                && Text(asset, "browser_download_url") is { Length: > 0 } url)
+            if (GitHub.Text(asset, "name").EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                && GitHub.Text(asset, "browser_download_url") is { Length: > 0 } url)
             {
                 const string prefix = "sha256:";
-                var digest = Text(asset, "digest");
+                var digest = GitHub.Text(asset, "digest");
                 string? sha256 = null;
                 if (digest.StartsWith(prefix, StringComparison.Ordinal))
                 {
@@ -88,16 +85,11 @@ public static class Updater
         return null;
     }
 
-    internal static string Text(JsonElement element, string property) =>
-        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString()!
-            : "";
-
     private static async Task<string> DownloadAndHashAsync(
         string url, string destination, IProgress<string> status,
         CancellationToken cancellationToken)
     {
-        using var response = await Http
+        using var response = await GitHub.Http
             .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
             .ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -272,15 +264,5 @@ public static class Updater
         {
             // Already gone.
         }
-    }
-
-    private static HttpClient CreateClient()
-    {
-        var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-        client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("charlotte-gui", App.Version));
-        client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        return client;
     }
 }
