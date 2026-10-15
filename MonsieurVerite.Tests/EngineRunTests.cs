@@ -245,7 +245,7 @@ public class EngineRunTests : ViewModelTest
     [Fact]
     public async Task AnEngineThatCannotStartFailsTheRunWithoutLeavingRowsQueued()
     {
-        var viewModel = NewViewModel(EngineLaunchProfile.Packaged(Scratch.File("missing.exe")));
+        var viewModel = NewViewModel(EngineLaunchProfile.At(Scratch.File("missing.exe")));
         var first = Add(viewModel, "a.usm");
         var second = Add(viewModel, "b.usm");
 

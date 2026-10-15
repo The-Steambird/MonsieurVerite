@@ -152,38 +152,43 @@ internal static partial class ReleaseNotes
                 marker = $"{number++}{list.OrderedDelimiter}";
             }
 
-            var bullet = Text([new Run(marker)]);
-            if (item.Count > 0 && item[0] is ParagraphBlock { Inline.FirstChild: TaskList task })
-            {
-                bullet = Text([new Run(task.Checked ? "\uE73A" : "\uE739")]);
-                bullet.SetResourceReference(TextBlock.FontFamilyProperty, "IconFont");
-            }
-
-            var content = new StackPanel();
-            foreach (var block in Blocks(item))
-            {
-                if (!list.IsLoose)
-                {
-                    block.Margin = new Thickness(0);
-                }
-
-                content.Children.Add(block);
-            }
-
-            bullet.MinWidth = 18;
-            bullet.Margin = new Thickness(0, 0, 4, 0);
-            bullet.SetResourceReference(TextBlock.ForegroundProperty, "FaintBrush");
-
-            var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.Children.Add(bullet);
-            Grid.SetColumn(content, 1);
-            grid.Children.Add(content);
-            panel.Children.Add(grid);
+            panel.Children.Add(Item(item, marker, list.IsLoose));
         }
 
         return panel;
+    }
+
+    private static Grid Item(ListItemBlock item, string marker, bool loose)
+    {
+        var bullet = Text([new Run(marker)]);
+        if (item.Count > 0 && item[0] is ParagraphBlock { Inline.FirstChild: TaskList task })
+        {
+            bullet = Text([new Run(task.Checked ? "\uE73A" : "\uE739")]);
+            bullet.SetResourceReference(TextBlock.FontFamilyProperty, "IconFont");
+        }
+
+        bullet.MinWidth = 18;
+        bullet.Margin = new Thickness(0, 0, 4, 0);
+        bullet.SetResourceReference(TextBlock.ForegroundProperty, "FaintBrush");
+
+        var content = new StackPanel();
+        foreach (var block in Blocks(item))
+        {
+            if (!loose)
+            {
+                block.Margin = new Thickness(0);
+            }
+
+            content.Children.Add(block);
+        }
+
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.Children.Add(bullet);
+        Grid.SetColumn(content, 1);
+        grid.Children.Add(content);
+        return grid;
     }
 
     private static Border Quote(QuoteBlock quote)
@@ -273,25 +278,7 @@ internal static partial class ReleaseNotes
             var cells = rows[r].OfType<TableCell>().ToList();
             for (var c = 0; c < cells.Count; c++)
             {
-                var content = new StackPanel();
-                foreach (var block in Blocks(cells[c]))
-                {
-                    block.Margin = new Thickness(0);
-                    content.Children.Add(block);
-                }
-
-                if (rows[r].IsHeader)
-                {
-                    TextElement.SetFontWeight(content, FontWeights.SemiBold);
-                }
-
-                var cell = new Border
-                {
-                    BorderThickness = new Thickness(0, 0, 0, 1),
-                    Padding = new Thickness(0, 6, 12, 6),
-                    Child = content,
-                };
-                cell.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
+                var cell = Cell(cells[c], rows[r].IsHeader);
                 Grid.SetRow(cell, r);
                 Grid.SetColumn(cell, c);
                 grid.Children.Add(cell);
@@ -299,6 +286,30 @@ internal static partial class ReleaseNotes
         }
 
         return grid;
+    }
+
+    private static Border Cell(TableCell cell, bool header)
+    {
+        var content = new StackPanel();
+        foreach (var block in Blocks(cell))
+        {
+            block.Margin = new Thickness(0);
+            content.Children.Add(block);
+        }
+
+        if (header)
+        {
+            TextElement.SetFontWeight(content, FontWeights.SemiBold);
+        }
+
+        var border = new Border
+        {
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(0, 6, 12, 6),
+            Child = content,
+        };
+        border.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
+        return border;
     }
 
     private static Image? Picture(string? source, string? link)

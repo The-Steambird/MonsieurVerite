@@ -12,12 +12,7 @@ public partial class App
     public static string Version { get; } =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
-    public static string? Build { get; } =
-        Assembly.GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion is { } text && text.IndexOf('+') is > 0 and var plus
-            ? text[(plus + 1)..Math.Min(text.Length, plus + 8)]
-            : null;
+    public static string? Build { get; } = ShortCommit();
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -32,20 +27,38 @@ public partial class App
         new MainWindow(settings).Show();
     }
 
+    // The SDK appends the commit hash to the informational version after a plus sign.
+    private static string? ShortCommit()
+    {
+        var version = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "";
+        var plus = version.IndexOf('+');
+        if (plus < 0)
+        {
+            return null;
+        }
+
+        var commit = version[(plus + 1)..];
+        return commit[..Math.Min(7, commit.Length)];
+    }
+
     private static void BlurOnClickOutside(object sender, MouseButtonEventArgs e)
     {
-        if (Keyboard.FocusedElement is TextBoxBase box && sender is Window window)
+        if (Keyboard.FocusedElement is not TextBoxBase box || sender is not Window window)
         {
-            var node = e.OriginalSource as DependencyObject;
-            while (node is not null and not Visual)
-            {
-                node = LogicalTreeHelper.GetParent(node);
-            }
+            return;
+        }
 
-            if (node is not Visual visual || (visual != box && !box.IsAncestorOf(visual)))
-            {
-                Blur(window);
-            }
+        var node = e.OriginalSource as DependencyObject;
+        while (node is not null and not Visual)
+        {
+            node = LogicalTreeHelper.GetParent(node);
+        }
+
+        var clickedBox = node is Visual visual && (visual == box || box.IsAncestorOf(visual));
+        if (!clickedBox)
+        {
+            Blur(window);
         }
     }
 

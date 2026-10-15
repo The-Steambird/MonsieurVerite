@@ -20,7 +20,7 @@ public abstract class ViewModelTest : IDisposable
         new(engine, new Settings { EnginePath = Scratch.File("charlotte-cli.exe") });
 
     protected MainViewModel NewViewModel() =>
-        NewViewModel(EngineLaunchProfile.Packaged(Scratch.File("charlotte-cli.exe")));
+        NewViewModel(EngineLaunchProfile.At(Scratch.File("charlotte-cli.exe")));
 
     protected QueueItem Add(MainViewModel viewModel, string name)
     {

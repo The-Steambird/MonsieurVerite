@@ -106,9 +106,7 @@ public static class Translations
             return false;
         }
 
-        var path = FilePath(appDirectory, language);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        AtomicFile.WriteAllText(path, json);
+        AtomicFile.WriteAllText(FilePath(appDirectory, language), json);
         return true;
     }
 

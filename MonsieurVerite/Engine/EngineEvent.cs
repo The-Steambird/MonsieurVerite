@@ -16,15 +16,15 @@ public abstract record EngineEvent
         try
         {
             using var document = JsonDocument.Parse(line);
-            if (document.RootElement.ValueKind != JsonValueKind.Object
-                || !document.RootElement.TryGetProperty("type", out var typeProperty)
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("type", out var typeProperty)
                 || typeProperty.ValueKind != JsonValueKind.String)
             {
                 return new UnknownEvent();
             }
 
-            var type = typeProperty.GetString() ?? "";
-            var root = document.RootElement;
+            var type = typeProperty.GetString()!;
             return type switch
             {
                 "session_start" => Read<SessionStartEvent>(root),

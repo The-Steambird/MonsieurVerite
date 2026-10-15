@@ -78,7 +78,8 @@ public sealed partial class QueueItem : ObservableObject
     {
         FullPath = fullPath;
         FileName = Path.GetFileName(fullPath);
-        Size = new FileInfo(fullPath) is { Exists: true } info ? info.Length : 0;
+        var file = new FileInfo(fullPath);
+        Size = file.Exists ? file.Length : 0;
         HasVsScript = true;
         Detail = "";
     }

@@ -11,8 +11,7 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
     private CancellationToken cancellation;
     private QueueItem? current;
     private int position;
-
-    public bool ForceStopped { get; private set; }
+    private bool forceStopped;
 
     public UpdateEvent? Update { get; private set; }
 
@@ -39,7 +38,7 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
             }
 
             var exitCode = await exit.ConfigureAwait(true);
-            if (ForceStopped)
+            if (forceStopped)
             {
                 owner.AppendLog(Strings.ENGINE_STOPPED_LOG);
             }
@@ -93,12 +92,12 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
     /// <summary>Ends the engine and everything it started, or returns false if it already has.</summary>
     public bool ForceStop()
     {
-        if (client is not { } engine || ForceStopped)
+        if (client is not { } engine || forceStopped)
         {
             return false;
         }
 
-        ForceStopped = true;
+        forceStopped = true;
         engine.Kill();
         return true;
     }
@@ -112,7 +111,7 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
                 continue;
             }
 
-            if (ForceStopped)
+            if (forceStopped)
             {
                 item.MarkCancelled();
             }

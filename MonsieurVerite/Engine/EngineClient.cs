@@ -34,12 +34,6 @@ public sealed class EngineClient : IAsyncDisposable
     /// <returns>The exit code, completing after the last event has been written.</returns>
     public Task<int> Start(IReadOnlyList<string> arguments)
     {
-        ObjectDisposedException.ThrowIf(disposed, this);
-        if (process is not null)
-        {
-            throw new InvalidOperationException("This client has already run an engine; create a new one per run.");
-        }
-
         var startInfo = new ProcessStartInfo
         {
             FileName = profile.FileName,

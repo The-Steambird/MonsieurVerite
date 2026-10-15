@@ -28,15 +28,8 @@ public static class RecoveredKeys
                 continue;
             }
 
-            for (var i = videos.Count - 1; i >= 0; i--)
-            {
-                if (videos[i] is JsonValue video && video.TryGetValue<string>(out var name) &&
-                    name == stem)
-                {
-                    videos.RemoveAt(i);
-                }
-            }
-
+            videos.RemoveAll(video =>
+                video is JsonValue text && text.TryGetValue<string>(out var name) && name == stem);
             if (entry["videoKey"] is JsonValue value && value.TryGetValue<ulong>(out var key) &&
                 key == videoKey)
             {
@@ -51,15 +44,7 @@ public static class RecoveredKeys
         }
 
         target.Add(stem);
-
-        for (var i = list.Count - 1; i >= 0; i--)
-        {
-            if (list[i] is JsonObject group && group["videos"] is JsonArray { Count: 0 })
-            {
-                list.RemoveAt(i);
-            }
-        }
-
+        list.RemoveAll(group => group is JsonObject entry && entry["videos"] is JsonArray { Count: 0 });
         AtomicFile.WriteAllText(path, root.ToJsonString(SerializerOptions));
         return setAside;
     }

@@ -63,7 +63,7 @@ public sealed class Settings
             : null;
 
     public EngineLaunchProfile? ResolveEngine() =>
-        File.Exists(EffectiveEnginePath) ? EngineLaunchProfile.Packaged(EffectiveEnginePath) : null;
+        File.Exists(EffectiveEnginePath) ? EngineLaunchProfile.At(EffectiveEnginePath) : null;
 
     public static Settings Load() => Load(FilePath);
 

@@ -201,8 +201,15 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    private IEnumerable<string> Expand(string path) =>
-        Directory.Exists(path) ? ListCutscenes(path) ?? [] : [path];
+    private IEnumerable<string> Expand(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            return [path];
+        }
+
+        return ListCutscenes(path) ?? [];
+    }
 
     private List<string>? ListCutscenes(string directory)
     {
@@ -289,9 +296,9 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        var restart = ShowMessage?.Invoke(new Message(Strings.RESTART_TITLE,
-            Strings.RESTART_MESSAGE, Strings.RESTART_NOW, Strings.LATER)) ?? false;
-        if (restart)
+        var question = new Message(Strings.RESTART_TITLE, Strings.RESTART_MESSAGE,
+            Strings.RESTART_NOW, Strings.LATER);
+        if (ShowMessage?.Invoke(question) == true)
         {
             Updater.Relaunch();
             CloseWindow?.Invoke();
@@ -519,8 +526,9 @@ public sealed partial class MainViewModel : ObservableObject
         await windowShown.ConfigureAwait(true);
         if (Engine is null)
         {
+            var detail = Strings.ENGINE_MISSING_DETAIL(EnginePath);
             ShowMessage?.Invoke(new Message(Strings.ENGINE_MISSING_TITLE,
-                Strings.ENGINE_MISSING_MESSAGE, Detail: Strings.ENGINE_MISSING_DETAIL(EnginePath)));
+                Strings.ENGINE_MISSING_MESSAGE, Detail: detail));
         }
 
         var translation = RefreshTranslationOnStartupAsync();
@@ -535,11 +543,13 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
+        var culture = CultureInfo.GetCultureInfo(Strings.Language);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         try
         {
-            if (await Translations.RefreshAsync(AppContext.BaseDirectory,
-                    CultureInfo.GetCultureInfo(Strings.Language), timeout.Token).ConfigureAwait(true))
+            var saved = await Translations.RefreshAsync(AppContext.BaseDirectory, culture,
+                timeout.Token).ConfigureAwait(true);
+            if (saved)
             {
                 AppendLog(Strings.TRANSLATION_UPDATED_LOG);
             }
@@ -595,10 +605,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         AppendLog(Strings.UPDATE_AVAILABLE_LOG(update.Latest, update.Current));
-        var accepted = ShowMessage?.Invoke(new Message(
-            Strings.UPDATE_AVAILABLE_TITLE(update.Latest),
+        var offer = new Message(Strings.UPDATE_AVAILABLE_TITLE(update.Latest),
             Strings.UPDATE_AVAILABLE_MESSAGE(update.Current, update.Latest),
-            Strings.UPDATE, Strings.CANCEL, Notes: update.Notes, NotesUrl: update.Url)) ?? false;
+            Strings.UPDATE, Strings.CANCEL, Notes: update.Notes, NotesUrl: update.Url);
+        var accepted = ShowMessage?.Invoke(offer) == true;
         if (accepted && await InstallUpdateAsync().ConfigureAwait(true))
         {
             Updater.Relaunch();

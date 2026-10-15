@@ -130,10 +130,7 @@ public static class Updater
         var entries = archive.Entries
             .Select(entry => (Entry: entry, Name: entry.FullName.Replace('\\', '/')))
             .Where(file => !file.Name.EndsWith('/'))
-            .Select(file => (file.Entry,
-                Name: file.Name.StartsWith(BundleFolder, StringComparison.OrdinalIgnoreCase)
-                    ? file.Name[BundleFolder.Length..]
-                    : file.Name))
+            .Select(file => (file.Entry, Name: WithoutBundleFolder(file.Name)))
             .ToList();
         var movedAside = new List<(string Original, string Stale)>();
         var written = new List<string>();
@@ -170,14 +167,22 @@ public static class Updater
                 throw;
             }
 
-            throw new IOException(
-                Strings.UPDATE_ROLLBACK_FAILED(failure.Message,
-                    string.Join(", ", unrestored.Select(Path.GetFileName))),
-                failure);
+            var names = string.Join(", ", unrestored.Select(Path.GetFileName));
+            throw new IOException(Strings.UPDATE_ROLLBACK_FAILED(failure.Message, names), failure);
         }
 
         Translations.DeleteAll(root);
         return written;
+    }
+
+    private static string WithoutBundleFolder(string name)
+    {
+        if (name.StartsWith(BundleFolder, StringComparison.OrdinalIgnoreCase))
+        {
+            return name[BundleFolder.Length..];
+        }
+
+        return name;
     }
 
     private static List<string> RollBack(

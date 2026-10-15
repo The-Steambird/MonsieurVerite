@@ -10,7 +10,7 @@ public sealed record EngineLaunchProfile
 
     public required string WorkingDirectory { get; init; }
 
-    public static EngineLaunchProfile Packaged(string executablePath) => new()
+    public static EngineLaunchProfile At(string executablePath) => new()
     {
         FileName = executablePath,
         BaseArguments = [],
