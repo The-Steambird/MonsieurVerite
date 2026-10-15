@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -43,10 +44,11 @@ public class RunOptionsTests(ITestOutputHelper output)
 
         // encode_args builds `tuning = [...]`, extends it with `tuning += [...]` for the presets
         // in `preset in (...)`, and each is a Python literal of quoted strings.
-        static IEnumerable<string> Quoted(string source, string opener) =>
-            Regex.Matches(Regex.Match(source, opener + "(.*?)[\\])]", RegexOptions.Singleline).Groups[1].Value,
-                    "\"([^\"]+)\"")
-                .Select(match => match.Groups[1].Value);
+        static IEnumerable<string> Quoted(string source, string opener)
+        {
+            var literal = Regex.Match(source, opener + "(.*?)[\\])]", RegexOptions.Singleline).Groups[1].Value;
+            return Regex.Matches(literal, "\"([^\"]+)\"").Select(match => match.Groups[1].Value);
+        }
 
         Assert.Equal(Quoted(source, @"tuning = \["), RunOptions.X265Tuning.Split(':'));
         Assert.Equal(Quoted(source, @"tuning \+= \["), RunOptions.X265Effort.Split(':'));
@@ -175,7 +177,7 @@ public class RunOptionsTests(ITestOutputHelper output)
     {
         var options = new RunOptions { UseVapourSynth = true, Crf = 13.5 };
         var previous = Thread.CurrentThread.CurrentCulture;
-        Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+        Thread.CurrentThread.CurrentCulture = new CultureInfo("de-DE");
         try
         {
             Assert.Contains("13.5", options.ToArguments());

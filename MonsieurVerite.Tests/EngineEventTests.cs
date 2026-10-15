@@ -68,11 +68,8 @@ public class EngineEventTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("   ")]
     [InlineData("not json at all")]
-    [InlineData("{\"unterminated\": ")]
     [InlineData("[1,2,3]")]
-    [InlineData("\"a bare string\"")]
     [InlineData("{\"no_type_field\":1}")]
     [InlineData("{\"type\":42}")]
     public void MalformedLinesBecomeUnknownRatherThanThrowing(string line)

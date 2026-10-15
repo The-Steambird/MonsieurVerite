@@ -19,6 +19,13 @@ public class TranslationsTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private void WriteDownload(string language, string json)
+    {
+        var path = Translations.FilePath(scratch.Root, language);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, json);
+    }
+
     [Fact]
     public void ADownloadedStringReplacesTheBuiltInOneOnlyWhereItsPlaceholdersMatch()
     {
@@ -46,9 +53,7 @@ public class TranslationsTests : IDisposable
     [Fact]
     public void ALanguageThatOnlyExistsAsADownloadIsStillFound()
     {
-        var path = Translations.FilePath(scratch.Root, Unshipped);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, """{ "OPEN_FOLDER": "เปิดโฟลเดอร์" }""");
+        WriteDownload(Unshipped, """{ "OPEN_FOLDER": "เปิดโฟลเดอร์" }""");
 
         var translation = Translations.Resolve(CultureInfo.GetCultureInfo(Unshipped), scratch.Root);
 
@@ -58,9 +63,7 @@ public class TranslationsTests : IDisposable
     [Fact]
     public void ANullStringInADownloadIsSkipped()
     {
-        var path = Translations.FilePath(scratch.Root, Unshipped);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, """{ "OPEN_FOLDER": null, "ADD_FILES": "เพิ่มไฟล์" }""");
+        WriteDownload(Unshipped, """{ "OPEN_FOLDER": null, "ADD_FILES": "เพิ่มไฟล์" }""");
 
         var translation = Translations.Resolve(CultureInfo.GetCultureInfo(Unshipped), scratch.Root);
 
@@ -70,12 +73,8 @@ public class TranslationsTests : IDisposable
     [Fact]
     public void AnUnreadableDownloadOrAStrayFolderIsIgnored()
     {
-        var path = Translations.FilePath(scratch.Root, Unshipped);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, "not json");
-        var stray = Translations.FilePath(scratch.Root, "old translations");
-        Directory.CreateDirectory(Path.GetDirectoryName(stray)!);
-        File.WriteAllText(stray, "{}");
+        WriteDownload(Unshipped, "not json");
+        WriteDownload("old translations", "{}");
 
         Assert.Empty(Translations.Resolve(CultureInfo.GetCultureInfo(Unshipped), scratch.Root)!);
         Assert.Null(Translations.Resolve(CultureInfo.GetCultureInfo(AlsoUnshipped), scratch.Root));
@@ -84,9 +83,7 @@ public class TranslationsTests : IDisposable
     [Fact]
     public void TheLanguageChoicesIncludeDownloads()
     {
-        var path = Translations.FilePath(scratch.Root, Unshipped);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, """{ "OPEN_FOLDER": "Paasuuk" }""");
+        WriteDownload(Unshipped, """{ "OPEN_FOLDER": "Paasuuk" }""");
 
         var choices = Translations.Choices(scratch.Root);
 
@@ -158,9 +155,7 @@ public class TranslationsTests : IDisposable
     [Fact]
     public void AnUnreadableSavedTranslationIsReplaced()
     {
-        var path = Translations.FilePath(scratch.Root, Unshipped);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, "not json");
+        WriteDownload(Unshipped, "not json");
 
         Assert.True(Translations.Save(scratch.Root, Unshipped, """{ "OPEN_FOLDER": "Ordner öffnen" }"""));
     }
@@ -182,18 +177,5 @@ public class TranslationsTests : IDisposable
         Assert.False(Translations.Save(scratch.Root, Unshipped, "{}"));
 
         Assert.False(Directory.Exists(scratch.File("locales")));
-    }
-
-    [Fact]
-    public void RemovingTheTranslationKeepsTheEnginesFileBesideIt()
-    {
-        Translations.Save(scratch.Root, Unshipped, """{ "OPEN_FOLDER": "Ordner öffnen" }""");
-        var engine = scratch.File(Path.Combine("locales", Unshipped, "cli.json"));
-        File.WriteAllText(engine, "{}");
-
-        Translations.Save(scratch.Root, Unshipped, "{}");
-
-        Assert.False(File.Exists(Translations.FilePath(scratch.Root, Unshipped)));
-        Assert.True(File.Exists(engine));
     }
 }

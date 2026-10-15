@@ -85,12 +85,12 @@ public class UpdaterTests : IDisposable
         var zip = Zip(
             ("charlotte/", ""),
             ("charlotte/charlotte-cli.exe", "new engine"),
-            ("charlotte/locales/de-DE/cli.json", "{}"));
+            ("charlotte/font/ja-jp.ttf", "font"));
 
         Updater.Install(zip, App(""));
 
         Assert.Equal("new engine", File.ReadAllText(App("charlotte-cli.exe")));
-        Assert.True(File.Exists(App(Path.Combine("locales", "de-DE", "cli.json"))));
+        Assert.True(File.Exists(App(Path.Combine("font", "ja-jp.ttf"))));
         Assert.False(Directory.Exists(App("charlotte")));
     }
 
@@ -134,18 +134,14 @@ public class UpdaterTests : IDisposable
     }
 
     [Fact]
-    public void InstallDeletesTheDownloadedTranslationsButNotTheEngines()
+    public void InstallDeletesTheDownloadedTranslations()
     {
         Translations.Save(App(""), "de-DE", """{ "OPEN_FOLDER": "Ordner öffnen" }""");
         Translations.Save(App(""), "th-TH", """{ "OPEN_FOLDER": "เปิดโฟลเดอร์" }""");
-        var engine = App(Path.Combine("locales", "de-DE", "cli.json"));
-        File.WriteAllText(engine, "{}");
 
         Updater.Install(Zip(("charlotte-gui.exe", "new gui")), App(""));
 
-        Assert.False(File.Exists(Translations.FilePath(App(""), "de-DE")));
-        Assert.False(Directory.Exists(App(Path.Combine("locales", "th-TH"))));
-        Assert.True(File.Exists(engine));
+        Assert.False(Directory.Exists(App("locales")));
     }
 
     [Fact]

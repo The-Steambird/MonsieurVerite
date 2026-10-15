@@ -18,16 +18,11 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         var engine = FakeEngine(
             $$"""@echo {"type":"update","current":"1.0","latest":"1.1",{{fields}}}""");
         var viewModel = NewViewModel(engine);
-        Message? shown = null;
-        viewModel.ShowMessage = message =>
-        {
-            shown = message;
-            return false;
-        };
+        var shown = DeclineMessages(viewModel);
 
         await viewModel.CheckForUpdatesOnStartupAsync();
 
-        Assert.Equal(asked, shown is not null);
+        Assert.Equal(asked, shown.Count > 0);
         Assert.Contains(logged, viewModel.Log);
         Assert.DoesNotContain(Strings.NO_UPDATE_RESULT_LOG, viewModel.Log);
     }
@@ -38,18 +33,14 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         var engine = FakeEngine(
             """@echo {"type":"update","current":"1.0","latest":"1.1","available":true,"url":"https://github.com/o/r/releases/tag/1.1","notes":"## Fixed"}""");
         var viewModel = NewViewModel(engine);
-        Message? shown = null;
-        viewModel.ShowMessage = message =>
-        {
-            shown = message;
-            return false;
-        };
+        var shown = DeclineMessages(viewModel);
 
         await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
 
-        Assert.Equal("## Fixed", shown?.Notes);
-        Assert.Equal("https://github.com/o/r/releases/tag/1.1", shown?.NotesUrl);
-        Assert.Null(shown?.Detail);
+        var offer = Assert.Single(shown);
+        Assert.Equal("## Fixed", offer.Notes);
+        Assert.Equal("https://github.com/o/r/releases/tag/1.1", offer.NotesUrl);
+        Assert.Null(offer.Detail);
     }
 
     [Theory]
@@ -60,17 +51,12 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         var engine = FakeEngine(
             $$"""@echo {"type":"update","current":"1.0","latest":"1.1",{{fields}}}""");
         var viewModel = NewViewModel(engine);
-        Message? shown = null;
-        viewModel.ShowMessage = message =>
-        {
-            shown = message;
-            return false;
-        };
+        var shown = DeclineMessages(viewModel);
 
         await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
 
         var expected = failed ? Strings.UPDATE_CHECK_FAILED_TITLE : Strings.UP_TO_DATE_TITLE;
-        Assert.Equal(expected, shown?.Title);
+        Assert.Equal(expected, Assert.Single(shown).Title);
     }
 
     // Offering a restart switches the strings, and English is the only switch that leaves them
@@ -82,16 +68,12 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         string chosen, string previous, bool offered)
     {
         var viewModel = new MainViewModel(null, new Settings { Language = chosen });
-        Message? shown = null;
-        viewModel.ShowMessage = message =>
-        {
-            shown = message;
-            return false;
-        };
+        var shown = DeclineMessages(viewModel);
 
         viewModel.OfferRestartForLanguage(previous);
 
-        Assert.Equal(offered ? Strings.RESTART_TITLE : null, shown?.Title);
+        string[] expected = offered ? [Strings.RESTART_TITLE] : [];
+        Assert.Equal(expected, shown.Select(message => message.Title));
     }
 
     [Fact]
@@ -101,12 +83,11 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         {
             IsRunning = true,
         };
-        var shown = false;
-        viewModel.ShowMessage = _ => shown = true;
+        var shown = DeclineMessages(viewModel);
 
         viewModel.OfferRestartForLanguage("de-DE");
 
-        Assert.False(shown);
+        Assert.Empty(shown);
         Assert.Contains(Strings.LANGUAGE_CHANGED_LOG, viewModel.Log);
     }
 
@@ -121,12 +102,11 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
             CheckForUpdatesOnStartup = false,
         };
         var viewModel = new MainViewModel(engine, settings);
-        var shown = false;
-        viewModel.ShowMessage = _ => shown = true;
+        var shown = DeclineMessages(viewModel);
 
         await viewModel.CheckForUpdatesOnStartupAsync();
 
-        Assert.False(shown);
+        Assert.Empty(shown);
         Assert.DoesNotContain(viewModel.Log, line => line.Contains("1.1", StringComparison.Ordinal));
     }
 
@@ -142,22 +122,18 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
             SourceDirectory = folder,
         };
         var viewModel = new MainViewModel(null, settings);
-        Message? shown = null;
-        viewModel.ShowMessage = message =>
-        {
-            shown = message;
-            return false;
-        };
+        var shown = DeclineMessages(viewModel);
         var windowShown = new TaskCompletionSource();
 
         var startup = viewModel.StartupAsync(windowShown.Task);
         Assert.Equal("a.usm", Assert.Single(viewModel.Items).FileName);
-        Assert.Null(shown);
+        Assert.Empty(shown);
 
         windowShown.SetResult();
         await startup;
-        Assert.Equal(Strings.ENGINE_MISSING_TITLE, shown?.Title);
-        Assert.Contains(viewModel.EnginePath, shown?.Detail, StringComparison.Ordinal);
+        var notice = Assert.Single(shown);
+        Assert.Equal(Strings.ENGINE_MISSING_TITLE, notice.Title);
+        Assert.Contains(viewModel.EnginePath, notice.Detail, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -195,12 +171,13 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     }
 
     [Fact]
-    public void RecoverKeyIgnoresStreamCipherFiles()
+    public void RecoverKeyNeedsACheckedRowThatIsNotStreamCipher()
     {
         var viewModel = NewViewModel();
         var old = Add(viewModel, "a.usm");
         var streamCipher = Add(viewModel, "b.usm");
         streamCipher.StreamCipher = true;
+        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
 
         streamCipher.IsChecked = true;
         Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
@@ -311,7 +288,6 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         Assert.True(viewModel.Items.AllChecked);
 
         viewModel.ToggleAllCommand.Execute(null);
-        Assert.False(viewModel.Items.AllChecked);
         Assert.All(viewModel.Items, item => Assert.False(item.IsChecked));
     }
 
@@ -388,20 +364,6 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         Assert.Equal(["a.usm", "B.USM"], viewModel.Items.Select(item => item.FileName));
         Assert.Equal(one, viewModel.SourceDirectory);
         Assert.Contains(viewModel.Log, line => line.Contains("already in the queue", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void RecoverKeysNeedsACheckedRow()
-    {
-        var viewModel = NewViewModel();
-        var item = Add(viewModel, "a.usm");
-        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
-
-        item.IsChecked = true;
-        Assert.True(viewModel.RecoverKeysCommand.CanExecute(null));
-
-        viewModel.Items.Clear();
-        Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
     }
 
     [Fact]

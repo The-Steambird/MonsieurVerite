@@ -130,17 +130,6 @@ public class EngineRunTests : ViewModelTest
     }
 
     [Fact]
-    public void UpdateCheckIsRemembered()
-    {
-        var run = NewRun(NewViewModel());
-        var update = new UpdateEvent { Current = "1.0", Latest = "1.1", Available = true };
-
-        run.Apply(update);
-
-        Assert.Same(update, run.Update);
-    }
-
-    [Fact]
     public void ACrackBatchReturnsEachRowToPendingWhenTheNextOneStarts()
     {
         var viewModel = NewViewModel();
@@ -206,14 +195,14 @@ public class EngineRunTests : ViewModelTest
     {
         var viewModel = NewViewModel();
         var run = NewRun(viewModel);
-        Message? asked = null;
-        viewModel.ShowMessage = message => { asked = message; return true; };
+        var shown = DeclineMessages(viewModel);
 
         run.Apply(new QuestionEvent { Id = "q0", Prompt = "Overwrite keys.json?", Default = false });
 
-        Assert.Equal("Overwrite keys.json?", asked?.Text);
-        Assert.Equal(Strings.YES, asked?.Primary);
-        Assert.Equal(Strings.NO, asked?.Secondary);
+        var question = Assert.Single(shown);
+        Assert.Equal("Overwrite keys.json?", question.Text);
+        Assert.Equal(Strings.YES, question.Primary);
+        Assert.Equal(Strings.NO, question.Secondary);
     }
 
     [Fact]

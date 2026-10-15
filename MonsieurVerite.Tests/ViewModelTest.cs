@@ -29,6 +29,19 @@ public abstract class ViewModelTest : IDisposable
         return item;
     }
 
+    // Every message is declined, because accepting an update or a restart would download a real
+    // release or relaunch the test host.
+    protected static List<Message> DeclineMessages(MainViewModel viewModel)
+    {
+        var shown = new List<Message>();
+        viewModel.ShowMessage = message =>
+        {
+            shown.Add(message);
+            return false;
+        };
+        return shown;
+    }
+
     protected EngineLaunchProfile FakeEngine(params string[] lines)
     {
         var script = Scratch.File(Path.GetRandomFileName() + ".cmd");

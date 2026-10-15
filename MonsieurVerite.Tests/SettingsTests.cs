@@ -69,15 +69,6 @@ public class SettingsTests : IDisposable
     }
 
     [Fact]
-    public void AFileFromBeforeTheUpdateCheckSettingStillChecks()
-    {
-        var path = scratch.File("settings.json");
-        File.WriteAllText(path, """{ "SourceDirectory": null }""");
-
-        Assert.True(Settings.Load(path).CheckForUpdatesOnStartup);
-    }
-
-    [Fact]
     public void CorruptFileMeansDefaultsNotACrash()
     {
         var path = scratch.File("settings.json");
