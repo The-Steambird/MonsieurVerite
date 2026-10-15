@@ -3,11 +3,13 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:MonsieurVerite"
                     xmlns:views="clr-namespace:MonsieurVerite.Views"
-                    Width="460" KeyDown="Window_KeyDown">
+                    Width="460" KeyDown="Window_KeyDown"
+                    Hyperlink.RequestNavigate="OpenLink">
 
     <Grid>
         <Grid Style="{StaticResource DialogRoot}">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -28,7 +30,27 @@
                 </ScrollViewer>
             </Border>
 
-            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+            <StackPanel x:Name="NotesPanel" Grid.Row="3" Margin="0,18,0,0" Visibility="Collapsed">
+                <StackPanel.Resources>
+                    <Style TargetType="Hyperlink" BasedOn="{StaticResource QuietLink}" />
+                </StackPanel.Resources>
+                <DockPanel Margin="0,0,0,10">
+                    <TextBlock x:Name="NotesLinkText" DockPanel.Dock="Right" FontSize="11"
+                               Visibility="Collapsed">
+                        <Hyperlink x:Name="NotesLink">
+                            <Run Text="{x:Static local:Strings.VIEW_ON_GITHUB}" />
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource SectionLabel}" Margin="0"
+                               Text="{x:Static local:Strings.WHATS_NEW}" />
+                </DockPanel>
+                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="NotesContent" Margin="0,0,14,0" />
+                </ScrollViewer>
+                <Border Height="1" Margin="-24,0" Background="{StaticResource LineBrush}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
                         Margin="0,22,0,0">
                 <Button x:Name="PrimaryButton" Style="{StaticResource PrimaryButton}"
                         IsDefault="True" Click="Primary_Click" />

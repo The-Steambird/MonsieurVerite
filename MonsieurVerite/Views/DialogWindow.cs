@@ -1,4 +1,6 @@
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Navigation;
 
 namespace MonsieurVerite.Views;
 
@@ -14,4 +16,17 @@ public class DialogWindow : Window
     }
 
     protected void Dismiss(object sender, RoutedEventArgs e) => Close();
+
+    protected void OpenLink(object sender, RequestNavigateEventArgs e)
+    {
+        e.Handled = true;
+        try
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
+        }
+        catch (Win32Exception failure)
+        {
+            MessageDialog.Show(this, Strings.LINK_FAILED_TITLE, failure.Message, detail: e.Uri.AbsoluteUri);
+        }
+    }
 }

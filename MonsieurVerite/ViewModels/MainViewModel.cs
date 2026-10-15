@@ -595,11 +595,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         AppendLog(Strings.UPDATE_AVAILABLE_LOG(update.Latest, update.Current));
-        var notes = update.Notes is { Length: > 1200 } text ? text[..1200] + "…" : update.Notes;
         var accepted = ShowMessage?.Invoke(new Message(
             Strings.UPDATE_AVAILABLE_TITLE(update.Latest),
             Strings.UPDATE_AVAILABLE_MESSAGE(update.Current, update.Latest),
-            Strings.UPDATE, Strings.CANCEL, notes)) ?? false;
+            Strings.UPDATE, Strings.CANCEL, Notes: update.Notes, NotesUrl: update.Url)) ?? false;
         if (accepted && await InstallUpdateAsync().ConfigureAwait(true))
         {
             Updater.Relaunch();
@@ -733,4 +732,4 @@ public sealed partial class MainViewModel : ObservableObject
 
 public sealed record Message(
     string Title, string Text, string? Primary = null, string? Secondary = null,
-    string? Detail = null);
+    string? Detail = null, string? Notes = null, string? NotesUrl = null);

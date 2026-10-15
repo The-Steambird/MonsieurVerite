@@ -34,6 +34,11 @@
         "resolved": "8.4.2",
         "contentHash": "WadCzGEc2U+3e20avRLng4qNtt4zoOGWrdUISqJWrHe3/FSnrYjuM5Sb4yQb09LhkBXrrI4Zt3dLKgRMbItsrg=="
       },
+      "Markdig": {
+        "type": "Transitive",
+        "resolved": "1.4.0",
+        "contentHash": "lLhaiI/mNDTNzgLqnmknhf4LjgTqOAyjx5+GNz0X3AxYMxUhmFppF2WVMdER+SDqwhE5wUF1pzs/cuLwFxs7xA=="
+      },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
         "resolved": "17.14.1",
@@ -101,7 +106,8 @@
       "charlotte-gui": {
         "type": "Project",
         "dependencies": {
-          "CommunityToolkit.Mvvm": "[8.4.2, )"
+          "CommunityToolkit.Mvvm": "[8.4.2, )",
+          "Markdig": "[1.4.0, )"
         }
       }
     }

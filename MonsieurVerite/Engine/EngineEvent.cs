@@ -145,6 +145,7 @@ public sealed record UpdateEvent : EngineEvent
     public string Current { get; init; } = "";
     public string? Latest { get; init; }
     public bool Available { get; init; }
+    public string? Url { get; init; }
     public string? Notes { get; init; }
     public string? Reason { get; init; }
 }

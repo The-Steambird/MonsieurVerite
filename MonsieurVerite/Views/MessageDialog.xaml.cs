@@ -12,7 +12,8 @@ public partial class MessageDialog : DialogWindow
 
     public static bool Show(
         Window owner, string title, string message,
-        string? primary = null, string? secondary = null, string? detail = null)
+        string? primary = null, string? secondary = null, string? detail = null,
+        string? notes = null, string? notesUrl = null)
     {
         var dialog = new MessageDialog { Owner = owner, Title = title };
         dialog.TitleText.Text = title;
@@ -29,6 +30,24 @@ public partial class MessageDialog : DialogWindow
         {
             dialog.DetailText.Text = detail;
             dialog.DetailPanel.Visibility = Visibility.Visible;
+        }
+
+        var blocks = ReleaseNotes.Render(notes ?? "");
+        if (blocks.Count > 0)
+        {
+            foreach (var block in blocks)
+            {
+                dialog.NotesContent.Children.Add(block);
+            }
+
+            dialog.NotesPanel.Visibility = Visibility.Visible;
+            dialog.Width = 560;
+        }
+
+        if (ReleaseNotes.WebLink(notesUrl) is { } link)
+        {
+            dialog.NotesLink.NavigateUri = link;
+            dialog.NotesLinkText.Visibility = Visibility.Visible;
         }
 
         return dialog.ShowDialog() == true;

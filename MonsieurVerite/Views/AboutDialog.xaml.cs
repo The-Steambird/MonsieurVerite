@@ -1,6 +1,5 @@
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Navigation;
 
 namespace MonsieurVerite.Views;
 
@@ -50,11 +49,5 @@ public partial class AboutDialog : DialogWindow
                 ? new Run(parts[i])
                 : links.First(link => link.Name == parts[i]).Link);
         }
-    }
-
-    private void Link_RequestNavigate(object sender, RequestNavigateEventArgs e)
-    {
-        Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true })?.Dispose();
-        e.Handled = true;
     }
 }

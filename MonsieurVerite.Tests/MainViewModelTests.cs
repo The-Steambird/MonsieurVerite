@@ -32,6 +32,26 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         Assert.DoesNotContain(Strings.NO_UPDATE_RESULT_LOG, viewModel.Log);
     }
 
+    [Fact]
+    public async Task AnOfferedReleaseShowsItsNotesApartFromTheDetail()
+    {
+        var engine = FakeEngine(
+            """@echo {"type":"update","current":"1.0","latest":"1.1","available":true,"url":"https://github.com/o/r/releases/tag/1.1","notes":"## Fixed"}""");
+        var viewModel = NewViewModel(engine);
+        Message? shown = null;
+        viewModel.ShowMessage = message =>
+        {
+            shown = message;
+            return false;
+        };
+
+        await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        Assert.Equal("## Fixed", shown?.Notes);
+        Assert.Equal("https://github.com/o/r/releases/tag/1.1", shown?.NotesUrl);
+        Assert.Null(shown?.Detail);
+    }
+
     [Theory]
     [InlineData("\"available\":false", false)]
     [InlineData("\"available\":false,\"reason\":\"offline\"", true)]

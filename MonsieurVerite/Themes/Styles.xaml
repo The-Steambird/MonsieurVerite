@@ -3,6 +3,7 @@
 
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <CubicEase x:Key="EaseOut" EasingMode="EaseOut" />
 
@@ -48,7 +49,7 @@
         <Setter Property="Height" Value="48" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
-        <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
         <Setter Property="FontSize" Value="10" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Template">
@@ -392,6 +393,15 @@
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{StaticResource DisabledTextBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="QuietLink" TargetType="Hyperlink" BasedOn="{StaticResource {x:Type Hyperlink}}">
+        <Setter Property="TextDecorations" Value="{x:Null}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="TextDecorations" Value="Underline" />
             </Trigger>
         </Style.Triggers>
     </Style>
