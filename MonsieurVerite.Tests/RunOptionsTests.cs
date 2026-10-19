@@ -40,7 +40,7 @@ public class RunOptionsTests(ITestOutputHelper output)
             return;
         }
 
-        var source = File.ReadAllText(Path.Combine(checkout, "stages", "filter.py"));
+        var source = File.ReadAllText(Path.Combine(checkout, "stages", "encode.py"));
 
         // encode_args builds `tuning = [...]`, extends it with `tuning += [...]` for the presets
         // in `preset in (...)`, and each is a Python literal of quoted strings.

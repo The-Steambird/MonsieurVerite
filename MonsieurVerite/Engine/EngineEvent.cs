@@ -121,7 +121,6 @@ public sealed record ProbeEvent : EngineEvent
     public string? Version { get; init; }
 
     public IReadOnlyList<string> Subtitles { get; init; } = [];
-    public string? VsScript { get; init; }
 
     public bool StreamCipher { get; init; }
 }

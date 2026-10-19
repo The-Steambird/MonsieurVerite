@@ -139,14 +139,7 @@ public sealed partial class MainViewModel : ObservableObject
             var done = Items.Count(item => item.Status == ItemStatus.Done);
             var missing = Items.Count(item => item.Key == KeyState.Missing);
             var unsubtitled = Items.Count(item => item.HasSubtitles == false);
-            var summary = Strings.SUMMARY(Items.Count, done, missing, unsubtitled);
-            if (Options.UseVapourSynth)
-            {
-                summary += " · " + Strings.SUMMARY_UNFILTERED(
-                    Items.Count(item => !item.HasVsScript));
-            }
-
-            return summary;
+            return Strings.SUMMARY(Items.Count, done, missing, unsubtitled);
         }
     }
 

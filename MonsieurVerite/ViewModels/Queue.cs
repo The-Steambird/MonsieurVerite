@@ -80,7 +80,6 @@ public sealed partial class QueueItem : ObservableObject
         FileName = Path.GetFileName(fullPath);
         var file = new FileInfo(fullPath);
         Size = file.Exists ? file.Length : 0;
-        HasVsScript = true;
         Detail = "";
     }
 
@@ -133,8 +132,6 @@ public sealed partial class QueueItem : ObservableObject
     public bool? HasSubtitles => Subtitles is null ? null : Subtitles.Count > 0;
 
     public string SubtitlesTip => Strings.CACHED_SUBTITLES_TIP(string.Join(", ", Subtitles ?? []));
-
-    [ObservableProperty] public partial bool HasVsScript { get; set; }
 
     [ObservableProperty] public partial bool StreamCipher { get; set; }
 
@@ -197,7 +194,6 @@ public sealed partial class QueueItem : ObservableObject
         Key = probe.Key ? KeyState.Present : KeyState.Missing;
         Version = probe.Version;
         Subtitles = probe.Subtitles;
-        HasVsScript = probe.VsScript is not null;
         StreamCipher = probe.StreamCipher;
     }
 

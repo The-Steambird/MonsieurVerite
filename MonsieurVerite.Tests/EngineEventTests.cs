@@ -21,7 +21,7 @@ public class EngineEventTests
         { """{"type":"result","file":"a.usm","stem":"a","output":"out.mkv","status":"ok"}""", typeof(ResultEvent) },
         { """{"type":"error","file":"a.usm","message":"boom"}""", typeof(ErrorEvent) },
         { """{"type":"cancelled","file":"a.usm"}""", typeof(CancelledEvent) },
-        { """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":[],"vs_script":null}""", typeof(ProbeEvent) },
+        { """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":[]}""", typeof(ProbeEvent) },
         { """{"type":"crack","file":"a.usm","stem":"a","key":null,"video_key":null,"reason":"x"}""", typeof(CrackEvent) },
         { """{"type":"crack_summary","recovered":1,"unrecovered":0}""", typeof(CrackSummaryEvent) },
         { """{"type":"update","current":"0.4.0","latest":null,"available":false,"url":null,"notes":null,"download":null,"reason":"x"}""", typeof(UpdateEvent) },
@@ -38,12 +38,11 @@ public class EngineEventTests
     public void ProbeKeyIsABooleanNotTheKeyItself()
     {
         var probe = Assert.IsType<ProbeEvent>(EngineEvent.Parse(
-            """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":["EN","JP"],"vs_script":"vs/a.py","stream_cipher":true}"""));
+            """{"type":"probe","file":"a.usm","stem":"a","key":true,"version":"5.3","subtitles":["EN","JP"],"stream_cipher":true}"""));
 
         Assert.True(probe.Key);
         Assert.Equal("5.3", probe.Version);
         Assert.Equal(["EN", "JP"], probe.Subtitles);
-        Assert.Equal("vs/a.py", probe.VsScript);
         Assert.True(probe.StreamCipher);
     }
 

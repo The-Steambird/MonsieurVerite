@@ -18,20 +18,18 @@ public class EngineRunTests : ViewModelTest
         var keyed = Add(viewModel, "a.usm");
         var keyless = Add(viewModel, "b.usm");
 
-        run.Apply(new ProbeEvent { File = "a.usm", Key = true, Version = "5.3", Subtitles = ["EN", "JP"], VsScript = "vs/a.py" });
-        run.Apply(new ProbeEvent { File = "b.usm", Key = false, Subtitles = [], VsScript = null, StreamCipher = true });
+        run.Apply(new ProbeEvent { File = "a.usm", Key = true, Version = "5.3", Subtitles = ["EN", "JP"] });
+        run.Apply(new ProbeEvent { File = "b.usm", Key = false, Subtitles = [], StreamCipher = true });
 
         Assert.Equal(KeyState.Present, keyed.Key);
         Assert.Equal("5.3", keyed.Version);
         Assert.True(keyed.HasSubtitles);
         Assert.Equal("Cached subtitles: EN, JP", keyed.SubtitlesTip);
-        Assert.True(keyed.HasVsScript);
         Assert.False(keyed.StreamCipher);
 
         Assert.Equal(KeyState.Missing, keyless.Key);
         Assert.Null(keyless.Version);
         Assert.False(keyless.HasSubtitles);
-        Assert.False(keyless.HasVsScript);
         Assert.True(keyless.StreamCipher);
     }
 

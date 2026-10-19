@@ -265,19 +265,6 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     }
 
     [Fact]
-    public void SummaryCountsUnfilteredOnlyWhenVapourSynthIsOn()
-    {
-        var viewModel = NewViewModel();
-        Add(viewModel, "a.usm").HasVsScript = false;
-        Add(viewModel, "b.usm");
-
-        Assert.DoesNotContain("unfiltered", viewModel.Summary, StringComparison.Ordinal);
-
-        viewModel.Options.UseVapourSynth = true;
-        Assert.EndsWith("· 1 unfiltered", viewModel.Summary, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void ToggleAllChecksEverythingThenNothing()
     {
         var viewModel = NewViewModel();
