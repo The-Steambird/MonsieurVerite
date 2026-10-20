@@ -12,6 +12,10 @@ public sealed partial class RunOptions : ObservableObject
 
     public const string X265Effort = "ref=6:bframes=8:lookahead-slices=0:rd=4:max-merge=5:tskip=1";
 
+    public const double DefaultCrf = 13;
+
+    public const string DefaultPreset = "slower";
+
     public static IReadOnlyList<string> X265EffortPresets { get; } =
         ["slow", "slower", "veryslow", "placebo"];
 
@@ -59,8 +63,6 @@ public sealed partial class RunOptions : ObservableObject
         DefaultSubtitle = "EN";
         AudioCodec = "flac";
         SkipExisting = true;
-        Crf = 13;
-        Preset = "slower";
     }
 
     [ObservableProperty] public partial string DefaultAudio { get; set; }
@@ -85,9 +87,53 @@ public sealed partial class RunOptions : ObservableObject
 
     [JsonIgnore] public bool Reencodes => UseVapourSynth || HardSub;
 
-    [ObservableProperty] public partial double Crf { get; set; }
+    /// <summary>Null means the default. The default spelled out is stored as null too, because a
+    /// stored value would keep an install on an old default after a release changes it.</summary>
+    public double? Crf
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value == DefaultCrf ? null : value))
+            {
+                OnPropertyChanged(nameof(EffectiveCrf));
+            }
+        }
+    }
 
-    [ObservableProperty] public partial string Preset { get; set; }
+    [JsonIgnore]
+    public double EffectiveCrf
+    {
+        get => Crf ?? DefaultCrf;
+        set => Crf = value;
+    }
+
+    /// <summary>Null means the default, stored the same way as <see cref="Crf" />.</summary>
+    public string? Preset
+    {
+        get;
+        set
+        {
+            var previous = EffectivePreset;
+            if (!SetProperty(ref field, string.IsNullOrEmpty(value) || value == DefaultPreset ? null : value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(EffectivePreset));
+            if (X265Params is null && DefaultX265ParamsFor(previous) != DefaultX265ParamsFor(EffectivePreset))
+            {
+                OnPropertyChanged(nameof(X265ParamLines));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public string EffectivePreset
+    {
+        get => Preset ?? DefaultPreset;
+        set => Preset = value;
+    }
 
     /// <summary>Null = built-in tuning for the preset. Empty = bare preset.</summary>
     [ObservableProperty] public partial string? X265Params { get; set; }
@@ -95,20 +141,12 @@ public sealed partial class RunOptions : ObservableObject
     [JsonIgnore]
     public string X265ParamLines
     {
-        get => (X265Params ?? DefaultX265ParamsFor(Preset)).Replace(':', '\n');
+        get => (X265Params ?? DefaultX265ParamsFor(EffectivePreset)).Replace(':', '\n');
         set
         {
             var joined = string.Join(':',
                 value.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0));
-            X265Params = joined == DefaultX265ParamsFor(Preset) ? null : joined;
-        }
-    }
-
-    partial void OnPresetChanged(string oldValue, string newValue)
-    {
-        if (X265Params is null && DefaultX265ParamsFor(oldValue) != DefaultX265ParamsFor(newValue))
-        {
-            OnPropertyChanged(nameof(X265ParamLines));
+            X265Params = joined == DefaultX265ParamsFor(EffectivePreset) ? null : joined;
         }
     }
 
@@ -152,9 +190,9 @@ public sealed partial class RunOptions : ObservableObject
         if (Reencodes)
         {
             arguments.Add("--crf");
-            arguments.Add(Crf.ToString(CultureInfo.InvariantCulture));
+            arguments.Add(EffectiveCrf.ToString(CultureInfo.InvariantCulture));
             arguments.Add("--preset");
-            arguments.Add(Preset);
+            arguments.Add(EffectivePreset);
             if (X265Params is not null)
             {
                 arguments.Add("--x265-params");

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using MonsieurVerite.ViewModels;
@@ -28,7 +29,30 @@ public class RunOptionsTests(ITestOutputHelper output)
         Assert.Contains(RunOptions.AudioLanguages, language => language.Code == options.DefaultAudio);
         Assert.Contains(RunOptions.SubtitleLanguages, language => language.Code == options.DefaultSubtitle);
         Assert.Contains(options.AudioCodec, RunOptions.AudioCodecs);
-        Assert.Contains(options.Preset, RunOptions.Presets);
+        Assert.Contains(options.EffectivePreset, RunOptions.Presets);
+    }
+
+    [Fact]
+    public void EncodeOptionsStoreOnlyADeparture()
+    {
+        var options = new RunOptions();
+        Assert.Null(options.Crf);
+        Assert.Null(options.Preset);
+
+        options.EffectiveCrf = RunOptions.DefaultCrf;
+        options.EffectivePreset = RunOptions.DefaultPreset;
+        Assert.Null(options.Crf);
+        Assert.Null(options.Preset);
+
+        options.EffectiveCrf = 16;
+        options.EffectivePreset = "slow";
+        var loaded = JsonSerializer.Deserialize<RunOptions>(JsonSerializer.Serialize(options))!;
+        Assert.Equal(16, loaded.Crf);
+        Assert.Equal("slow", loaded.Preset);
+
+        var old = JsonSerializer.Deserialize<RunOptions>($$"""{"Crf": {{RunOptions.DefaultCrf}}, "Preset": "{{RunOptions.DefaultPreset}}"}""")!;
+        Assert.Null(old.Crf);
+        Assert.Null(old.Preset);
     }
 
     [Fact]
@@ -53,6 +77,12 @@ public class RunOptionsTests(ITestOutputHelper output)
         Assert.Equal(Quoted(source, @"tuning = \["), RunOptions.X265Tuning.Split(':'));
         Assert.Equal(Quoted(source, @"tuning \+= \["), RunOptions.X265Effort.Split(':'));
         Assert.Equal(Quoted(source, @"preset in \("), RunOptions.X265EffortPresets);
+
+        Assert.Equal(RunOptions.DefaultCrf,
+            double.Parse(Regex.Match(source, @"^DEFAULT_CRF = ([\d.]+)", RegexOptions.Multiline).Groups[1].Value,
+                CultureInfo.InvariantCulture));
+        Assert.Equal(RunOptions.DefaultPreset,
+            Regex.Match(source, "^DEFAULT_PRESET = \"(\\w+)\"", RegexOptions.Multiline).Groups[1].Value);
     }
 
     [Theory]
@@ -84,7 +114,7 @@ public class RunOptionsTests(ITestOutputHelper output)
     {
         var options = new RunOptions();
 
-        options.X265ParamLines = RunOptions.DefaultX265ParamsFor(options.Preset).Replace(":", " \r\n\r\n");
+        options.X265ParamLines = RunOptions.DefaultX265ParamsFor(options.EffectivePreset).Replace(":", " \r\n\r\n");
 
         Assert.Null(options.X265Params);
     }
