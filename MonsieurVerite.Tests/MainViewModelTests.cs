@@ -68,8 +68,8 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     // Offering a restart switches the strings, and English is the only switch that leaves them
     // as every other test expects.
     [Theory]
-    [InlineData("en-US", "de-DE", true)]
-    [InlineData("de-DE", "de-DE", false)]
+    [InlineData("en-US", "ja-JP", true)]
+    [InlineData("ja-JP", "ja-JP", false)]
     public void ARestartIsOfferedOnlyForANewLanguage(
         string chosen, string previous, bool offered)
     {
@@ -91,7 +91,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         };
         var shown = DeclineMessages(viewModel);
 
-        viewModel.OfferRestartForLanguage("de-DE");
+        viewModel.OfferRestartForLanguage("ja-JP");
 
         Assert.Empty(shown);
         Assert.Contains(Strings.LANGUAGE_CHANGED_LOG, viewModel.Log);

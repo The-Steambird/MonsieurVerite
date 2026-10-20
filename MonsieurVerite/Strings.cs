@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite;
 
@@ -24,34 +25,35 @@ public static partial class Strings
             .Select(name => Path.GetFileNameWithoutExtension(name[Prefix.Length..]))
             .ToList();
 
-    /// <summary>The culture the UI asked for, passed to the engine as CHARLOTTE_LANG.</summary>
+    /// <summary>The language picked in Settings, passed to the engine as CHARLOTTE_LANG.</summary>
     public static string Language { get; private set; } = SourceLanguage;
 
-    /// <summary>Switches to the closest language there is a file for, else English.</summary>
-    public static void Use(string language, string appDirectory)
+    public static void Use(string language)
     {
         Language = language;
-        translation = Translations.Resolve(CultureInfo.GetCultureInfo(language), appDirectory);
+        translation = language == SourceLanguage ? null : Load(language);
+    }
+
+    internal static List<Language> Choices() =>
+        Languages
+            .Select(code => new Language(code, NativeName(code, Languages)))
+            .OrderBy(choice => choice.Name, StringComparer.CurrentCulture)
+            .ToList();
+
+    internal static string NativeName(string code, IReadOnlyCollection<string> codes)
+    {
+        var culture = CultureInfo.GetCultureInfo(code);
+        var language = culture.TwoLetterISOLanguageName;
+        var shared = codes.Count(other =>
+            CultureInfo.GetCultureInfo(other).TwoLetterISOLanguageName == language) > 1;
+        var name = shared || culture.IsNeutralCulture
+            ? culture.NativeName
+            : CultureInfo.GetCultureInfo(language).NativeName;
+        return char.ToUpper(name[0], culture) + name[1..];
     }
 
     /// <summary>A string with its placeholders left in, for text that puts links in them.</summary>
     public static string Template(string key) => Text(key);
-
-    internal static string? Closest(CultureInfo culture, IEnumerable<string> languages)
-    {
-        var available = languages.ToList();
-        foreach (var wanted in Lineage(culture))
-        {
-            var match = available.FirstOrDefault(language =>
-                Lineage(CultureInfo.GetCultureInfo(language)).Contains(wanted));
-            if (match is not null)
-            {
-                return match;
-            }
-        }
-
-        return null;
-    }
 
     internal static Dictionary<string, string> Load(string language)
     {
@@ -63,17 +65,6 @@ public static partial class Strings
 
     [GeneratedRegex(@"\{([a-z][a-z0-9_]*)\}")]
     internal static partial Regex Placeholder();
-
-    internal static HashSet<string> Placeholders(string text) =>
-        Placeholder().Matches(text).Select(match => match.Value).ToHashSet();
-
-    private static IEnumerable<string> Lineage(CultureInfo culture)
-    {
-        for (var current = culture; current.Name.Length > 0; current = current.Parent)
-        {
-            yield return current.Name;
-        }
-    }
 
     private static string Text(string key) =>
         translation?.GetValueOrDefault(key) is { Length: > 0 } text ? text : English[key];

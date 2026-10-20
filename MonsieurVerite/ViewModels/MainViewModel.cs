@@ -2,11 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Net.Http;
-using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MonsieurVerite.Engine;
 
 namespace MonsieurVerite.ViewModels;
 
@@ -17,14 +14,14 @@ public sealed partial class MainViewModel : ObservableObject
     private CancellationTokenSource? cancellation;
     private EngineRun? run;
 
-    public MainViewModel(EngineLaunchProfile? engine, Settings settings)
+    public MainViewModel(string? engine, Settings settings)
     {
         this.settings = settings;
         Engine = engine;
 
         SourceDirectory = settings.SourceDirectory ?? "";
         OutputDirectory = settings.OutputDirectory
-                          ?? Path.Combine(engine?.WorkingDirectory ?? AppContext.BaseDirectory,
+                          ?? Path.Combine(Path.GetDirectoryName(engine) ?? AppContext.BaseDirectory,
                               "output");
         IsLogOpen = true;
         StageText = Strings.IDLE;
@@ -70,7 +67,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasEngine), nameof(CanRunEngine))]
-    public partial EngineLaunchProfile? Engine { get; private set; }
+    public partial string? Engine { get; private set; }
 
     public bool HasEngine => Engine is not null;
 
@@ -281,7 +278,7 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        Strings.Use(settings.Language, AppContext.BaseDirectory);
+        Strings.Use(settings.Language);
 
         if (IsRunning)
         {
@@ -303,14 +300,14 @@ public sealed partial class MainViewModel : ObservableObject
     private void ApplyEngineSetting(string previousPath)
     {
         var engine = settings.ResolveEngine();
-        if (engine?.FileName == Engine?.FileName && EnginePath == previousPath)
+        if (engine == Engine && EnginePath == previousPath)
         {
             return;
         }
 
         Engine = engine;
         EngineVersion = null;
-        AppendLog(engine is null ? NoEngineMessage : Strings.ENGINE_LOG(engine.FileName));
+        AppendLog(engine is null ? NoEngineMessage : Strings.ENGINE_LOG(engine));
     }
 
     public void SaveSettings()
@@ -524,35 +521,7 @@ public sealed partial class MainViewModel : ObservableObject
                 Strings.ENGINE_MISSING_MESSAGE, Detail: detail));
         }
 
-        var translation = RefreshTranslationOnStartupAsync();
         await CheckForUpdatesOnStartupAsync().ConfigureAwait(true);
-        await translation.ConfigureAwait(true);
-    }
-
-    private async Task RefreshTranslationOnStartupAsync()
-    {
-        if (!settings.CheckForUpdatesOnStartup)
-        {
-            return;
-        }
-
-        var culture = CultureInfo.GetCultureInfo(Strings.Language);
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        try
-        {
-            var saved = await Translations.RefreshAsync(AppContext.BaseDirectory, culture,
-                timeout.Token).ConfigureAwait(true);
-            if (saved)
-            {
-                AppendLog(Strings.TRANSLATION_UPDATED_LOG);
-            }
-        }
-        catch (Exception e) when (e is HttpRequestException or OperationCanceledException
-                                      or IOException or JsonException
-                                      or UnauthorizedAccessException)
-        {
-            Debug.WriteLine(e);
-        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunEngine))]
@@ -602,8 +571,6 @@ public sealed partial class MainViewModel : ObservableObject
         if (check.Install is { Installed: true })
         {
             AppendLog(Strings.UPDATE_RESTARTING_LOG);
-            // A translation downloaded for the old version would override the new one's strings.
-            Translations.DeleteAll(AppContext.BaseDirectory);
             Updater.Relaunch();
             CloseWindow?.Invoke();
         }
@@ -615,7 +582,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// </summary>
     private async Task<EngineRun> RunEngineAsync(IReadOnlyList<string> arguments, int jobCount)
     {
-        if (Engine is not { } profile)
+        if (Engine is not { } engine)
         {
             throw new InvalidOperationException("No engine is configured.");
         }
@@ -625,7 +592,7 @@ public sealed partial class MainViewModel : ObservableObject
             throw new InvalidOperationException("A run is already in progress.");
         }
 
-        var engineRun = new EngineRun(this, profile, jobCount);
+        var engineRun = new EngineRun(this, engine, jobCount);
         using var source = new CancellationTokenSource();
         cancellation = source;
         run = engineRun;
@@ -658,7 +625,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ClearLog() => Log.Clear();
 
-    partial void OnEngineChanged(EngineLaunchProfile? value) => RefreshCommands();
+    partial void OnEngineChanged(string? value) => RefreshCommands();
 
     partial void OnIsRunningChanged(bool value) => RefreshCommands();
 

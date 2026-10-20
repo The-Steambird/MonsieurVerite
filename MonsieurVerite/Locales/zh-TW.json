@@ -112,7 +112,6 @@
   "UPDATE_AVAILABLE_LOG": "Charlotte {latest} 已推出（目前執行 {current}）。",
   "UPDATE_CHECK_FAILED_LOG": "檢查更新失敗：{reason}",
   "UP_TO_DATE_LOG": "Charlotte {version} 已是最新版本。",
-  "TRANSLATION_UPDATED_LOG": "已下載更新的翻譯，將在 Charlotte 下次啟動時套用。",
   "LANGUAGE_CHANGED_LOG": "新語言將在 Charlotte 下次啟動時套用。",
   "UNKNOWN_EVENT_LOG": "引擎傳送了此 GUI 無法辨識的事件類型：{kind}",
   "RECOVERED_KEYS_SET_ASIDE_LOG": "無法讀取 {path}。已將其重新命名為 {renamed}，並建立了新檔案。",

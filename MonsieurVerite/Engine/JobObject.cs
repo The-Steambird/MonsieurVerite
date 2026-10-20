@@ -48,21 +48,9 @@ public sealed partial class JobObject : IDisposable
         }
     }
 
-    public void Assign(Process process)
-    {
-        if (!disposed)
-        {
-            _ = AssignProcessToJobObject(handle, process.Handle);
-        }
-    }
+    public void Assign(Process process) => _ = AssignProcessToJobObject(handle, process.Handle);
 
-    public void Terminate()
-    {
-        if (!disposed)
-        {
-            _ = TerminateJobObject(handle, 1);
-        }
-    }
+    public void Terminate() => _ = TerminateJobObject(handle, 1);
 
     public void Dispose()
     {

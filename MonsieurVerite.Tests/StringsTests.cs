@@ -65,18 +65,14 @@ public class StringsTests
         Assert.Equal("Could not read {error}: boom", Strings.FOLDER_UNREADABLE_LOG("{error}", "boom"));
     }
 
-    [Theory]
-    [InlineData("de-AT", "de-DE")]
-    [InlineData("zh-HK", "zh-TW")]
-    [InlineData("zh-SG", "zh-CN")]
-    [InlineData("pt-PT", "pt-BR")]
-    [InlineData("en-GB", "en-US")]
-    [InlineData("fr-FR", null)]
-    public void TheClosestLanguageIsChosen(string culture, string? expected)
+    [Fact]
+    public void ALanguageNamesItsRegionOnlyWhenAnotherChoiceSharesIt()
     {
-        string[] languages = ["en-US", "de-DE", "zh-CN", "zh-TW", "pt-BR"];
+        string[] codes = ["en-US", "es-ES", "zh-CN", "zh-TW"];
 
-        Assert.Equal(expected, Strings.Closest(CultureInfo.GetCultureInfo(culture), languages));
+        Assert.Equal("Español", Strings.NativeName("es-ES", codes));
+        Assert.Equal(CultureInfo.GetCultureInfo("zh-CN").NativeName, Strings.NativeName("zh-CN", codes));
+        Assert.NotEqual(Strings.NativeName("zh-CN", codes), Strings.NativeName("zh-TW", codes));
     }
 
     private static List<string> Placeholders(string text) =>

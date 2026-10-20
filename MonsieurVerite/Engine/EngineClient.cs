@@ -9,7 +9,7 @@ public sealed class EngineClient : IAsyncDisposable
 {
     private const int StandardErrorTailCapacity = 20;
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
-    private readonly EngineLaunchProfile profile;
+    private readonly string executablePath;
     private readonly JobObject job = new();
     private readonly Queue<string> standardErrorTail = new();
 
@@ -20,7 +20,7 @@ public sealed class EngineClient : IAsyncDisposable
     private Task pumped = Task.CompletedTask;
     private bool disposed;
 
-    public EngineClient(EngineLaunchProfile profile) => this.profile = profile;
+    public EngineClient(string executablePath) => this.executablePath = executablePath;
 
     /// <summary>Completes once the engine has exited and both of its pipes are drained.</summary>
     public ChannelReader<EngineEvent> Events => events.Reader;
@@ -36,8 +36,8 @@ public sealed class EngineClient : IAsyncDisposable
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = profile.FileName,
-            WorkingDirectory = profile.WorkingDirectory,
+            FileName = executablePath,
+            WorkingDirectory = Path.GetDirectoryName(executablePath) ?? ".",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,
@@ -49,13 +49,13 @@ public sealed class EngineClient : IAsyncDisposable
         };
         startInfo.Environment["CHARLOTTE_LANG"] = Strings.Language;
 
-        foreach (var argument in profile.BaseArguments.Concat(arguments))
+        foreach (var argument in arguments)
         {
             startInfo.ArgumentList.Add(argument);
         }
 
         var started = Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Could not start '{profile.FileName}'.");
+            ?? throw new InvalidOperationException($"Could not start '{executablePath}'.");
         process = started;
         job.Assign(started);
         var exit = PumpAsync(started);

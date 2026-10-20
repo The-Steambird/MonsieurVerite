@@ -5,7 +5,7 @@ using MonsieurVerite.Engine;
 namespace MonsieurVerite.ViewModels;
 
 /// <summary>Drives one engine process and is the only place its events are read.</summary>
-internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile, int jobCount)
+internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobCount)
 {
     private EngineClient? client;
     private CancellationToken cancellation;
@@ -23,7 +23,7 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
 
     public async Task RunAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
-        await using var engine = new EngineClient(profile);
+        await using var engine = new EngineClient(enginePath);
         using var registration = cancellationToken.Register(engine.SendCancel);
         client = engine;
         cancellation = cancellationToken;
@@ -64,7 +64,7 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
         catch (Win32Exception e)
         {
             failure = Strings.ENGINE_NOT_STARTED_DETAIL;
-            owner.AppendLog(Strings.ENGINE_START_FAILED_LOG(profile.FileName, e.Message));
+            owner.AppendLog(Strings.ENGINE_START_FAILED_LOG(enginePath, e.Message));
         }
         catch (Exception)
         {

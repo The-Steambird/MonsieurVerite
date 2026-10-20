@@ -1,7 +1,6 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MonsieurVerite.Engine;
 using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite;
@@ -36,9 +35,7 @@ public sealed class Settings
     public string Language
     {
         get;
-        set => field = string.IsNullOrWhiteSpace(value) || !Translations.IsCulture(value)
-            ? Strings.SourceLanguage
-            : value;
+        set => field = Strings.Languages.Contains(value) ? value : Strings.SourceLanguage;
     } = Strings.SourceLanguage;
 
     public RunOptions Options { get; set; } = new();
@@ -62,8 +59,7 @@ public sealed class Settings
             ? Strings.SETTINGS_UNREADABLE_LOG(failure.Path, failure.Reason)
             : null;
 
-    public EngineLaunchProfile? ResolveEngine() =>
-        File.Exists(EffectiveEnginePath) ? EngineLaunchProfile.At(EffectiveEnginePath) : null;
+    public string? ResolveEngine() => File.Exists(EffectiveEnginePath) ? EffectiveEnginePath : null;
 
     public static Settings Load() => Load(FilePath);
 

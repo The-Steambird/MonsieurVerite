@@ -2,7 +2,6 @@ using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Input;
 using MonsieurVerite.Views;
 
 namespace MonsieurVerite.Tests;
@@ -70,26 +69,25 @@ public class ReleaseNotesTests
     });
 
     [Fact]
-    public void TablesQuotesCodeAndTaskListsRender() => OnSta(() =>
+    public void QuotesCodeAndStrikethroughRender() => OnSta(() =>
     {
         var blocks = ReleaseNotes.Render("""
-            | Key | Value |
-            | --- | ----- |
-            | a   | ~~b~~ |
-
-            > quoted
+            > quoted ~~gone~~
 
             ```
             code <here>
             ```
-
-            - [x] done
-            - [ ] todo
             """);
 
-        Assert.Equal(
-            ["Key", "Value", "a", "b", "quoted", "code <here>", "\uE73A", "done", "\uE739", "todo"],
-            blocks.SelectMany(Texts));
+        Assert.Equal(["quoted gone", "code <here>"], blocks.SelectMany(Texts));
+    });
+
+    [Fact]
+    public void TablesAndTaskListsShowAsTheirText() => OnSta(() =>
+    {
+        var blocks = ReleaseNotes.Render("| Key | Value |\n| --- | ----- |\n\n- [x] done");
+
+        Assert.Equal(["| Key | Value |\n| --- | ----- |", "\u2022", "[x] done"], blocks.SelectMany(Texts));
     });
 
     [Fact]
@@ -97,14 +95,13 @@ public class ReleaseNotesTests
         Assert.Equal(["Pass --key <hex> here"], ReleaseNotes.Render("Pass `--key <hex>` here").SelectMany(Texts)));
 
     [Fact]
-    public void LinkedImagesOpenTheirLink() => OnSta(() =>
+    public void LinkedImagesShowTheImage() => OnSta(() =>
     {
         var blocks = ReleaseNotes.Render(
             "[![shot](https://example.invalid/a.png)](https://example.com/video)\n\n" +
             "Built by [![ci](https://example.invalid/b.svg)](https://example.com/ci) today");
 
-        var image = Assert.IsType<Image>(blocks[0]);
-        Assert.Equal(Cursors.Hand, image.Cursor);
+        Assert.IsType<Image>(blocks[0]);
         Assert.Equal(["Built by ci today"], Texts(blocks[1]));
         Assert.Equal(["https://example.com/ci"], Links(blocks[1]).Select(link => link.NavigateUri.AbsoluteUri));
     });

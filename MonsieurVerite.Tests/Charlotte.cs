@@ -1,7 +1,5 @@
 using System.IO;
 
-using MonsieurVerite.Engine;
-
 using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
@@ -14,7 +12,7 @@ internal static class Charlotte
 {
     public static string? Checkout { get; } = Find();
 
-    public static EngineLaunchProfile? LiveEngine(ITestOutputHelper output)
+    public static string? LiveEngine(ITestOutputHelper output)
     {
         var engine = new Settings().ResolveEngine();
         if (engine is null)

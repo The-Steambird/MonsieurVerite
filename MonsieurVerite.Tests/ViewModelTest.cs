@@ -1,6 +1,5 @@
 using System.IO;
 
-using MonsieurVerite.Engine;
 using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite.Tests;
@@ -16,11 +15,11 @@ public abstract class ViewModelTest : IDisposable
     }
 
     // Pointing the engine path into the scratch folder puts recovered_keys.json there too.
-    protected MainViewModel NewViewModel(EngineLaunchProfile? engine) =>
+    protected MainViewModel NewViewModel(string? engine) =>
         new(engine, new Settings { EnginePath = Scratch.File("charlotte-cli.exe") });
 
     protected MainViewModel NewViewModel() =>
-        NewViewModel(EngineLaunchProfile.At(Scratch.File("charlotte-cli.exe")));
+        NewViewModel(Scratch.File("charlotte-cli.exe"));
 
     protected QueueItem Add(MainViewModel viewModel, string name)
     {
@@ -42,15 +41,10 @@ public abstract class ViewModelTest : IDisposable
         return shown;
     }
 
-    protected EngineLaunchProfile FakeEngine(params string[] lines)
+    protected string FakeEngine(params string[] lines)
     {
         var script = Scratch.File(Path.GetRandomFileName() + ".cmd");
         File.WriteAllLines(script, lines);
-        return new EngineLaunchProfile
-        {
-            FileName = "cmd.exe",
-            BaseArguments = ["/c", script],
-            WorkingDirectory = Scratch.Root,
-        };
+        return script;
     }
 }

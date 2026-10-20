@@ -8,7 +8,7 @@ namespace MonsieurVerite.Views;
 public partial class SettingsDialog : DialogWindow
 {
     private readonly Settings settings;
-    private readonly List<Language> languages = Translations.Choices(AppContext.BaseDirectory);
+    private readonly List<Language> languages = Strings.Choices();
     private RunOptions working;
 
     public SettingsDialog(Settings settings)

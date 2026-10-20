@@ -18,7 +18,7 @@ public partial class App
     {
         Updater.WaitForPredecessor(e.Args);
         var settings = Settings.Load();
-        Strings.Use(settings.Language, AppContext.BaseDirectory);
+        Strings.Use(settings.Language);
         base.OnStartup(e);
         Updater.DeleteStaleFiles(AppContext.BaseDirectory);
         ThemeMode = ThemeMode.Dark;

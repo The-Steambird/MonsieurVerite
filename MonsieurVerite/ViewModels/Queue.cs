@@ -44,13 +44,6 @@ public sealed class QueueItems : ObservableCollection<QueueItem>
         base.InsertItem(index, item);
     }
 
-    protected override void SetItem(int index, QueueItem item)
-    {
-        this[index].PropertyChanged -= OnRowChanged;
-        item.PropertyChanged += OnRowChanged;
-        base.SetItem(index, item);
-    }
-
     protected override void RemoveItem(int index)
     {
         this[index].PropertyChanged -= OnRowChanged;

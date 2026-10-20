@@ -1,35 +1,30 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using Markdig;
 using Markdig.Extensions.EmphasisExtras;
-using Markdig.Extensions.TaskLists;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 using Block = Markdig.Syntax.Block;
 using Inline = System.Windows.Documents.Inline;
 using MdInline = Markdig.Syntax.Inlines.Inline;
-using Table = Markdig.Extensions.Tables.Table;
-using TableCell = Markdig.Extensions.Tables.TableCell;
-using TableRow = Markdig.Extensions.Tables.TableRow;
 
 namespace MonsieurVerite.Views;
 
 /// <summary>Renders GitHub release notes as WPF elements, with Markdig doing the parsing.</summary>
 internal static partial class ReleaseNotes
 {
+    private static readonly HttpClient Http = CreateClient();
+
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
-        .UsePipeTables()
         .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
-        .UseTaskLists()
         .UseAutoLinks()
         .UseEmojiAndSmiley(enableSmileys: false)
         .Build();
@@ -56,7 +51,6 @@ internal static partial class ReleaseNotes
         HtmlBlock html => Html(html.Lines.ToString()),
         CodeBlock code => [Code(code)],
         ThematicBreakBlock => [Rule()],
-        Table table => [TableGrid(table)],
         ContainerBlock container => Blocks(container),
         _ => [],
     };
@@ -129,9 +123,9 @@ internal static partial class ReleaseNotes
 
     private static Image? Picture(MdInline inline) => inline switch
     {
-        LinkInline { IsImage: true } image => Picture(image.Url, null),
-        LinkInline { FirstChild: LinkInline image } link => Picture(image.Url, link.Url),
-        HtmlInline html => Picture(Source(html.Tag), null),
+        LinkInline { IsImage: true } image => Picture(image.Url),
+        LinkInline { FirstChild: LinkInline image } => Picture(image.Url),
+        HtmlInline html => Picture(Source(html.Tag)),
         _ => null,
     };
 
@@ -161,12 +155,6 @@ internal static partial class ReleaseNotes
     private static Grid Item(ListItemBlock item, string marker, bool loose)
     {
         var bullet = Text([new Run(marker)]);
-        if (item.Count > 0 && item[0] is ParagraphBlock { Inline.FirstChild: TaskList task })
-        {
-            bullet = Text([new Run(task.Checked ? "\uE73A" : "\uE739")]);
-            bullet.SetResourceReference(TextBlock.FontFamilyProperty, "IconFont");
-        }
-
         bullet.MinWidth = 18;
         bullet.Margin = new Thickness(0, 0, 4, 0);
         bullet.SetResourceReference(TextBlock.ForegroundProperty, "FaintBrush");
@@ -217,7 +205,7 @@ internal static partial class ReleaseNotes
         var blocks = new List<FrameworkElement>();
         foreach (Match image in ImageTag().Matches(html))
         {
-            if (Picture(Source(image.Value), null) is { } picture)
+            if (Picture(Source(image.Value)) is { } picture)
             {
                 blocks.Add(picture);
             }
@@ -262,57 +250,7 @@ internal static partial class ReleaseNotes
         return rule;
     }
 
-    private static Grid TableGrid(Table table)
-    {
-        var rows = table.OfType<TableRow>().ToList();
-        var grid = new Grid { Margin = new Thickness(0, 0, 0, 10) };
-        var columns = rows.Max(row => row.Count);
-        for (var c = 0; c < columns; c++)
-        {
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-        }
-
-        for (var r = 0; r < rows.Count; r++)
-        {
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var cells = rows[r].OfType<TableCell>().ToList();
-            for (var c = 0; c < cells.Count; c++)
-            {
-                var cell = Cell(cells[c], rows[r].IsHeader);
-                Grid.SetRow(cell, r);
-                Grid.SetColumn(cell, c);
-                grid.Children.Add(cell);
-            }
-        }
-
-        return grid;
-    }
-
-    private static Border Cell(TableCell cell, bool header)
-    {
-        var content = new StackPanel();
-        foreach (var block in Blocks(cell))
-        {
-            block.Margin = new Thickness(0);
-            content.Children.Add(block);
-        }
-
-        if (header)
-        {
-            TextElement.SetFontWeight(content, FontWeights.SemiBold);
-        }
-
-        var border = new Border
-        {
-            BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(0, 6, 12, 6),
-            Child = content,
-        };
-        border.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
-        return border;
-    }
-
-    private static Image? Picture(string? source, string? link)
+    private static Image? Picture(string? source)
     {
         if (WebLink(source) is not { } uri)
         {
@@ -327,13 +265,6 @@ internal static partial class ReleaseNotes
             Margin = new Thickness(0, 0, 0, 12),
         };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
-        if (WebLink(link) is { } target)
-        {
-            image.Cursor = Cursors.Hand;
-            image.MouseLeftButtonUp += (_, _) => image.RaiseEvent(
-                new RequestNavigateEventArgs(target, null) { RoutedEvent = Hyperlink.RequestNavigateEvent });
-        }
-
         _ = LoadAsync(image, uri);
         return image;
     }
@@ -344,7 +275,7 @@ internal static partial class ReleaseNotes
     {
         try
         {
-            var bytes = await GitHub.Http.GetByteArrayAsync(source).ConfigureAwait(true);
+            var bytes = await Http.GetByteArrayAsync(source).ConfigureAwait(true);
             var width = BitmapDecoder.Create(new MemoryStream(bytes), BitmapCreateOptions.DelayCreation,
                 BitmapCacheOption.None).Frames[0].PixelWidth;
             var bitmap = new BitmapImage();
@@ -361,6 +292,13 @@ internal static partial class ReleaseNotes
         {
             // An image that cannot be fetched or decoded stays empty and takes no space.
         }
+    }
+
+    private static HttpClient CreateClient()
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("charlotte-gui", App.Version));
+        return client;
     }
 
     private static TextBlock Text(List<Inline> inlines)
@@ -392,7 +330,6 @@ internal static partial class ReleaseNotes
     // A soft line break becomes a real one because GitHub renders release notes that way.
     private static Inline? Inline(MdInline inline) => inline switch
     {
-        LiteralInline { PreviousSibling: TaskList } literal => new Run(literal.Content.ToString().TrimStart()),
         LiteralInline literal => new Run(literal.Content.ToString()),
         HtmlEntityInline entity => new Run(entity.Transcoded.ToString()),
         CodeInline code => CodeSpan(code.Content),

@@ -112,7 +112,6 @@
   "UPDATE_AVAILABLE_LOG": "Charlotte {latest} が利用可能です（実行中: {current}）。",
   "UPDATE_CHECK_FAILED_LOG": "アップデートの確認に失敗しました: {reason}",
   "UP_TO_DATE_LOG": "Charlotte {version} は最新です。",
-  "TRANSLATION_UPDATED_LOG": "更新された翻訳をダウンロードしました。次回 Charlotte の起動時に適用されます。",
   "LANGUAGE_CHANGED_LOG": "新しい言語は次回 Charlotte の起動時に適用されます。",
   "UNKNOWN_EVENT_LOG": "この GUI が認識できない種類のイベントをエンジンが送信しました: {kind}",
   "RECOVERED_KEYS_SET_ASIDE_LOG": "{path} を読み込めませんでした。{renamed} に名前を変更し、新しいファイルを作成しました。",

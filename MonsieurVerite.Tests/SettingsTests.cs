@@ -81,16 +81,17 @@ public class SettingsTests : IDisposable
     }
 
     [Fact]
-    public void TheLanguageIsEnglishUnlessARealOneWasChosen()
+    public void TheLanguageIsEnglishUnlessABuiltInOneWasChosen()
     {
         var path = scratch.File("settings.json");
-        new Settings { Language = "de-DE" }.Save(path);
-        Assert.Equal("de-DE", Settings.Load(path).Language);
+        new Settings { Language = "ja-JP" }.Save(path);
+        Assert.Equal("ja-JP", Settings.Load(path).Language);
 
         File.WriteAllText(path, """{ "Language": null }""");
         Assert.Equal("en-US", Settings.Load(path).Language);
         Assert.Equal("en-US", new Settings().Language);
         Assert.Equal("en-US", new Settings { Language = "" }.Language);
         Assert.Equal("en-US", new Settings { Language = "xx-QQ" }.Language);
+        Assert.Equal("en-US", new Settings { Language = "de-DE" }.Language);
     }
 }

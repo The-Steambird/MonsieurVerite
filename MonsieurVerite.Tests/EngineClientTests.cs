@@ -69,12 +69,7 @@ public class EngineClientTests(ITestOutputHelper output)
         using var scratch = new ScratchFolder();
         var script = scratch.File("engine.cmd");
         File.WriteAllText(script, """@echo {"type":"log","level":"info","message":"%CHARLOTTE_LANG%"}""");
-        await using var client = new EngineClient(new EngineLaunchProfile
-        {
-            FileName = "cmd.exe",
-            BaseArguments = ["/c", script],
-            WorkingDirectory = scratch.Root,
-        });
+        await using var client = new EngineClient(script);
 
         var exit = client.Start([]);
         var events = await client.Events.ReadAllAsync().ToListAsync();

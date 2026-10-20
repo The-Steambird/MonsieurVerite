@@ -30,22 +30,19 @@ public class QueueTests
     }
 
     [Fact]
-    public void RemovedAndReplacedRowsStopRaisingRowChanged()
+    public void RemovedRowsStopRaisingRowChanged()
     {
         var removed = new QueueItem("a.usm");
-        var replaced = new QueueItem("b.usm");
-        var replacement = new QueueItem("c.usm");
-        var items = new QueueItems { removed, replaced };
+        var kept = new QueueItem("b.usm");
+        var items = new QueueItems { removed, kept };
         items.Remove(removed);
-        items[0] = replacement;
         var senders = new List<object?>();
         items.RowChanged += (sender, _) => senders.Add(sender);
 
         removed.IsChecked = true;
-        replaced.IsChecked = true;
-        replacement.IsChecked = true;
+        kept.IsChecked = true;
 
-        Assert.Equal([replacement], senders);
+        Assert.Equal([kept], senders);
     }
 
     [Theory]
