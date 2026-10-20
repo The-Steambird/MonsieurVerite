@@ -66,6 +66,10 @@ public class StringsTests
     }
 
     [Fact]
+    public void ThePickerListsEveryBuiltInLanguage() =>
+        Assert.Equal(Strings.Languages.Order(), Strings.Choices().Select(choice => choice.Code).Order());
+
+    [Fact]
     public void ALanguageNamesItsRegionOnlyWhenAnotherChoiceSharesIt()
     {
         string[] codes = ["en-US", "es-ES", "zh-CN", "zh-TW"];

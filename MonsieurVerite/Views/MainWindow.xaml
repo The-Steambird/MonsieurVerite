@@ -37,7 +37,7 @@
         <Rectangle x:Name="Bleed" Grid.RowSpan="5" IsHitTestVisible="False"
                    RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
-        <Border x:Name="Toolbar" Grid.Row="0" Height="48" Background="{StaticResource LayerBrush}"
+        <Border Grid.Row="0" Height="48" Background="{StaticResource LayerBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="12,0,0,0">

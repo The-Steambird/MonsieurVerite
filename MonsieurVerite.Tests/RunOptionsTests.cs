@@ -102,7 +102,7 @@ public class RunOptionsTests(ITestOutputHelper output)
     {
         var options = new RunOptions();
 
-        Assert.Equal(RunOptions.DefaultX265ParamsFor("slower").Replace(':', '\n'), options.X265ParamLines);
+        Assert.Equal(RunOptions.DefaultX265ParamsFor(RunOptions.DefaultPreset).Replace(':', '\n'), options.X265ParamLines);
 
         options.Preset = "fast";
         Assert.Equal(RunOptions.X265Tuning.Replace(':', '\n'), options.X265ParamLines);
@@ -176,7 +176,9 @@ public class RunOptionsTests(ITestOutputHelper output)
             [
                 "--default-audio", "en", "--default-sub", "JP", "--audio-codec", "opus",
                 "--no-cleanup", "--skip-existing", "--flat",
-                "--vapoursynth", "--hard-sub", "--crf", "13", "--preset", "slower",
+                "--vapoursynth", "--hard-sub",
+                "--crf", RunOptions.DefaultCrf.ToString(CultureInfo.InvariantCulture),
+                "--preset", RunOptions.DefaultPreset,
             ],
             options.ToArguments());
     }

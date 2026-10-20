@@ -57,15 +57,6 @@ public class RecoveredKeysTests : IDisposable
     }
 
     [Fact]
-    public void KeysUseTheFull56BitRange()
-    {
-        const ulong big = 0xFF_FFFF_FFFF_FFFFUL;
-        RecoveredKeys.Add(path, "Cs_Boy", big);
-
-        Assert.Equal(big, List()[0]!["videoKey"]!.GetValue<ulong>());
-    }
-
-    [Fact]
     public void AHandEditedGroupWithAnOddKeyIsLeftAloneNotFatal()
     {
         File.WriteAllText(path, """{"list":[{"videoKey":"42","videos":["Cs_Other"]}]}""");

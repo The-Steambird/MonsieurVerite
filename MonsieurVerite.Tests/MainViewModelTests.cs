@@ -260,7 +260,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     }
 
     [Fact]
-    public void SummaryCountsDoneAndMissing()
+    public void SummaryCountsDoneMissingKeysAndNoSubtitles()
     {
         var viewModel = NewViewModel();
         Add(viewModel, "a.usm").MarkDone(Scratch.File("a.mkv"));
