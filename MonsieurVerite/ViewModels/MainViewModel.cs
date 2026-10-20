@@ -598,47 +598,21 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         AppendLog(Strings.UPDATE_AVAILABLE_LOG(update.Latest, update.Current));
-        var offer = new Message(Strings.UPDATE_AVAILABLE_TITLE(update.Latest),
-            Strings.UPDATE_AVAILABLE_MESSAGE(update.Current, update.Latest),
-            Strings.UPDATE, Strings.CANCEL, Notes: update.Notes, NotesUrl: update.Url);
-        var accepted = ShowMessage?.Invoke(offer) == true;
-        if (accepted && await InstallUpdateAsync().ConfigureAwait(true))
+        // A failed install needs nothing here, because the engine already logged its reason.
+        if (check.Install is { Installed: true })
         {
+            AppendLog(Strings.UPDATE_RESTARTING_LOG);
+            // A translation downloaded for the old version would override the new one's strings.
+            Translations.DeleteAll(AppContext.BaseDirectory);
             Updater.Relaunch();
             CloseWindow?.Invoke();
         }
     }
 
-    private async Task<bool> InstallUpdateAsync()
-    {
-        var installed = false;
-        await RunExclusiveAsync(null, async token =>
-        {
-            try
-            {
-                var status = new Progress<string>(text => StageText = text);
-                var written = await Updater
-                    .InstallLatestAsync(AppContext.BaseDirectory, status, token)
-                    .ConfigureAwait(true);
-                AppendLog(Strings.UPDATE_INSTALLED_LOG(written.Count));
-                installed = true;
-            }
-            catch (OperationCanceledException)
-            {
-                AppendLog(token.IsCancellationRequested
-                    ? Strings.UPDATE_CANCELLED_LOG
-                    : Strings.UPDATE_TIMED_OUT_LOG);
-            }
-            catch (Exception e) when (e is HttpRequestException or IOException
-                                          or InvalidDataException or UnauthorizedAccessException
-                                          or JsonException)
-            {
-                AppendLog(Strings.UPDATE_FAILED_LOG(e.Message));
-            }
-        }).ConfigureAwait(true);
-        return installed;
-    }
-
+    /// <summary>
+    /// This is the one owner of <see cref="IsRunning"/>, the cancellation source and the current
+    /// run.
+    /// </summary>
     private async Task<EngineRun> RunEngineAsync(IReadOnlyList<string> arguments, int jobCount)
     {
         if (Engine is not { } profile)
@@ -646,30 +620,19 @@ public sealed partial class MainViewModel : ObservableObject
             throw new InvalidOperationException("No engine is configured.");
         }
 
-        var engineRun = new EngineRun(this, profile, jobCount);
-        await RunExclusiveAsync(engineRun, token => engineRun.RunAsync(arguments, token))
-            .ConfigureAwait(true);
-        return engineRun;
-    }
-
-    /// <summary>
-    /// This is the one owner of <see cref="IsRunning"/>, the cancellation source and the current
-    /// run. An update install passes null because it has no engine run.
-    /// </summary>
-    private async Task RunExclusiveAsync(EngineRun? engineRun, Func<CancellationToken, Task> work)
-    {
         if (IsRunning)
         {
             throw new InvalidOperationException("A run is already in progress.");
         }
 
+        var engineRun = new EngineRun(this, profile, jobCount);
         using var source = new CancellationTokenSource();
         cancellation = source;
         run = engineRun;
         IsRunning = true;
         try
         {
-            await work(source.Token).ConfigureAwait(true);
+            await engineRun.RunAsync(arguments, source.Token).ConfigureAwait(true);
         }
         finally
         {
@@ -679,6 +642,8 @@ public sealed partial class MainViewModel : ObservableObject
             IsRunning = false;
             StageText = Strings.IDLE;
         }
+
+        return engineRun;
     }
 
     public void AppendLog(string line)

@@ -25,6 +25,7 @@ public class EngineEventTests
         { """{"type":"crack","file":"a.usm","stem":"a","key":null,"video_key":null,"reason":"x"}""", typeof(CrackEvent) },
         { """{"type":"crack_summary","recovered":1,"unrecovered":0}""", typeof(CrackSummaryEvent) },
         { """{"type":"update","current":"0.4.0","latest":null,"available":false,"url":null,"notes":null,"download":null,"reason":"x"}""", typeof(UpdateEvent) },
+        { """{"type":"update_install","installed":false,"reason":"x"}""", typeof(UpdateInstallEvent) },
     };
 
     [Theory]

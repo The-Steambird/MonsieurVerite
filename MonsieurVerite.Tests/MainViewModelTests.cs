@@ -8,6 +8,10 @@ namespace MonsieurVerite.Tests;
 
 public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
 {
+    // The engine asks this right after it reports an available release.
+    private const string InstallQuestion =
+        """@echo {"type":"question","id":"q0","prompt":"Download and install 1.1 now?","default":false}""";
+
     [Theory]
     [InlineData("\"available\":true", true, "Charlotte 1.1 is available (running 1.0).")]
     [InlineData("\"available\":false", false, "Charlotte 1.0 is up to date.")]
@@ -15,8 +19,8 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     public async Task StartupCheckLogsTheResultAndAsksOnlyWhenAReleaseIsOut(
         string fields, bool asked, string logged)
     {
-        var engine = FakeEngine(
-            $$"""@echo {"type":"update","current":"1.0","latest":"1.1",{{fields}}}""");
+        string[] lines = [$$"""@echo {"type":"update","current":"1.0","latest":"1.1",{{fields}}}"""];
+        var engine = FakeEngine(asked ? [.. lines, InstallQuestion] : lines);
         var viewModel = NewViewModel(engine);
         var shown = DeclineMessages(viewModel);
 
@@ -31,13 +35,15 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     public async Task AnOfferedReleaseShowsItsNotesApartFromTheDetail()
     {
         var engine = FakeEngine(
-            """@echo {"type":"update","current":"1.0","latest":"1.1","available":true,"url":"https://github.com/o/r/releases/tag/1.1","notes":"## Fixed"}""");
+            """@echo {"type":"update","current":"1.0","latest":"1.1","available":true,"url":"https://github.com/o/r/releases/tag/1.1","notes":"## Fixed"}""",
+            InstallQuestion);
         var viewModel = NewViewModel(engine);
         var shown = DeclineMessages(viewModel);
 
         await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
 
         var offer = Assert.Single(shown);
+        Assert.Equal(Strings.UPDATE_AVAILABLE_TITLE("1.1"), offer.Title);
         Assert.Equal("## Fixed", offer.Notes);
         Assert.Equal("https://github.com/o/r/releases/tag/1.1", offer.NotesUrl);
         Assert.Null(offer.Detail);

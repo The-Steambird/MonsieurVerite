@@ -146,7 +146,7 @@ public class RunOptionsTests(ITestOutputHelper output)
             [
                 "--default-audio", "en", "--default-sub", "JP", "--audio-codec", "opus",
                 "--no-cleanup", "--skip-existing", "--flat",
-                "--vapoursynth", "--hard-sub", "--crf", "13.5", "--preset", "slower",
+                "--vapoursynth", "--hard-sub", "--crf", "13", "--preset", "slower",
             ],
             options.ToArguments());
     }

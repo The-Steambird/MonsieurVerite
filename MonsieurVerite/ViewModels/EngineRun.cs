@@ -15,6 +15,8 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
 
     public UpdateEvent? Update { get; private set; }
 
+    public UpdateInstallEvent? Install { get; private set; }
+
     // jobCount is how many job_start events the run will open, which a probe and an update check
     // never do. Zero hides the run position and disables Skip.
     public bool OpensJobs => jobCount > 0;
@@ -220,10 +222,12 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
                 Update = update;
                 break;
 
+            case UpdateInstallEvent install:
+                Install = install;
+                break;
+
             case QuestionEvent question:
-                var prompt = new Message(Strings.QUESTION_TITLE, question.Prompt, Strings.YES,
-                    Strings.NO);
-                var answer = owner.ShowMessage?.Invoke(prompt) ?? question.Default;
+                var answer = owner.ShowMessage?.Invoke(Prompt(question)) ?? question.Default;
                 client?.SendAnswer(question.Id, answer);
                 break;
 
@@ -231,6 +235,21 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
                 owner.AppendLog(Strings.UNKNOWN_EVENT_LOG(unknown.Type));
                 break;
         }
+    }
+
+    // An update run asks only whether to install the release it just reported, which is why that
+    // question gets the release notes instead of a plain yes or no.
+    private Message Prompt(QuestionEvent question)
+    {
+        if (Update is { Available: true } update)
+        {
+            var title = Strings.UPDATE_AVAILABLE_TITLE(update.Latest);
+            var text = Strings.UPDATE_AVAILABLE_MESSAGE(update.Current, update.Latest);
+            return new Message(title, text, Strings.UPDATE, Strings.CANCEL,
+                Notes: update.Notes, NotesUrl: update.Url);
+        }
+
+        return new Message(Strings.QUESTION_TITLE, question.Prompt, Strings.YES, Strings.NO);
     }
 
     private void ShowStage(string text)
@@ -254,6 +273,7 @@ internal sealed class EngineRun(MainViewModel owner, EngineLaunchProfile profile
         "crack" => Strings.STAGE_CRACK,
         "ffmpeg" => Strings.STAGE_FFMPEG,
         "subtitles" => Strings.STAGE_SUBTITLES,
+        "download" => Strings.STAGE_DOWNLOAD,
         _ => stage,
     };
 

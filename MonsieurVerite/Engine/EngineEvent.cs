@@ -41,6 +41,7 @@ public abstract record EngineEvent
                 "crack" => Read<CrackEvent>(root),
                 "crack_summary" => Read<CrackSummaryEvent>(root),
                 "update" => Read<UpdateEvent>(root),
+                "update_install" => Read<UpdateInstallEvent>(root),
                 _ => new UnknownEvent { Type = type },
             };
         }
@@ -146,6 +147,12 @@ public sealed record UpdateEvent : EngineEvent
     public bool Available { get; init; }
     public string? Url { get; init; }
     public string? Notes { get; init; }
+    public string? Reason { get; init; }
+}
+
+public sealed record UpdateInstallEvent : EngineEvent
+{
+    public bool Installed { get; init; }
     public string? Reason { get; init; }
 }
 

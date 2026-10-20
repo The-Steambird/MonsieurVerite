@@ -15,7 +15,7 @@ public static class GitHub
 
     private static HttpClient CreateClient()
     {
-        var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        var client = new HttpClient();
         client.DefaultRequestHeaders.UserAgent.Add(
             new ProductInfoHeaderValue("charlotte-gui", App.Version));
         client.DefaultRequestHeaders.Accept.Add(
