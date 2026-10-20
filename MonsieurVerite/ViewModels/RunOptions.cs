@@ -8,7 +8,7 @@ namespace MonsieurVerite.ViewModels;
 public sealed partial class RunOptions : ObservableObject
 {
     public const string X265Tuning =
-        "keyint=300:min-keyint=30:no-open-gop=1:aq-mode=3:aq-strength=1.0:qcomp=0.6:cbqpoffs=-2:crqpoffs=-2:no-cutree=1:psy-rd=2.0:psy-rdoq=1.7:no-strong-intra-smoothing=1:deblock=-2,-2:no-sao=1:no-sao-non-deblock=1";
+        "keyint=300:min-keyint=30:no-open-gop=1:aq-mode=3:aq-strength=1.0:qcomp=0.6:cbqpoffs=-2:crqpoffs=-2:no-cutree=1:psy-rd=2.0:psy-rdoq=1.7:no-strong-intra-smoothing=1:deblock=-2,-2:no-sao=1";
 
     public const string X265Effort = "ref=6:bframes=8:lookahead-slices=0:rd=4:max-merge=5:tskip=1";
 
