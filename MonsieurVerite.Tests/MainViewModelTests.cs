@@ -27,8 +27,8 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         await viewModel.CheckForUpdatesOnStartupAsync();
 
         Assert.Equal(asked, shown.Count > 0);
-        Assert.Contains(logged, viewModel.Log);
-        Assert.DoesNotContain(Strings.NO_UPDATE_RESULT_LOG, viewModel.Log);
+        Assert.Contains(logged, viewModel.Log.Select(line => line.Text));
+        Assert.DoesNotContain(Strings.NO_UPDATE_RESULT_LOG, viewModel.Log.Select(line => line.Text));
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         viewModel.OfferRestartForLanguage("ja-JP");
 
         Assert.Empty(shown);
-        Assert.Contains(Strings.LANGUAGE_CHANGED_LOG, viewModel.Log);
+        Assert.Contains(new LogLine(Strings.LANGUAGE_CHANGED_LOG), viewModel.Log);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         await viewModel.CheckForUpdatesOnStartupAsync();
 
         Assert.Empty(shown);
-        Assert.DoesNotContain(viewModel.Log, line => line.Contains("1.1", StringComparison.Ordinal));
+        Assert.DoesNotContain(viewModel.Log, line => line.Text.Contains("1.1", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -310,7 +310,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
         Assert.False(viewModel.CheckForUpdatesCommand.CanExecute(null));
         Assert.True(viewModel.RemoveCheckedCommand.CanExecute(null));
-        Assert.Contains(viewModel.Log, line => line.Contains("No engine", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("No engine", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         await viewModel.LoadSourceAsync(Scratch.File("missing"));
 
         Assert.Same(kept, Assert.Single(viewModel.Items));
-        Assert.Contains(viewModel.Log, line => line.Contains("Could not read", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("Could not read", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -356,7 +356,29 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
 
         Assert.Equal(["a.usm", "B.USM"], viewModel.Items.Select(item => item.FileName));
         Assert.Equal(one, viewModel.SourceDirectory);
-        Assert.Contains(viewModel.Log, line => line.Contains("already in the queue", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("already in the queue", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TheEngineStartsInTheFolderHoldingMostFilesAndGetsThemAsBareNames()
+    {
+        var engine = FakeEngine(
+            """@echo %CD%>"%~dp0folder.txt" """,
+            """@echo %*>"%~dp0arguments.txt" """);
+        var viewModel = NewViewModel(engine);
+        viewModel.OutputDirectory = "out";
+        Directory.CreateDirectory(Scratch.File("usm"));
+        Add(viewModel, "a.usm");
+        var elsewhere = new QueueItem(Scratch.File(Path.Combine("other", "b.usm")));
+        viewModel.Items.Add(elsewhere);
+        Add(viewModel, "c.usm");
+
+        await viewModel.StartCommand.ExecuteAsync(null);
+
+        var arguments = File.ReadAllText(Scratch.File("arguments.txt")).Trim();
+        Assert.Equal(Scratch.File("usm"), File.ReadAllText(Scratch.File("folder.txt")).Trim());
+        Assert.EndsWith($" a.usm {elsewhere.FullPath} c.usm", arguments);
+        Assert.Contains($"--output {Scratch.File("out")} ", arguments);
     }
 
     [Fact]
@@ -367,7 +389,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
 
         var viewModel = new MainViewModel(null, Settings.Load(path));
 
-        Assert.Contains(viewModel.Log, line => line.Contains("using defaults", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("using defaults", StringComparison.Ordinal));
     }
 
     [Fact]

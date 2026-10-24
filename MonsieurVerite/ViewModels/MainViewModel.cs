@@ -31,12 +31,12 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (settings.LoadError is { } error)
         {
-            AppendLog(error);
+            AppendLog(error, warning: true);
         }
 
         if (engine is null)
         {
-            AppendLog(NoEngineMessage);
+            AppendLog(NoEngineMessage, warning: true);
         }
     }
 
@@ -44,7 +44,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public QueueItems Items { get; } = [];
 
-    public ObservableCollection<string> Log { get; } = [];
+    public ObservableCollection<LogLine> Log { get; } = [];
 
     public RunOptions Options => settings.Options;
 
@@ -55,6 +55,8 @@ public sealed partial class MainViewModel : ObservableObject
     public Func<Settings, bool>? ShowSettings { get; set; }
 
     public Func<QueueItem, string?>? PromptKey { get; set; }
+
+    public Action<KeyCapture>? ShowCapture { get; set; }
 
     public Action<string>? CopyText { get; set; }
 
@@ -186,8 +188,8 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (HasEngine)
         {
-            await RunEngineAsync(["--probe", .. added.Select(item => item.FullPath)], 0)
-                .ConfigureAwait(true);
+            var (folder, files) = EngineFiles(added);
+            await RunEngineAsync(["--probe", .. files], 0, folder).ConfigureAwait(true);
         }
     }
 
@@ -209,7 +211,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            AppendLog(Strings.FOLDER_UNREADABLE_LOG(directory, e.Message));
+            AppendLog(Strings.FOLDER_UNREADABLE_LOG(directory, e.Message), warning: true);
             return null;
         }
     }
@@ -307,7 +309,14 @@ public sealed partial class MainViewModel : ObservableObject
 
         Engine = engine;
         EngineVersion = null;
-        AppendLog(engine is null ? NoEngineMessage : Strings.ENGINE_LOG(engine));
+        if (engine is null)
+        {
+            AppendLog(NoEngineMessage, warning: true);
+        }
+        else
+        {
+            AppendLog(Strings.ENGINE_LOG(engine));
+        }
     }
 
     public void SaveSettings()
@@ -320,7 +329,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            AppendLog(Strings.SETTINGS_UNSAVED_LOG(e.Message));
+            AppendLog(Strings.SETTINGS_UNSAVED_LOG(e.Message), warning: true);
         }
     }
 
@@ -381,6 +390,18 @@ public sealed partial class MainViewModel : ObservableObject
         {
             AppendLog(Strings.NO_RECOVERED_KEYS_LOG(RecoveredKeysPath));
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunEngine))]
+    private void CaptureKeys()
+    {
+        if (Engine is not { } engine)
+        {
+            return;
+        }
+
+        var capture = new KeyCapture(engine, settings) { CopyText = CopyText, AppendLog = AppendLog };
+        ShowCapture?.Invoke(capture);
     }
 
     private static void Explore(string arguments) =>
@@ -446,12 +467,15 @@ public sealed partial class MainViewModel : ObservableObject
             item.OutputPath = null;
         }
 
+        // A relative output folder belongs to the engine's folder, where the engine no longer
+        // starts.
+        var engineFolder = Path.GetDirectoryName(Engine) ?? AppContext.BaseDirectory;
+        var output = Path.GetFullPath(OutputDirectory, engineFolder);
+        var (folder, files) = EngineFiles(targets);
         await RunEngineAsync(
-            [
-                "--output", OutputDirectory, .. Options.ToArguments(), .. extraArguments,
-                .. targets.Select(item => item.FullPath),
-            ],
-            targets.Count).ConfigureAwait(true);
+            ["--output", output, .. Options.ToArguments(), .. extraArguments, .. files],
+            targets.Count,
+            folder).ConfigureAwait(true);
     }
 
     [RelayCommand(CanExecute = nameof(CanRecoverKeys))]
@@ -469,8 +493,8 @@ public sealed partial class MainViewModel : ObservableObject
             item.MarkQueued();
         }
 
-        await RunEngineAsync(["--crack", .. targets.Select(item => item.FullPath)], targets.Count)
-            .ConfigureAwait(true);
+        var (folder, files) = EngineFiles(targets);
+        await RunEngineAsync(["--crack", .. files], targets.Count, folder).ConfigureAwait(true);
     }
 
     private bool CanRecoverKeys() => CanRunEngine && Items.Any(IsRecoverable);
@@ -539,13 +563,13 @@ public sealed partial class MainViewModel : ObservableObject
         var check = await RunEngineAsync(["--update"], 0).ConfigureAwait(true);
         if (check.Update is not { } update)
         {
-            AppendLog(Strings.NO_UPDATE_RESULT_LOG);
+            AppendLog(Strings.NO_UPDATE_RESULT_LOG, warning: true);
             return;
         }
 
         if (!update.Available && update.Reason is { Length: > 0 } reason)
         {
-            AppendLog(Strings.UPDATE_CHECK_FAILED_LOG(reason));
+            AppendLog(Strings.UPDATE_CHECK_FAILED_LOG(reason), warning: true);
             if (!quiet)
             {
                 ShowMessage?.Invoke(new Message(Strings.UPDATE_CHECK_FAILED_TITLE, reason));
@@ -576,11 +600,36 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    // Windows caps a command line at 32,767 characters, and the game's 278 cutscenes take 47,375
+    // as full paths. The engine starts in the folder holding most of the files and gets those as
+    // bare names.
+    private static (string? Folder, List<string> Files) EngineFiles(IReadOnlyList<QueueItem> items)
+    {
+        var folder = items
+            .GroupBy(item => Path.GetDirectoryName(item.FullPath), StringComparer.OrdinalIgnoreCase)
+            .MaxBy(group => group.Count())?.Key;
+        if (!Directory.Exists(folder))
+        {
+            return (null, [.. items.Select(item => item.FullPath)]);
+        }
+
+        var files = new List<string>();
+        foreach (var item in items)
+        {
+            var inFolder = string.Equals(Path.GetDirectoryName(item.FullPath), folder,
+                StringComparison.OrdinalIgnoreCase);
+            files.Add(inFolder ? item.FileName : item.FullPath);
+        }
+
+        return (folder, files);
+    }
+
     /// <summary>
     /// This is the one owner of <see cref="IsRunning"/>, the cancellation source and the current
     /// run.
     /// </summary>
-    private async Task<EngineRun> RunEngineAsync(IReadOnlyList<string> arguments, int jobCount)
+    private async Task<EngineRun> RunEngineAsync(
+        IReadOnlyList<string> arguments, int jobCount, string? workingDirectory = null)
     {
         if (Engine is not { } engine)
         {
@@ -599,7 +648,7 @@ public sealed partial class MainViewModel : ObservableObject
         IsRunning = true;
         try
         {
-            await engineRun.RunAsync(arguments, source.Token).ConfigureAwait(true);
+            await engineRun.RunAsync(arguments, workingDirectory, source.Token).ConfigureAwait(true);
         }
         finally
         {
@@ -613,7 +662,9 @@ public sealed partial class MainViewModel : ObservableObject
         return engineRun;
     }
 
-    public void AppendLog(string line)
+    public void AppendLog(string text, bool warning = false) => AppendLog(new LogLine(text, warning));
+
+    public void AppendLog(LogLine line)
     {
         Log.Add(line);
         if (Log.Count > LogCapacity)
@@ -662,6 +713,7 @@ public sealed partial class MainViewModel : ObservableObject
         CancelCommand.NotifyCanExecuteChanged();
         SkipCommand.NotifyCanExecuteChanged();
         CheckForUpdatesCommand.NotifyCanExecuteChanged();
+        CaptureKeysCommand.NotifyCanExecuteChanged();
     }
 }
 

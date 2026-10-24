@@ -172,5 +172,15 @@
   "SPONSOR_LINK": "patrocinarme",
   "COPYRIGHT": "© 2026 lunarmint. Software libre bajo la GNU GPL v3, distribuido sin ninguna garantía.",
   "REPORT_ISSUE": "Informar de un problema",
-  "LICENSE": "Licencia"
+  "LICENSE": "Licencia",
+  "CAPTURE_KEYS": "Capturar claves…",
+  "CAPTURE_TITLE": "Capturar claves",
+  "CAPTURE_INSTRUCTIONS": "1. Haz clic en «Iniciar» para empezar a capturar paquetes.\n2. Abre Genshin Impact y entra por la puerta.\n3. Cuando se hayan capturado los datos, detén la captura y cópialos al portapapeles.",
+  "CAPTURE_NEW_ONLY": "Mostrar solo claves nuevas",
+  "CAPTURE_NEW_ONLY_TIP": "Ocultar las claves que ya están en keys.json.",
+  "CAPTURE_STARTING": "Iniciando…",
+  "CAPTURE_NEEDS_ADMIN": "Capturar claves requiere permisos de administrador.",
+  "CAPTURE_ENGINE_STOPPED": "La captura se detuvo antes de empezar.",
+  "STOP": "Detener",
+  "CLOSE": "Cerrar"
 }

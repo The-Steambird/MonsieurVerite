@@ -177,5 +177,15 @@
   "SPONSOR_LINK": "sponsoring",
   "COPYRIGHT": "© 2026 lunarmint. Free software under the GNU GPL v3, distributed without any warranty.",
   "REPORT_ISSUE": "Report an issue",
-  "LICENSE": "License"
+  "LICENSE": "License",
+  "CAPTURE_KEYS": "Capture keys…",
+  "CAPTURE_TITLE": "Capture keys",
+  "CAPTURE_INSTRUCTIONS": "1. Click \"Start\" to start capturing packets.\n2. Start Genshin Impact and enter the door.\n3. Once the data has been captured, stop the capture and copy it to the clipboard.",
+  "CAPTURE_NEW_ONLY": "Show only new keys",
+  "CAPTURE_NEW_ONLY_TIP": "Hide keys that are already in keys.json.",
+  "CAPTURE_STARTING": "Starting…",
+  "CAPTURE_NEEDS_ADMIN": "Capturing keys needs administrator rights.",
+  "CAPTURE_ENGINE_STOPPED": "The capture stopped before it started.",
+  "STOP": "Stop",
+  "CLOSE": "Close"
 }

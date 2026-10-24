@@ -26,6 +26,7 @@ public class EngineEventTests
         { """{"type":"crack_summary","recovered":1,"unrecovered":0}""", typeof(CrackSummaryEvent) },
         { """{"type":"update","current":"0.4.0","latest":null,"available":false,"url":null,"notes":null,"download":null,"reason":"x"}""", typeof(UpdateEvent) },
         { """{"type":"update_install","installed":false,"reason":"x"}""", typeof(UpdateInstallEvent) },
+        { """{"type":"capture_key","video_key":null,"audio_key":1,"aes_key":"ab","parent_quest_id":null,"known":false,"videos":[]}""", typeof(CaptureKeyEvent) },
     };
 
     [Theory]
@@ -56,6 +57,27 @@ public class EngineEventTests
 
         Assert.Equal(72057594037927934UL, crack.VideoKey);
         Assert.Equal("a", crack.Stem);
+    }
+
+    /// <summary>Copied from capture/run.py's capture_key, for an old key and a 7.1 one.</summary>
+    [Fact]
+    public void CaptureKeysCarryEitherSchemeAndTheirFiles()
+    {
+        var old = Assert.IsType<CaptureKeyEvent>(EngineEvent.Parse(
+            """{"type":"capture_key","video_key":9602627639787478,"audio_key":null,"aes_key":null,"parent_quest_id":"602","known":true,"videos":["Cs_A_Boy","Cs_A_Girl"]}"""));
+        var stream = Assert.IsType<CaptureKeyEvent>(EngineEvent.Parse(
+            """{"type":"capture_key","video_key":null,"audio_key":72057594037927935,"aes_key":"f9e9e1c5cf3a68deffa0a4d3df665836","parent_quest_id":null,"known":false,"videos":[]}"""));
+
+        Assert.Equal(9602627639787478UL, old.VideoKey);
+        Assert.Null(old.AudioKey);
+        Assert.Equal("602", old.ParentQuestId);
+        Assert.Equal(["Cs_A_Boy", "Cs_A_Girl"], old.Videos);
+        Assert.True(old.Known);
+
+        Assert.Null(stream.VideoKey);
+        Assert.Equal(72057594037927935UL, stream.AudioKey);
+        Assert.Equal("f9e9e1c5cf3a68deffa0a4d3df665836", stream.AesKey);
+        Assert.Null(stream.ParentQuestId);
     }
 
     [Fact]

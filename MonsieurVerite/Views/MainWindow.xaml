@@ -93,6 +93,8 @@
                                           Command="{Binding OpenOutputFolderCommand}" />
                                 <MenuItem Header="{x:Static local:Strings.SHOW_RECOVERED_KEYS}"
                                           Command="{Binding ShowRecoveredKeysCommand}" />
+                                <MenuItem Header="{x:Static local:Strings.CAPTURE_KEYS}"
+                                          Command="{Binding CaptureKeysCommand}" />
                                 <Separator />
                                 <MenuItem Header="{x:Static local:Strings.CHECK_FOR_UPDATES}"
                                           Command="{Binding CheckForUpdatesCommand}" />
@@ -235,6 +237,23 @@
                              FontFamily="{StaticResource MonoFont}" FontSize="11.5"
                              SelectionMode="Extended"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWarning}"
+                                                             Value="True">
+                                                    <Setter Property="Foreground"
+                                                            Value="{StaticResource WarnBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
                         <ListBox.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="{x:Static local:Strings.COPY}"

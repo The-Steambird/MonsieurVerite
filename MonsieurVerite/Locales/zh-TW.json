@@ -172,5 +172,15 @@
   "SPONSOR_LINK": "贊助我",
   "COPYRIGHT": "© 2026 lunarmint。以 GNU GPL v3 授權的自由軟體，不提供任何擔保。",
   "REPORT_ISSUE": "回報問題",
-  "LICENSE": "授權"
+  "LICENSE": "授權",
+  "CAPTURE_KEYS": "擷取金鑰…",
+  "CAPTURE_TITLE": "擷取金鑰",
+  "CAPTURE_INSTRUCTIONS": "1. 按下「開始」以開始擷取封包。\n2. 啟動原神並進入大門。\n3. 資料擷取完成後，停止擷取並複製到剪貼簿。",
+  "CAPTURE_NEW_ONLY": "只顯示新金鑰",
+  "CAPTURE_NEW_ONLY_TIP": "隱藏 keys.json 中已有的金鑰。",
+  "CAPTURE_STARTING": "正在啟動…",
+  "CAPTURE_NEEDS_ADMIN": "擷取金鑰需要系統管理員權限。",
+  "CAPTURE_ENGINE_STOPPED": "擷取在開始前就已停止。",
+  "STOP": "停止",
+  "CLOSE": "關閉"
 }

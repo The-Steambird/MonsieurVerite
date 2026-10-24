@@ -32,12 +32,12 @@ public sealed class EngineClient : IAsyncDisposable
     public IReadOnlyList<string> StandardErrorTail => [.. standardErrorTail];
 
     /// <returns>The exit code, completing after the last event has been written.</returns>
-    public Task<int> Start(IReadOnlyList<string> arguments)
+    public Task<int> Start(IReadOnlyList<string> arguments, string? workingDirectory = null)
     {
         var startInfo = new ProcessStartInfo
         {
             FileName = executablePath,
-            WorkingDirectory = Path.GetDirectoryName(executablePath) ?? ".",
+            WorkingDirectory = workingDirectory ?? Path.GetDirectoryName(executablePath) ?? ".",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,

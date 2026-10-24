@@ -172,5 +172,15 @@
   "SPONSOR_LINK": "赞助我",
   "COPYRIGHT": "© 2026 lunarmint。基于 GNU GPL v3 的自由软件，不提供任何担保。",
   "REPORT_ISSUE": "报告问题",
-  "LICENSE": "许可证"
+  "LICENSE": "许可证",
+  "CAPTURE_KEYS": "捕获密钥…",
+  "CAPTURE_TITLE": "捕获密钥",
+  "CAPTURE_INSTRUCTIONS": "1. 点击“开始”以开始捕获数据包。\n2. 启动原神并进入大门。\n3. 数据捕获完成后，停止捕获并复制到剪贴板。",
+  "CAPTURE_NEW_ONLY": "只显示新密钥",
+  "CAPTURE_NEW_ONLY_TIP": "隐藏 keys.json 中已有的密钥。",
+  "CAPTURE_STARTING": "正在启动…",
+  "CAPTURE_NEEDS_ADMIN": "捕获密钥需要管理员权限。",
+  "CAPTURE_ENGINE_STOPPED": "捕获在开始前就已停止。",
+  "STOP": "停止",
+  "CLOSE": "关闭"
 }

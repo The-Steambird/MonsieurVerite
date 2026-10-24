@@ -35,6 +35,7 @@ public partial class MainWindow : Window
             PickFiles = PickFiles,
             ShowSettings = ShowSettings,
             PromptKey = PromptKey,
+            ShowCapture = capture => new CaptureDialog(capture) { Owner = this }.ShowDialog(),
             CopyText = CopyToClipboard,
             ShowMessage = message => MessageDialog.Show(this, message.Title, message.Text,
                 message.Primary, message.Secondary, message.Detail, message.Notes, message.NotesUrl),
@@ -101,7 +102,8 @@ public partial class MainWindow : Window
         e.Handled = true;
         Debug.WriteLine(e.Exception);
         viewModel.AppendLog(
-            Strings.UNEXPECTED_ERROR_LOG(e.Exception.GetType().Name, e.Exception.Message));
+            Strings.UNEXPECTED_ERROR_LOG(e.Exception.GetType().Name, e.Exception.Message),
+            warning: true);
         if (Dialog is null)
         {
             MessageDialog.Show(this, Strings.UNEXPECTED_ERROR_TITLE, e.Exception.Message,
@@ -278,13 +280,13 @@ public partial class MainWindow : Window
     private void CopyLog_Click(object sender, RoutedEventArgs e)
     {
         var lines = LogList.SelectedItems.Count > 0
-            ? LogList.SelectedItems.Cast<string>()
+            ? LogList.SelectedItems.Cast<LogLine>()
             : viewModel.Log;
-        CopyToClipboard(string.Join(Environment.NewLine, lines));
+        CopyToClipboard(string.Join(Environment.NewLine, lines.Select(line => line.Text)));
     }
 
     private void CopyAllLog_Click(object sender, RoutedEventArgs e) =>
-        CopyToClipboard(string.Join(Environment.NewLine, viewModel.Log));
+        CopyToClipboard(string.Join(Environment.NewLine, viewModel.Log.Select(line => line.Text)));
 
     /// <summary>
     /// Clipboard.SetText throws while another process holds the clipboard, despite WPF's retries.
@@ -302,7 +304,7 @@ public partial class MainWindow : Window
         }
         catch (ExternalException e)
         {
-            viewModel.AppendLog(Strings.CLIPBOARD_FAILED_LOG(e.Message));
+            viewModel.AppendLog(Strings.CLIPBOARD_FAILED_LOG(e.Message), warning: true);
         }
     }
 

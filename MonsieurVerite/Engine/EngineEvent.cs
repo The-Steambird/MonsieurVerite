@@ -42,6 +42,7 @@ public abstract record EngineEvent
                 "crack_summary" => Read<CrackSummaryEvent>(root),
                 "update" => Read<UpdateEvent>(root),
                 "update_install" => Read<UpdateInstallEvent>(root),
+                "capture_key" => Read<CaptureKeyEvent>(root),
                 _ => new UnknownEvent { Type = type },
             };
         }
@@ -154,6 +155,21 @@ public sealed record UpdateInstallEvent : EngineEvent
 {
     public bool Installed { get; init; }
     public string? Reason { get; init; }
+}
+
+/// <summary>
+/// An old-scheme key carries only <see cref="VideoKey"/>, and a 7.1 key only
+/// <see cref="AudioKey"/> and <see cref="AesKey"/>. A new 7.1 key arrives twice, first without
+/// files and then with the files it decrypts.
+/// </summary>
+public sealed record CaptureKeyEvent : EngineEvent
+{
+    public ulong? VideoKey { get; init; }
+    public ulong? AudioKey { get; init; }
+    public string? AesKey { get; init; }
+    public string? ParentQuestId { get; init; }
+    public bool Known { get; init; }
+    public IReadOnlyList<string> Videos { get; init; } = [];
 }
 
 public sealed record UnknownEvent : EngineEvent;

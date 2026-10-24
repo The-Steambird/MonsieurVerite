@@ -172,5 +172,15 @@
   "SPONSOR_LINK": "スポンサー",
   "COPYRIGHT": "© 2026 lunarmint。GNU GPL v3 に基づくフリーソフトウェアであり、一切の保証なしに配布されます。",
   "REPORT_ISSUE": "問題を報告",
-  "LICENSE": "ライセンス"
+  "LICENSE": "ライセンス",
+  "CAPTURE_KEYS": "キーをキャプチャ…",
+  "CAPTURE_TITLE": "キーをキャプチャ",
+  "CAPTURE_INSTRUCTIONS": "1. 「開始」をクリックしてパケットのキャプチャを始めます。\n2. 原神を起動し、扉をくぐります。\n3. データがキャプチャされたら、キャプチャを停止してクリップボードにコピーします。",
+  "CAPTURE_NEW_ONLY": "新しいキーだけを表示",
+  "CAPTURE_NEW_ONLY_TIP": "keys.json にすでにあるキーを隠します。",
+  "CAPTURE_STARTING": "開始中…",
+  "CAPTURE_NEEDS_ADMIN": "キーのキャプチャには管理者権限が必要です。",
+  "CAPTURE_ENGINE_STOPPED": "キャプチャは開始前に停止しました。",
+  "STOP": "停止",
+  "CLOSE": "閉じる"
 }

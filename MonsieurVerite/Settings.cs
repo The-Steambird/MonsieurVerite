@@ -32,6 +32,9 @@ public sealed class Settings
 
     public bool CheckForUpdatesOnStartup { get; set; } = true;
 
+    /// <summary>The capture dialog hides the keys keys.json already has.</summary>
+    public bool CaptureNewKeysOnly { get; set; } = true;
+
     public string Language
     {
         get;

@@ -172,5 +172,15 @@
   "SPONSOR_LINK": "후원",
   "COPYRIGHT": "© 2026 lunarmint. GNU GPL v3에 따른 자유 소프트웨어이며, 어떠한 보증도 없이 배포됩니다.",
   "REPORT_ISSUE": "문제 신고",
-  "LICENSE": "라이선스"
+  "LICENSE": "라이선스",
+  "CAPTURE_KEYS": "키 캡처…",
+  "CAPTURE_TITLE": "키 캡처",
+  "CAPTURE_INSTRUCTIONS": "1. \"시작\"을 눌러 패킷 캡처를 시작합니다.\n2. 원신을 실행하고 문으로 들어갑니다.\n3. 데이터가 캡처되면 캡처를 중지하고 클립보드에 복사합니다.",
+  "CAPTURE_NEW_ONLY": "새 키만 표시",
+  "CAPTURE_NEW_ONLY_TIP": "keys.json에 이미 있는 키를 숨깁니다.",
+  "CAPTURE_STARTING": "시작하는 중…",
+  "CAPTURE_NEEDS_ADMIN": "키를 캡처하려면 관리자 권한이 필요합니다.",
+  "CAPTURE_ENGINE_STOPPED": "캡처가 시작되기 전에 중지되었습니다.",
+  "STOP": "중지",
+  "CLOSE": "닫기"
 }

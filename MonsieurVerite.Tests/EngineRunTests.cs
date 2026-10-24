@@ -90,7 +90,7 @@ public class EngineRunTests : ViewModelTest
         Assert.Equal(ItemStatus.Error, item.Status);
         Assert.Equal(75, item.Progress);
         Assert.Equal("bad chunk", item.Detail);
-        Assert.Contains("a.usm: bad chunk", viewModel.Log);
+        Assert.Contains(new LogLine("a.usm: bad chunk", IsWarning: true), viewModel.Log);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class EngineRunTests : ViewModelTest
 
         Assert.Equal(KeyState.Recovered, item.Key);
         Assert.Equal(7UL, item.VideoKey);
-        Assert.Contains(viewModel.Log, line => line.Contains("videoKey=7", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("videoKey=7", StringComparison.Ordinal));
         Assert.Contains("\"a\"", File.ReadAllText(viewModel.RecoveredKeysPath), StringComparison.Ordinal);
     }
 
@@ -156,7 +156,7 @@ public class EngineRunTests : ViewModelTest
         run.Apply(new CrackEvent { File = "a.usm", Stem = "a", VideoKey = null, Reason = "single distinct payload" });
 
         Assert.Equal(KeyState.Missing, item.Key);
-        Assert.Contains(viewModel.Log, line => line.Contains("single distinct payload", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("single distinct payload", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class EngineRunTests : ViewModelTest
 
         run.Apply(new UnknownEvent { Type = "something_new" });
 
-        Assert.Contains(viewModel.Log, line => line.Contains("something_new", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("something_new", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -240,7 +240,7 @@ public class EngineRunTests : ViewModelTest
 
         Assert.False(viewModel.IsRunning);
         Assert.Equal("Idle", viewModel.StageText);
-        Assert.Contains(viewModel.Log, line => line.Contains("Could not start the engine", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("Could not start the engine", StringComparison.Ordinal));
         Assert.Equal(ItemStatus.Pending, first.Status);
         Assert.Equal(ItemStatus.Pending, second.Status);
     }
@@ -280,8 +280,8 @@ public class EngineRunTests : ViewModelTest
 
         await viewModel.StartCommand.ExecuteAsync(null);
 
-        Assert.Contains(viewModel.Log, line => line.Contains("exited with code 1", StringComparison.Ordinal));
-        Assert.Contains(viewModel.Log, line => line.Contains("something broke", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("exited with code 1", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("something broke", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -301,8 +301,8 @@ public class EngineRunTests : ViewModelTest
 
         Assert.Equal(ItemStatus.Error, failed.Status);
         Assert.Equal("bad chunk", failed.Detail);
-        Assert.Contains(viewModel.Log, line => line.Contains("exited with code 1", StringComparison.Ordinal));
-        Assert.DoesNotContain(viewModel.Log, line => line.Contains("Failed to process", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains("exited with code 1", StringComparison.Ordinal));
+        Assert.DoesNotContain(viewModel.Log, line => line.Text.Contains("Failed to process", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public class EngineRunTests : ViewModelTest
         Assert.Equal("Cancel", viewModel.CancelLabel);
         Assert.Equal(ItemStatus.Cancelled, running.Status);
         Assert.Equal(ItemStatus.Cancelled, queued.Status);
-        Assert.Contains(viewModel.Log, line => line == "Engine stopped.");
+        Assert.Contains(viewModel.Log, line => line.Text == "Engine stopped.");
     }
 
     [Fact]

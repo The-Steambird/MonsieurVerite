@@ -21,7 +21,8 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
     // never do. Zero hides the run position and disables Skip.
     public bool OpensJobs => jobCount > 0;
 
-    public async Task RunAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
+    public async Task RunAsync(
+        IReadOnlyList<string> arguments, string? workingDirectory, CancellationToken cancellationToken)
     {
         await using var engine = new EngineClient(enginePath);
         using var registration = cancellationToken.Register(engine.SendCancel);
@@ -31,7 +32,7 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         string? failure = null;
         try
         {
-            var exit = engine.Start(["--json", .. arguments]);
+            var exit = engine.Start(["--json", .. arguments], workingDirectory);
             // The token only asks the engine to stop, and its events are read until it has.
             await foreach (var evt in engine.Events.ReadAllAsync(CancellationToken.None)
                                .ConfigureAwait(true))
@@ -47,7 +48,7 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
             else if (exitCode != 0)
             {
                 failure = Strings.ENGINE_EXITED_DETAIL(exitCode);
-                owner.AppendLog(Strings.ENGINE_EXITED_LOG(exitCode));
+                owner.AppendLog(Strings.ENGINE_EXITED_LOG(exitCode), warning: true);
 
                 // The engine exits 1 after a batch in which any file failed, and those rows
                 // already carry the error events. The stderr tail is for a run that never opened
@@ -56,7 +57,7 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
                 {
                     foreach (var line in engine.StandardErrorTail.Where(line => line.Length > 0))
                     {
-                        owner.AppendLog($"  {line}");
+                        owner.AppendLog($"  {line}", warning: true);
                     }
                 }
             }
@@ -64,7 +65,7 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         catch (Win32Exception e)
         {
             failure = Strings.ENGINE_NOT_STARTED_DETAIL;
-            owner.AppendLog(Strings.ENGINE_START_FAILED_LOG(enginePath, e.Message));
+            owner.AppendLog(Strings.ENGINE_START_FAILED_LOG(enginePath, e.Message), warning: true);
         }
         catch (Exception)
         {
@@ -137,13 +138,13 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
                 owner.EngineVersion = session.Version;
                 if (session.Version != App.Version)
                 {
-                    owner.AppendLog(Strings.VERSION_MISMATCH_LOG);
+                    owner.AppendLog(Strings.VERSION_MISMATCH_LOG, warning: true);
                 }
 
                 break;
 
             case LogEvent log:
-                owner.AppendLog($"[{log.Level}] {log.Message}");
+                owner.AppendLog(LogLine.From(log));
                 break;
 
             case JobStartEvent job:
@@ -180,7 +181,8 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
 
             case ErrorEvent error:
                 items.Find(error.File)?.MarkFailed(error.Message);
-                owner.AppendLog(error.File.Length > 0 ? $"{error.File}: {error.Message}" : error.Message);
+                owner.AppendLog(error.File.Length > 0 ? $"{error.File}: {error.Message}" : error.Message,
+                    warning: true);
                 break;
 
             case JobSkippedEvent skipped:
@@ -292,12 +294,12 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         {
             if (RecoveredKeys.Add(path, stem, videoKey) is { } setAside)
             {
-                owner.AppendLog(Strings.RECOVERED_KEYS_SET_ASIDE_LOG(path, setAside));
+                owner.AppendLog(Strings.RECOVERED_KEYS_SET_ASIDE_LOG(path, setAside), warning: true);
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            owner.AppendLog(Strings.RECOVERED_KEYS_UNWRITTEN_LOG(path, e.Message));
+            owner.AppendLog(Strings.RECOVERED_KEYS_UNWRITTEN_LOG(path, e.Message), warning: true);
         }
     }
 }
