@@ -6,9 +6,8 @@ using System.Windows.Threading;
 namespace MonsieurVerite.Themes;
 
 /// <summary>
-/// The animations that need code: the progress-bar glide and the pills' fade-in. The queue
-/// recycles row containers while scrolling, and both play only when their own row changes, never
-/// when a container is handed a different row.
+/// The progress-bar glide and the pills' fade-in play only when their own row changes, never when
+/// the queue recycles a container for a different row while scrolling.
 /// </summary>
 public static class Motion
 {

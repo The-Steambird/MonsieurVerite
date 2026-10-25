@@ -421,8 +421,8 @@
         </Style.Triggers>
     </Style>
 
-    <!-- This is a TextBox for its selection and Ctrl+C alone. Its template drops the field look and
-         the focus states, which leaves the panel the About dialog draws. -->
+    <!-- This is a TextBox only for its selection and Ctrl+C. Its template drops the field look and
+         the focus states and draws the same panel as the About dialog. -->
     <Style x:Key="ReadOnlyPanel" TargetType="TextBox">
         <Setter Property="IsReadOnly" Value="True" />
         <Setter Property="AcceptsReturn" Value="True" />

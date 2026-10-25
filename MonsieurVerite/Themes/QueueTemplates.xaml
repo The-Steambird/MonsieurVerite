@@ -301,8 +301,7 @@
     <Style x:Key="SubtitlesMissingGlyph" TargetType="Path" BasedOn="{StaticResource StateGlyph}">
         <Setter Property="Data" Value="{StaticResource CrossIcon}" />
         <Setter Property="Stroke" Value="{StaticResource FaintBrush}" />
-        <Setter Property="ToolTip"
-                Value="{x:Static local:Strings.NO_SUBTITLES_TIP}" />
+        <Setter Property="ToolTip" Value="{x:Static local:Strings.NO_SUBTITLES_TIP}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding HasSubtitles}" Value="False">
                 <Setter Property="Visibility" Value="Visible" />

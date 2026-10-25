@@ -133,9 +133,10 @@
         </Border>
 
         <Grid Grid.Row="1">
-            <!-- Fluent's DataGrid leaves the corner above its scrollbar empty, so the header band
-                 is painted here, behind the transparent grid, across the full width. Both brushes
-                 are translucent, which is why the grid's own header fill and lines are cleared. -->
+            <!-- Fluent's DataGrid leaves the corner above its scrollbar empty. The header band is
+                 painted here instead, behind the transparent grid and across the full width. The
+                 grid's own header fill and lines are cleared, because both brushes are translucent
+                 and would double up. -->
             <Border Height="36" VerticalAlignment="Top"
                     Background="{DynamicResource DataGridHeaderBackground}"
                     BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,0,0,1" />

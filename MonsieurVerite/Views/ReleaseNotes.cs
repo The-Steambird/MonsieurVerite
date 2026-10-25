@@ -78,8 +78,8 @@ internal static partial class ReleaseNotes
         return [block];
     }
 
-    // GitHub shows a paragraph that holds nothing but images as the images themselves, which is
-    // how a screenshot or a linked badge on its own line is meant to look.
+    // GitHub shows a paragraph that holds nothing but images as the images themselves. A screenshot
+    // or a linked badge on its own line is meant to look that way.
     private static List<FrameworkElement>? Pictures(ContainerInline? container)
     {
         if (container is null)
@@ -228,7 +228,12 @@ internal static partial class ReleaseNotes
 
     private static Border Code(CodeBlock code)
     {
-        var text = new TextBlock { Text = code.Lines.ToString(), TextWrapping = TextWrapping.Wrap, FontSize = 12 };
+        var text = new TextBlock
+        {
+            Text = code.Lines.ToString(),
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 12,
+        };
         text.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
         text.SetResourceReference(TextBlock.ForegroundProperty, "DimBrush");
 
@@ -270,14 +275,15 @@ internal static partial class ReleaseNotes
     }
 
     // The image is shown at its pixel size like a browser shows it, because the DPI in the file is
-    // arbitrary. Decoding stops at 1024 pixels wide, which keeps a 4K screenshot from taking 50 MB.
+    // arbitrary. Decoding stops at 1024 pixels wide to keep a 4K screenshot from taking 50 MB.
     private static async Task LoadAsync(Image image, Uri source)
     {
         try
         {
             var bytes = await Http.GetByteArrayAsync(source).ConfigureAwait(true);
-            var width = BitmapDecoder.Create(new MemoryStream(bytes), BitmapCreateOptions.DelayCreation,
-                BitmapCacheOption.None).Frames[0].PixelWidth;
+            var decoder = BitmapDecoder.Create(new MemoryStream(bytes),
+                BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+            var width = decoder.Frames[0].PixelWidth;
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.StreamSource = new MemoryStream(bytes);

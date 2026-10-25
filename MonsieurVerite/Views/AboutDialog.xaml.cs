@@ -38,16 +38,21 @@ public partial class AboutDialog : DialogWindow
         new(new Run(text)) { NavigateUri = new Uri(uri) };
 
     // The text is split around its placeholders instead of written as runs in the xaml, because a
-    // translation may move the links.
+    // translation may move the links. Split puts each placeholder's name between the text around it.
     private static void AppendFormat(
         TextBlock block, string key, params (string Name, Inline Link)[] links)
     {
         var parts = Strings.Placeholder().Split(Strings.Template(key));
         for (var i = 0; i < parts.Length; i++)
         {
-            block.Inlines.Add(i % 2 == 0
-                ? new Run(parts[i])
-                : links.First(link => link.Name == parts[i]).Link);
+            if (i % 2 == 0)
+            {
+                block.Inlines.Add(new Run(parts[i]));
+            }
+            else
+            {
+                block.Inlines.Add(links.First(link => link.Name == parts[i]).Link);
+            }
         }
     }
 }

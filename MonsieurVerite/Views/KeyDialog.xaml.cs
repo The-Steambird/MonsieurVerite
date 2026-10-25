@@ -29,8 +29,8 @@ public partial class KeyDialog : DialogWindow
         {
             var aesKey = AesKeyBox.Text.Trim();
             key = $"{key}:{aesKey}";
-            valid = valid && value < 1UL << 56 && aesKey.Length == 32 &&
-                    aesKey.All(char.IsAsciiHexDigit);
+            valid = valid && value < 1UL << 56
+                    && aesKey.Length == 32 && aesKey.All(char.IsAsciiHexDigit);
         }
 
         Key = key;

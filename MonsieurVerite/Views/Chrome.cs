@@ -74,7 +74,8 @@ public static partial class Chrome
     {
         Solid(dialog);
         var hwnd = new WindowInteropHelper(dialog).Handle;
-        _ = SetWindowLongPtrW(hwnd, Style, GetWindowLongPtrW(hwnd, Style) & ~SystemMenu);
+        var style = GetWindowLongPtrW(hwnd, Style);
+        _ = SetWindowLongPtrW(hwnd, Style, style & ~SystemMenu);
         _ = SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, FrameChanged);
 
         dialog.Background = (Brush)dialog.FindResource("WindowBrush");
@@ -84,7 +85,8 @@ public static partial class Chrome
             return;
         }
 
-        var glass = new ImageBrush(Frosted(scene, (Color)dialog.FindResource("FrostColor")))
+        var tint = (Color)dialog.FindResource("FrostColor");
+        var glass = new ImageBrush(Frosted(scene, tint))
         {
             ViewboxUnits = BrushMappingMode.Absolute,
             Stretch = Stretch.Fill,

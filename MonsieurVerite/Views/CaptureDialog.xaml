@@ -36,8 +36,8 @@
             <TextBox Style="{StaticResource ReadOnlyPanel}" Height="300"
                      Text="{Binding Text, Mode=OneWay}" />
 
-            <!-- Two lines are always reserved, which keeps the dialog's height still as the
-                 status changes. A longer line is cut short, and the main log has it whole. -->
+            <!-- Two lines are always reserved to keep the dialog's height still as the status
+                 changes. A longer line is cut short, and the main log has it whole. -->
             <TextBlock Height="40" Margin="0,10,0,0" Text="{Binding Status.Text}"
                        TextTrimming="CharacterEllipsis">
                 <TextBlock.Style>
