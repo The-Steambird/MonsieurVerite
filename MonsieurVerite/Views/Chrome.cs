@@ -177,6 +177,18 @@ public static partial class Chrome
     private static byte Dither(byte from, byte to, double mix, Random noise) =>
         (byte)Math.Round(from + (to - from) * mix + noise.NextDouble() - 0.5);
 
+    public static void Flash(Window window)
+    {
+        const uint tray = 0x2, untilForeground = 0xC;
+        var info = new FlashInfo
+        {
+            Size = (uint)Marshal.SizeOf<FlashInfo>(),
+            Window = new WindowInteropHelper(window).Handle,
+            Flags = tray | untilForeground,
+        };
+        _ = FlashWindowEx(ref info);
+    }
+
     public static Thickness MaximizedInset(DpiScale dpi)
     {
         const int sizeFrame = 32, paddedBorder = 92;
@@ -185,6 +197,20 @@ public static partial class Chrome
                      + GetSystemMetricsForDpi(paddedBorder, pixelDpi);
         return new Thickness(pixels / dpi.DpiScaleX);
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FlashInfo
+    {
+        public uint Size;
+        public IntPtr Window;
+        public uint Flags;
+        public uint Count;
+        public uint Timeout;
+    }
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool FlashWindowEx(ref FlashInfo info);
 
     [LibraryImport("user32.dll")]
     private static partial int GetSystemMetricsForDpi(int index, uint dpi);

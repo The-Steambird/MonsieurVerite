@@ -7,7 +7,7 @@ namespace MonsieurVerite.Tests;
 public class EngineRunTests : ViewModelTest
 {
     private static EngineRun NewRun(MainViewModel viewModel) =>
-        new(viewModel, viewModel.Engine!, opensJobs: false);
+        new(viewModel, viewModel.Engine!, jobs: []);
 
     [Fact]
     public void ProbeFillsKeyAndSubtitleAvailability()
@@ -54,6 +54,33 @@ public class EngineRunTests : ViewModelTest
         Assert.Equal(ItemStatus.Done, item.Status);
         Assert.Equal(100, item.Progress);
         Assert.Equal(output, item.OutputPath);
+    }
+
+    [Fact]
+    public void CompletionCountsFinishedJobsAndTheRunningOnesStage()
+    {
+        var viewModel = NewViewModel();
+        var a = Add(viewModel, "a.usm");
+        var b = Add(viewModel, "b.usm");
+        var c = Add(viewModel, "c.usm");
+        var run = new EngineRun(viewModel, viewModel.Engine!, [a, b, c]);
+        foreach (var item in viewModel.Items)
+        {
+            item.MarkQueued();
+        }
+
+        Assert.Equal(0, run.Completion);
+
+        run.Apply(new JobStartEvent { File = "a.usm" });
+        run.Apply(new ResultEvent { File = "a.usm", Output = Scratch.File("a.mkv") });
+        run.Apply(new JobStartEvent { File = "b.usm" });
+        run.Apply(new ProgressEvent { Current = 1, Total = 2 });
+        Assert.Equal(0.5, run.Completion);
+        Assert.False(run.AnyFailed);
+
+        run.Apply(new ErrorEvent { File = "b.usm", Message = "bad chunk" });
+        Assert.Equal(2 / 3.0, run.Completion);
+        Assert.True(run.AnyFailed);
     }
 
     [Fact]

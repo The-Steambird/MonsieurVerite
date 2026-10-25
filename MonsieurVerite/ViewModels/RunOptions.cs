@@ -108,7 +108,7 @@ public sealed partial class RunOptions : ObservableObject
     public double EffectiveCrf
     {
         get => Crf ?? DefaultCrf;
-        set => Crf = value;
+        set => Crf = Math.Clamp(value, 0, 51);
     }
 
     /// <summary>Null means the default, stored the same way as <see cref="Crf" />.</summary>

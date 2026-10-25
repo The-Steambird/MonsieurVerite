@@ -54,6 +54,16 @@ public class RunOptionsTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void CrfIsHeldToX265sRange()
+    {
+        var options = new RunOptions { EffectiveCrf = 80 };
+        Assert.Equal(51, options.Crf);
+
+        options.EffectiveCrf = -1;
+        Assert.Equal(0, options.Crf);
+    }
+
+    [Fact]
     public void DefaultX265ParamsMatchCharlottes()
     {
         if (Charlotte.Checkout is not { } checkout)

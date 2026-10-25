@@ -5,7 +5,8 @@ using MonsieurVerite.Engine;
 namespace MonsieurVerite.ViewModels;
 
 /// <summary>Drives one engine process and is the only place its events are read.</summary>
-internal sealed class EngineRun(MainViewModel owner, string enginePath, bool opensJobs)
+internal sealed class EngineRun(
+    MainViewModel owner, string enginePath, IReadOnlyList<QueueItem> jobs)
 {
     private EngineClient? client;
     private QueueItem? current;
@@ -16,7 +17,37 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, bool ope
     public UpdateInstallEvent? Install { get; private set; }
 
     /// <summary>A probe and an update check open no jobs, and Skip is off for them.</summary>
-    public bool OpensJobs => opensJobs;
+    public bool OpensJobs => jobs.Count > 0;
+
+    public bool AnyFailed => jobs.Any(job => job.Status == ItemStatus.Error);
+
+    /// <summary>
+    /// How much of the run is done, from 0 to 1. The running file counts by its current stage's
+    /// progress, and the total steps back when that file starts a new stage.
+    /// </summary>
+    public double Completion
+    {
+        get
+        {
+            if (jobs.Count == 0)
+            {
+                return 0;
+            }
+
+            var finished = 0.0;
+            foreach (var job in jobs)
+            {
+                finished += job.Status switch
+                {
+                    ItemStatus.Queued => 0,
+                    ItemStatus.Running => job.Progress / 100,
+                    _ => 1,
+                };
+            }
+
+            return finished / jobs.Count;
+        }
+    }
 
     public async Task RunAsync(
         IReadOnlyList<string> arguments, string? workingDirectory, CancellationToken cancellationToken)

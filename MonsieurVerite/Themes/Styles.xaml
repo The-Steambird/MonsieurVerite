@@ -337,29 +337,22 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="LogPane" TargetType="Border">
-        <Setter Property="Height" Value="0" />
-        <Setter Property="ClipToBounds" Value="True" />
+    <Style x:Key="LogGrip" TargetType="Thumb">
+        <Setter Property="Height" Value="6" />
+        <Setter Property="Margin" Value="0,-3,0,0" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Cursor" Value="SizeNS" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="Transparent" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsLogOpen}" Value="True">
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="Height" To="132"
-                                             Duration="0:0:0.2"
-                                             EasingFunction="{StaticResource EaseOut}" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </DataTrigger.EnterActions>
-                <DataTrigger.ExitActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="Height" To="0"
-                                             Duration="0:0:0.18"
-                                             EasingFunction="{StaticResource EaseOut}" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </DataTrigger.ExitActions>
+                <Setter Property="Visibility" Value="Visible" />
             </DataTrigger>
         </Style.Triggers>
     </Style>

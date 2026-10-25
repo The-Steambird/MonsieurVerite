@@ -12,6 +12,7 @@
   "GAME_NOT_FOUND_MESSAGE": "Couldn't find Genshin Impact directory.",
   "ADD_FILES": "Add files",
   "MORE_TIP": "More",
+  "SETTINGS_TIP": "Settings (Ctrl+,)",
   "SHOW_RECOVERED_KEYS": "Show recovered keys",
   "CHECK_FOR_UPDATES": "Check for updates…",
   "EXIT": "Exit",
