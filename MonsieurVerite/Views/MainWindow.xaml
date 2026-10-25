@@ -133,6 +133,12 @@
         </Border>
 
         <Grid Grid.Row="1">
+            <!-- Fluent's DataGrid leaves the corner above its scrollbar empty, so the header band
+                 is painted here, behind the transparent grid, across the full width. Both brushes
+                 are translucent, which is why the grid's own header fill and lines are cleared. -->
+            <Border Height="36" VerticalAlignment="Top"
+                    Background="{DynamicResource DataGridHeaderBackground}"
+                    BorderBrush="{StaticResource LineStrongBrush}" BorderThickness="0,0,0,1" />
             <DataGrid x:Name="Queue"
                       ItemsSource="{Binding Items}"
                       AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
@@ -144,6 +150,10 @@
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       FontSize="13" RowHeight="42" BorderThickness="0" Background="Transparent"
                       PreviewMouseLeftButtonDown="Queue_PreviewMouseLeftButtonDown">
+
+                <DataGrid.Resources>
+                    <SolidColorBrush x:Key="DataGridHeaderBackground" Color="Transparent" />
+                </DataGrid.Resources>
 
                 <DataGrid.ContextMenu>
                     <ContextMenu>
