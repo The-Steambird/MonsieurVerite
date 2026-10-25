@@ -75,7 +75,6 @@ public sealed record StageEvent : EngineEvent
 
 public sealed record ProgressEvent : EngineEvent
 {
-    public string Stage { get; init; } = "";
     public long Current { get; init; }
     public long Total { get; init; }
 }
@@ -119,11 +118,8 @@ public sealed record ProbeEvent : EngineEvent
 {
     public string File { get; init; } = "";
     public bool Key { get; init; }
-
     public string? Version { get; init; }
-
     public IReadOnlyList<string> Subtitles { get; init; } = [];
-
     public bool StreamCipher { get; init; }
 }
 
@@ -159,8 +155,7 @@ public sealed record UpdateInstallEvent : EngineEvent
 
 /// <summary>
 /// An old-scheme key carries only <see cref="VideoKey"/>, and a 7.1 key only
-/// <see cref="AudioKey"/> and <see cref="AesKey"/>. A new 7.1 key arrives twice, first without
-/// files and then with the files it decrypts.
+/// <see cref="AudioKey"/> and <see cref="AesKey"/>.
 /// </summary>
 public sealed record CaptureKeyEvent : EngineEvent
 {

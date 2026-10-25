@@ -20,10 +20,9 @@ public sealed partial class MainViewModel : ObservableObject
         this.settings = settings;
         Engine = engine;
 
+        var engineFolder = Path.GetDirectoryName(engine) ?? AppContext.BaseDirectory;
         SourceDirectory = settings.SourceDirectory ?? "";
-        OutputDirectory = settings.OutputDirectory
-                          ?? Path.Combine(Path.GetDirectoryName(engine) ?? AppContext.BaseDirectory,
-                              "output");
+        OutputDirectory = settings.OutputDirectory ?? Path.Combine(engineFolder, "output");
         IsLogOpen = true;
 
         Items.CollectionChanged += (_, _) => RefreshQueue();
@@ -89,7 +88,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool IsIdle => !IsRunning;
 
-    /// <summary>An engine run was asked to cancel, which makes a second press kill it.</summary>
+    /// <summary>An engine run was asked to cancel, and a second press kills it.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CancelLabel))]
     public partial bool CanForceStop { get; private set; }
@@ -115,8 +114,8 @@ public sealed partial class MainViewModel : ObservableObject
     public bool CanRunEngine => HasEngine && !IsRunning;
 
     /// <summary>
-    /// Started by a language restart, which hands over the queue and was preceded by an instance
-    /// that already checked for updates.
+    /// Started by a language restart. The previous instance handed over its queue and already
+    /// checked for updates.
     /// </summary>
     public bool IsRestart { get; init; }
 
@@ -198,7 +197,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (HasEngine)
         {
             var (folder, files) = EngineFiles(added);
-            await RunEngineAsync(["--probe", .. files], 0, folder).ConfigureAwait(true);
+            await RunEngineAsync(["--probe", .. files], opensJobs: false, folder).ConfigureAwait(true);
         }
     }
 
@@ -279,8 +278,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    // A window reads its strings once, which is why a new language needs a restart. Switching
-    // them first puts the question in the language the user just picked.
+    // A new language needs a restart because a window reads its strings once. Switching them first
+    // puts the question in the language the user just picked.
     internal void OfferRestartForLanguage(string previousLanguage)
     {
         if (settings.Language == previousLanguage)
@@ -493,7 +492,7 @@ public sealed partial class MainViewModel : ObservableObject
         var (folder, files) = EngineFiles(targets);
         await RunEngineAsync(
             ["--output", output, .. Options.ToArguments(), .. extraArguments, .. files],
-            targets.Count,
+            opensJobs: true,
             folder).ConfigureAwait(true);
     }
 
@@ -513,7 +512,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         var (folder, files) = EngineFiles(targets);
-        await RunEngineAsync(["--crack", .. files], targets.Count, folder).ConfigureAwait(true);
+        await RunEngineAsync(["--crack", .. files], opensJobs: true, folder).ConfigureAwait(true);
     }
 
     private bool CanRecoverKeys() => CanRunEngine && Items.Any(IsRecoverable);
@@ -523,18 +522,14 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCancel))]
     private void Cancel()
     {
-        if (cancellation is not { } source)
+        if (!CanForceStop)
         {
-            return;
+            cancellation?.Cancel();
+            CanForceStop = true;
         }
-
-        if (!source.IsCancellationRequested)
+        else
         {
-            source.Cancel();
-            CanForceStop = run is not null;
-        }
-        else if (run?.ForceStop() == true)
-        {
+            run?.ForceStop();
             IsStopping = true;
         }
     }
@@ -548,11 +543,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     public void Shutdown() => cancellation?.Cancel();
 
-    // The folder loads before the first frame, which keeps the empty queue from flashing, and a
-    // dialog opened before the window is on screen would appear alone on the desktop.
+    // The folder loads before the first frame to keep the empty queue from flashing. The dialogs
+    // wait for the window, because one opened earlier would appear alone on the desktop.
     public async Task StartupAsync(Task windowShown)
     {
-        // Taken on every start, which also clears a file left by a restart that never came up.
+        // Every start takes and deletes the file, including one left by a restart that never came up.
         var saved = QueueItems.TakeSaved(SavedQueuePath);
         if (IsRestart && saved is not null)
         {
@@ -592,7 +587,7 @@ public sealed partial class MainViewModel : ObservableObject
     // otherwise meet a dialog every time.
     private async Task UpdateAsync(bool quiet)
     {
-        var check = await RunEngineAsync(["--update"], 0).ConfigureAwait(true);
+        var check = await RunEngineAsync(["--update"], opensJobs: false).ConfigureAwait(true);
         if (check.Update is not { } update)
         {
             AppendLog(Strings.NO_UPDATE_RESULT_LOG, warning: true);
@@ -632,9 +627,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    // Windows caps a command line at 32,767 characters, and the game's 278 cutscenes take 47,375
-    // as full paths. The engine starts in the folder holding most of the files and gets those as
-    // bare names.
+    // Windows caps a command line at 32,767 characters, and the game's cutscenes overrun it as full
+    // paths. The engine starts in the folder holding most of the files and gets those as bare names.
     private static (string? Folder, List<string> Files) EngineFiles(IReadOnlyList<QueueItem> items)
     {
         var folder = items
@@ -661,7 +655,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// run.
     /// </summary>
     private async Task<EngineRun> RunEngineAsync(
-        IReadOnlyList<string> arguments, int jobCount, string? workingDirectory = null)
+        IReadOnlyList<string> arguments, bool opensJobs, string? workingDirectory = null)
     {
         if (Engine is not { } engine)
         {
@@ -673,7 +667,7 @@ public sealed partial class MainViewModel : ObservableObject
             throw new InvalidOperationException("A run is already in progress.");
         }
 
-        var engineRun = new EngineRun(this, engine, jobCount);
+        var engineRun = new EngineRun(this, engine, opensJobs);
         using var source = new CancellationTokenSource();
         cancellation = source;
         run = engineRun;

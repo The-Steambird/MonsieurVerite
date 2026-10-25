@@ -5,7 +5,7 @@ using MonsieurVerite.Engine;
 namespace MonsieurVerite.ViewModels;
 
 /// <summary>Drives one engine process and is the only place its events are read.</summary>
-internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobCount)
+internal sealed class EngineRun(MainViewModel owner, string enginePath, bool opensJobs)
 {
     private EngineClient? client;
     private QueueItem? current;
@@ -15,9 +15,8 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
 
     public UpdateInstallEvent? Install { get; private set; }
 
-    // jobCount is how many job_start events the run will open, which a probe and an update check
-    // never do. Zero disables Skip.
-    public bool OpensJobs => jobCount > 0;
+    /// <summary>A probe and an update check open no jobs, and Skip is off for them.</summary>
+    public bool OpensJobs => opensJobs;
 
     public async Task RunAsync(
         IReadOnlyList<string> arguments, string? workingDirectory, CancellationToken cancellationToken)
@@ -89,17 +88,11 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         }
     }
 
-    /// <summary>Ends the engine and everything it started, or returns false if it already has.</summary>
-    public bool ForceStop()
+    /// <summary>Ends the engine and everything it started.</summary>
+    public void ForceStop()
     {
-        if (client is not { } engine || forceStopped)
-        {
-            return false;
-        }
-
         forceStopped = true;
-        engine.Kill();
-        return true;
+        client?.Kill();
     }
 
     private void Settle(string? failure)
@@ -162,7 +155,6 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
 
             case ProgressEvent progress when progress.Total > 0 && current is not null:
                 current.Progress = progress.Current * 100.0 / progress.Total;
-
                 break;
 
             case ResultEvent result:
@@ -171,8 +163,8 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
 
             case ErrorEvent error:
                 items.Find(error.File)?.MarkFailed(error.Message);
-                owner.AppendLog(error.File.Length > 0 ? $"{error.File}: {error.Message}" : error.Message,
-                    warning: true);
+                var message = error.File.Length > 0 ? $"{error.File}: {error.Message}" : error.Message;
+                owner.AppendLog(message, warning: true);
                 break;
 
             case JobSkippedEvent skipped:
@@ -219,7 +211,8 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
                 break;
 
             case QuestionEvent question:
-                var answer = owner.ShowMessage?.Invoke(Prompt(question)) ?? question.Default;
+                var prompt = Prompt(question);
+                var answer = owner.ShowMessage?.Invoke(prompt) ?? question.Default;
                 client?.SendAnswer(question.Id, answer);
                 break;
 
@@ -229,8 +222,8 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         }
     }
 
-    // An update run asks only whether to install the release it just reported, which is why that
-    // question gets the release notes instead of a plain yes or no.
+    // An update run asks only whether to install the release it just reported. That question gets
+    // the release notes instead of a plain yes or no.
     private Message Prompt(QuestionEvent question)
     {
         if (Update is { Available: true } update)

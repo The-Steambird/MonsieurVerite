@@ -7,8 +7,8 @@ namespace MonsieurVerite.Tests;
 
 public class EngineRunTests : ViewModelTest
 {
-    private static EngineRun NewRun(MainViewModel viewModel, int jobCount = 0) =>
-        new(viewModel, viewModel.Engine!, jobCount);
+    private static EngineRun NewRun(MainViewModel viewModel) =>
+        new(viewModel, viewModel.Engine!, opensJobs: false);
 
     [Fact]
     public void ProbeFillsKeyAndSubtitleAvailability()
@@ -47,7 +47,7 @@ public class EngineRunTests : ViewModelTest
         run.Apply(new StageEvent { Stage = "demux", Status = "start" });
         Assert.Equal("Demuxing", item.Detail);
 
-        run.Apply(new ProgressEvent { Stage = "demux", Current = 5, Total = 10 });
+        run.Apply(new ProgressEvent { Current = 5, Total = 10 });
         Assert.Equal(50, item.Progress);
 
         var output = Scratch.File(Path.Combine("out", "a", "a.mkv"));
@@ -65,7 +65,7 @@ public class EngineRunTests : ViewModelTest
         var item = Add(viewModel, "a.usm");
 
         run.Apply(new JobStartEvent { File = "a.usm" });
-        run.Apply(new ProgressEvent { Stage = "ffmpeg", Current = 3, Total = 4 });
+        run.Apply(new ProgressEvent { Current = 3, Total = 4 });
         run.Apply(new ErrorEvent { File = "a.usm", Message = "bad chunk" });
 
         Assert.Equal(ItemStatus.Error, item.Status);
@@ -203,7 +203,7 @@ public class EngineRunTests : ViewModelTest
         var item = Add(viewModel, "a.usm");
 
         run.Apply(new StageEvent { Stage = "subtitles", Status = "start" });
-        run.Apply(new ProgressEvent { Stage = "subtitles", Current = 1, Total = 4 });
+        run.Apply(new ProgressEvent { Current = 1, Total = 4 });
 
         Assert.Equal("", item.Detail);
         Assert.Equal(0, item.Progress);
