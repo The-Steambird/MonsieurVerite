@@ -79,6 +79,7 @@ public class RecoveredKeysTests : IDisposable
         var setAside = RecoveredKeys.Add(path, "Cs_Boy", 42);
 
         Assert.NotNull(setAside);
+        Assert.Matches(@"\\recovered_keys\.unreadable-\d{8}-\d{6}\.json$", setAside);
         Assert.Equal(corrupt, File.ReadAllText(setAside));
         Assert.Single(List());
         Assert.Null(RecoveredKeys.Add(path, "Cs_Girl", 7));

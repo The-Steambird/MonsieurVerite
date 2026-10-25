@@ -2,9 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-
 using MonsieurVerite.ViewModels;
-
 using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
@@ -78,11 +76,10 @@ public class RunOptionsTests(ITestOutputHelper output)
         Assert.Equal(Quoted(source, @"tuning \+= \["), RunOptions.X265Effort.Split(':'));
         Assert.Equal(Quoted(source, @"preset in \("), RunOptions.X265EffortPresets);
 
-        Assert.Equal(RunOptions.DefaultCrf,
-            double.Parse(Regex.Match(source, @"^DEFAULT_CRF = ([\d.]+)", RegexOptions.Multiline).Groups[1].Value,
-                CultureInfo.InvariantCulture));
-        Assert.Equal(RunOptions.DefaultPreset,
-            Regex.Match(source, "^DEFAULT_PRESET = \"(\\w+)\"", RegexOptions.Multiline).Groups[1].Value);
+        var crf = Regex.Match(source, @"^DEFAULT_CRF = ([\d.]+)", RegexOptions.Multiline).Groups[1].Value;
+        var preset = Regex.Match(source, "^DEFAULT_PRESET = \"(\\w+)\"", RegexOptions.Multiline).Groups[1].Value;
+        Assert.Equal(RunOptions.DefaultCrf, double.Parse(crf, CultureInfo.InvariantCulture));
+        Assert.Equal(RunOptions.DefaultPreset, preset);
     }
 
     [Theory]
@@ -101,12 +98,15 @@ public class RunOptionsTests(ITestOutputHelper output)
     public void UntouchedParamLinesFollowThePreset()
     {
         var options = new RunOptions();
+        var changed = new List<string?>();
+        options.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
         Assert.Equal(RunOptions.DefaultX265ParamsFor(RunOptions.DefaultPreset).Replace(':', '\n'), options.X265ParamLines);
 
         options.Preset = "fast";
         Assert.Equal(RunOptions.X265Tuning.Replace(':', '\n'), options.X265ParamLines);
         Assert.Null(options.X265Params);
+        Assert.Contains(nameof(RunOptions.X265ParamLines), changed);
     }
 
     [Fact]
