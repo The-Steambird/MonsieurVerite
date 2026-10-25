@@ -19,7 +19,7 @@ public sealed partial class JobObject : IDisposable
                 $"CreateJobObject failed (error {Marshal.GetLastPInvokeError()}).");
         }
 
-        var extended = new JobObjectExtendedLimitInformation
+        var limits = new JobObjectExtendedLimitInformation
         {
             BasicLimitInformation = new JobObjectBasicLimitInformation
             {
@@ -27,24 +27,13 @@ public sealed partial class JobObject : IDisposable
             },
         };
 
-        var size = Marshal.SizeOf<JobObjectExtendedLimitInformation>();
-        var buffer = Marshal.AllocHGlobal(size);
-        try
+        var size = (uint)Marshal.SizeOf<JobObjectExtendedLimitInformation>();
+        if (!SetInformationJobObject(handle, ExtendedLimitInformation, ref limits, size))
         {
-            Marshal.StructureToPtr(extended, buffer, fDeleteOld: false);
-            if (SetInformationJobObject(handle, ExtendedLimitInformation, buffer, (uint)size))
-            {
-                return;
-            }
-
             var error = Marshal.GetLastPInvokeError();
             _ = CloseHandle(handle);
             throw new InvalidOperationException(
                 $"SetInformationJobObject failed (error {error}).");
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
         }
     }
 
@@ -70,7 +59,7 @@ public sealed partial class JobObject : IDisposable
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetInformationJobObject(
-        IntPtr job, int infoClass, IntPtr info, uint infoLength);
+        IntPtr job, int infoClass, ref JobObjectExtendedLimitInformation info, uint infoLength);
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
