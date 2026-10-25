@@ -1,7 +1,5 @@
 using System.IO;
-
 using MonsieurVerite.ViewModels;
-
 using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
@@ -70,8 +68,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     [Theory]
     [InlineData("en-US", "ja-JP", true)]
     [InlineData("ja-JP", "ja-JP", false)]
-    public void ARestartIsOfferedOnlyForANewLanguage(
-        string chosen, string previous, bool offered)
+    public void ARestartIsOfferedOnlyForANewLanguage(string chosen, string previous, bool offered)
     {
         var viewModel = new MainViewModel(null, new Settings { Language = chosen });
         var shown = DeclineMessages(viewModel);

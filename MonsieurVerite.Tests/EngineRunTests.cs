@@ -1,5 +1,4 @@
 using System.IO;
-
 using MonsieurVerite.Engine;
 using MonsieurVerite.ViewModels;
 
@@ -230,8 +229,8 @@ public class EngineRunTests : ViewModelTest
     [InlineData(0, ItemStatus.Pending, "")]
     public async Task ARowTheEngineLeftRunningIsSettledByHowTheEngineEnded(int exitCode, ItemStatus expected, string detail)
     {
-        // A clean exit that never closed the job is how --crack ends, which is why the row goes
-        // back to Pending instead of to Error.
+        // A clean exit that never closed the job is how --crack ends. The row then goes back to
+        // Pending instead of to Error.
         var engine = FakeEngine(
             """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
             $"@exit /b {exitCode}");
@@ -268,7 +267,7 @@ public class EngineRunTests : ViewModelTest
     public async Task AFailureTheEventsAlreadyExplainedDoesNotEchoStderr()
     {
         // The engine exits 1 after a batch with a failed file, and the error event on the row
-        // already explains it, which is why the console logger's copy stays out of the log.
+        // already explains it. The console logger's copy stays out of the log.
         var engine = FakeEngine(
             """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
             """@echo {"type":"error","file":"a.usm","message":"bad chunk"}""",

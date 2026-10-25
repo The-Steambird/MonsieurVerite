@@ -1,8 +1,6 @@
 using System.IO;
 using System.Text.Json;
-
 using MonsieurVerite.Engine;
-
 using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
@@ -84,7 +82,7 @@ public class EngineClientTests(ITestOutputHelper output)
     public void AnswerCommandIsOneJsonObjectTheEngineCanParse(string id, bool value)
     {
         // json.py matches `cmd.get("type") == "answer" and cmd.get("id") == question_id` on one
-        // line of stdin, which makes the three keys and the single line the contract.
+        // line of stdin. The three keys and the single line are the contract.
         var command = EngineClient.AnswerCommand(id, value);
 
         Assert.DoesNotContain('\n', command);

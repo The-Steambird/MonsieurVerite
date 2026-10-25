@@ -1,5 +1,4 @@
 using System.IO;
-
 using Xunit.Abstractions;
 
 namespace MonsieurVerite.Tests;
@@ -26,8 +25,8 @@ internal static class Charlotte
     private static string? Find()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null &&
-               !File.Exists(Path.Combine(directory.FullName, "MonsieurVerite.slnx")))
+        while (directory is not null
+               && !File.Exists(Path.Combine(directory.FullName, "MonsieurVerite.slnx")))
         {
             directory = directory.Parent;
         }

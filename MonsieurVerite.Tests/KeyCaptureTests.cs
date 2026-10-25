@@ -20,7 +20,7 @@ public class KeyCaptureTests
     private static KeyCapture NewCapture(bool newKeysOnly) =>
         new("charlotte-cli.exe", new Settings { CaptureNewKeysOnly = newKeysOnly });
 
-    /// <summary>The text is what the user pastes into keys.json, which fixes its field order.</summary>
+    /// <summary>The user pastes the text into keys.json, and that fixes its field order.</summary>
     [Fact]
     public void EachSchemePrintsAsTheKeysJsonGroupItBelongsIn()
     {
@@ -48,9 +48,7 @@ public class KeyCaptureTests
             KeyCapture.Group(Unlisted));
     }
 
-    /// <summary>
-    /// Every key is kept, which is what lets the filter change after a capture without another.
-    /// </summary>
+    /// <summary>Every key is kept, because the filter can still change after the capture.</summary>
     [Fact]
     public void TheFilterHidesKnownKeysAndCanBeFlippedAfterwards()
     {

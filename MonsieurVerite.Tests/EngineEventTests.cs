@@ -3,8 +3,8 @@ using MonsieurVerite.Engine;
 namespace MonsieurVerite.Tests;
 
 /// <summary>
-/// There is no schema file, which leaves these and charlotte's utils/reporter/json.py as the
-/// only field-level check on the protocol.
+/// There is no schema file. These tests and charlotte's utils/reporter/json.py are the only
+/// field-level check on the protocol.
 /// </summary>
 public class EngineEventTests
 {

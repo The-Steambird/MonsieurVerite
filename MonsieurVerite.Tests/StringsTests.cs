@@ -25,14 +25,15 @@ public class StringsTests
         Assert.All(Strings.English, pair => Assert.False(string.IsNullOrWhiteSpace(pair.Value), pair.Key));
     }
 
-    // x:Static resolves only public members, and only when the window that names one is opened,
-    // so neither the build nor starting the app catches a string it cannot see.
+    // x:Static resolves only public members, and only when the window that names one opens.
+    // Neither the build nor starting the app catches a string it cannot see.
     [Fact]
     public void EveryStringTheXamlNamesIsPublic()
     {
         var project = Path.Combine(RepositoryRoot(), "MonsieurVerite");
         var names = Directory.EnumerateFiles(project, "*.xaml", SearchOption.AllDirectories)
-            .SelectMany(path => Regex.Matches(File.ReadAllText(path), @"local:Strings\.(\w+)"))
+            .Select(File.ReadAllText)
+            .SelectMany(xaml => Regex.Matches(xaml, @"local:Strings\.(\w+)"))
             .Select(match => match.Groups[1].Value)
             .Distinct()
             .ToList();
@@ -42,20 +43,20 @@ public class StringsTests
             Assert.NotNull(typeof(Strings).GetProperty(name, BindingFlags.Public | BindingFlags.Static)));
     }
 
+    public static TheoryData<string> Translations() =>
+        new(Strings.Languages.Where(language => language != Strings.SourceLanguage));
+
     // A translation that drops or renames a placeholder shows it raw, and only when that message
     // comes up.
-    [Fact]
-    public void TranslationsKeepTheEnglishKeysAndPlaceholders()
+    [Theory]
+    [MemberData(nameof(Translations))]
+    public void TranslationsKeepTheEnglishKeysAndPlaceholders(string language)
     {
-        Assert.Contains("en-US", Strings.Languages);
-        foreach (var language in Strings.Languages.Where(language => language != "en-US"))
+        CultureInfo.GetCultureInfo(language, predefinedOnly: true);
+        foreach (var (key, text) in Strings.Load(language).Where(pair => pair.Value.Length > 0))
         {
-            CultureInfo.GetCultureInfo(language, predefinedOnly: true);
-            foreach (var (key, text) in Strings.Load(language).Where(pair => pair.Value.Length > 0))
-            {
-                Assert.True(Strings.English.ContainsKey(key), $"{language}: {key} is not in en-US");
-                Assert.Equal(Placeholders(Strings.English[key]), Placeholders(text));
-            }
+            Assert.True(Strings.English.ContainsKey(key), $"{key} is not in en-US");
+            Assert.Equal(Placeholders(Strings.English[key]), Placeholders(text));
         }
     }
 
