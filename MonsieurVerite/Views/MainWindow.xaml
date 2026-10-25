@@ -81,6 +81,11 @@
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Style="{StaticResource ToolbarIconButton}"
+                            Command="{Binding CaptureKeysCommand}"
+                            ToolTip="{x:Static local:Strings.CAPTURE_KEYS}">
+                        <Path Style="{StaticResource Icon}" Data="{StaticResource KeyRoundIcon}" />
+                    </Button>
+                    <Button Style="{StaticResource ToolbarIconButton}"
                             Command="{Binding EditSettingsCommand}"
                             ToolTip="Ctrl+,">
                         <Path Style="{StaticResource Icon}" Data="{StaticResource GearIcon}" />
@@ -93,8 +98,6 @@
                                           Command="{Binding OpenOutputFolderCommand}" />
                                 <MenuItem Header="{x:Static local:Strings.SHOW_RECOVERED_KEYS}"
                                           Command="{Binding ShowRecoveredKeysCommand}" />
-                                <MenuItem Header="{x:Static local:Strings.CAPTURE_KEYS}"
-                                          Command="{Binding CaptureKeysCommand}" />
                                 <Separator />
                                 <MenuItem Header="{x:Static local:Strings.CHECK_FOR_UPDATES}"
                                           Command="{Binding CheckForUpdatesCommand}" />
