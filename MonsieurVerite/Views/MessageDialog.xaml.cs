@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite.Views;
 
@@ -10,29 +11,26 @@ public partial class MessageDialog : DialogWindow
         InitializeComponent();
     }
 
-    public static bool Show(
-        Window owner, string title, string message,
-        string? primary = null, string? secondary = null, string? detail = null,
-        string? notes = null, string? notesUrl = null)
+    public static bool Show(Window owner, Message message)
     {
-        var dialog = new MessageDialog { Owner = owner, Title = title };
-        dialog.TitleText.Text = title;
-        dialog.MessageText.Text = message;
-        dialog.PrimaryButton.Content = primary ?? Strings.OK;
+        var dialog = new MessageDialog { Owner = owner, Title = message.Title };
+        dialog.TitleText.Text = message.Title;
+        dialog.MessageText.Text = message.Text;
+        dialog.PrimaryButton.Content = message.Primary ?? Strings.OK;
 
-        if (secondary is not null)
+        if (message.Secondary is { } secondary)
         {
             dialog.SecondaryButton.Content = secondary;
             dialog.SecondaryButton.Visibility = Visibility.Visible;
         }
 
-        if (detail is { Length: > 0 })
+        if (message.Detail is { Length: > 0 } detail)
         {
             dialog.DetailText.Text = detail;
             dialog.DetailPanel.Visibility = Visibility.Visible;
         }
 
-        var blocks = ReleaseNotes.Render(notes ?? "");
+        var blocks = ReleaseNotes.Render(message.Notes ?? "");
         if (blocks.Count > 0)
         {
             foreach (var block in blocks)
@@ -44,7 +42,7 @@ public partial class MessageDialog : DialogWindow
             dialog.Width = 560;
         }
 
-        if (ReleaseNotes.WebLink(notesUrl) is { } link)
+        if (ReleaseNotes.WebLink(message.NotesUrl) is { } link)
         {
             dialog.NotesLink.NavigateUri = link;
             dialog.NotesLinkText.Visibility = Visibility.Visible;

@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -38,8 +39,7 @@ public partial class MainWindow : Window
             PromptKey = PromptKey,
             ShowCapture = capture => new CaptureDialog(capture) { Owner = this }.ShowDialog(),
             CopyText = CopyToClipboard,
-            ShowMessage = message => MessageDialog.Show(this, message.Title, message.Text,
-                message.Primary, message.Secondary, message.Detail, message.Notes, message.NotesUrl),
+            ShowMessage = message => MessageDialog.Show(this, message),
             CloseWindow = Close,
         };
         DataContext = viewModel;
@@ -57,7 +57,6 @@ public partial class MainWindow : Window
         Dispatcher.UnhandledException += OnUnhandledException;
         Loaded += OnLoaded;
         ContentRendered += (_, _) => shown.TrySetResult();
-        Closing += OnClosing;
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -92,23 +91,27 @@ public partial class MainWindow : Window
         PaintBleed(newDpi);
     }
 
-    private void PaintBleed(DpiScale dpi) =>
-        Bleed.Fill = Chrome.Bleed((Color)FindResource("WindowColor"),
-            (Color)FindResource("AccentColor"), dpi);
+    private void PaintBleed(DpiScale dpi)
+    {
+        var canvas = (Color)FindResource("WindowColor");
+        var accent = (Color)FindResource("AccentColor");
+        Bleed.Fill = Chrome.Bleed(canvas, accent, dpi);
+    }
 
     // Without this, an exception from an async void handler or a command closes the app with no
     // trace. Only the log takes it under a dialog, because a repeating failure would stack them.
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;
-        Debug.WriteLine(e.Exception);
-        viewModel.AppendLog(
-            Strings.UNEXPECTED_ERROR_LOG(e.Exception.GetType().Name, e.Exception.Message),
-            warning: true);
+        var exception = e.Exception;
+        Debug.WriteLine(exception);
+        var line = Strings.UNEXPECTED_ERROR_LOG(exception.GetType().Name, exception.Message);
+        viewModel.AppendLog(line, warning: true);
         if (Dialog is null)
         {
-            MessageDialog.Show(this, Strings.UNEXPECTED_ERROR_TITLE, e.Exception.Message,
-                detail: e.Exception.ToString());
+            var message = new Message(Strings.UNEXPECTED_ERROR_TITLE, exception.Message,
+                Detail: exception.ToString());
+            MessageDialog.Show(this, message);
         }
     }
 
@@ -117,8 +120,9 @@ public partial class MainWindow : Window
 
     // A dialog disables this window, but a WM_CLOSE from outside (taskkill without /f) still
     // arrives, and closing here would pull the dialog out from under its ShowDialog caller.
-    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    protected override void OnClosing(CancelEventArgs e)
     {
+        base.OnClosing(e);
         if (Dialog is { } dialog)
         {
             e.Cancel = true;
@@ -128,12 +132,9 @@ public partial class MainWindow : Window
 
         if (viewModel.IsRunning)
         {
-            var quit = MessageDialog.Show(
-                this,
-                Strings.QUIT_TITLE,
-                Strings.QUIT_MESSAGE,
-                Strings.QUIT, Strings.KEEP_RUNNING);
-            if (!quit)
+            var question = new Message(Strings.QUIT_TITLE, Strings.QUIT_MESSAGE, Strings.QUIT,
+                Strings.KEEP_RUNNING);
+            if (!MessageDialog.Show(this, question))
             {
                 e.Cancel = true;
                 return;
@@ -262,8 +263,8 @@ public partial class MainWindow : Window
         e.Handled = true;
         dragDepth = 0;
         Fade(DropOverlay, false);
-        if (viewModel.IsRunning ||
-            e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } dropped)
+        if (viewModel.IsRunning
+            || e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } dropped)
         {
             return;
         }
@@ -309,8 +310,8 @@ public partial class MainWindow : Window
         }
     }
 
-    // ScrollIntoView looks the item up by value, which would send a repeated log line to its
-    // first occurrence instead of the bottom.
+    // ScrollIntoView looks the item up by value and would send a repeated log line to its first
+    // occurrence instead of the bottom.
     private void OnLogChanged(object sender, ItemsChangedEventArgs e)
     {
         if (e.Action != NotifyCollectionChangedAction.Add)
@@ -330,7 +331,12 @@ public partial class MainWindow : Window
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
         {
             var child = VisualTreeHelper.GetChild(node, i);
-            if ((child as T ?? FindDescendant<T>(child)) is { } found)
+            if (child is T match)
+            {
+                return match;
+            }
+
+            if (FindDescendant<T>(child) is { } found)
             {
                 return found;
             }

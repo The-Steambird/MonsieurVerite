@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Navigation;
+using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite.Views;
 
@@ -26,7 +27,8 @@ public class DialogWindow : Window
         }
         catch (Win32Exception failure)
         {
-            MessageDialog.Show(this, Strings.LINK_FAILED_TITLE, failure.Message, detail: e.Uri.AbsoluteUri);
+            var message = new Message(Strings.LINK_FAILED_TITLE, failure.Message, Detail: e.Uri.AbsoluteUri);
+            MessageDialog.Show(this, message);
         }
     }
 }
