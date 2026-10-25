@@ -20,9 +20,8 @@ public sealed partial class MainViewModel : ObservableObject
         this.settings = settings;
         Engine = engine;
 
-        var engineFolder = Path.GetDirectoryName(engine) ?? AppContext.BaseDirectory;
         SourceDirectory = settings.SourceDirectory ?? "";
-        OutputDirectory = settings.OutputDirectory ?? Path.Combine(engineFolder, "output");
+        OutputDirectory = settings.OutputDirectory ?? Path.Combine(settings.EngineFolder, "output");
         IsLogOpen = true;
 
         Items.CollectionChanged += (_, _) => RefreshQueue();
@@ -487,8 +486,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         // A relative output folder belongs to the engine's folder, where the engine no longer
         // starts.
-        var engineFolder = Path.GetDirectoryName(Engine) ?? AppContext.BaseDirectory;
-        var output = Path.GetFullPath(OutputDirectory, engineFolder);
+        var output = Path.GetFullPath(OutputDirectory, settings.EngineFolder);
         var (folder, files) = EngineFiles(targets);
         await RunEngineAsync(
             ["--output", output, .. Options.ToArguments(), .. extraArguments, .. files],
@@ -610,8 +608,8 @@ public sealed partial class MainViewModel : ObservableObject
             AppendLog(Strings.UP_TO_DATE_LOG(update.Current));
             if (!quiet)
             {
-                ShowMessage?.Invoke(new Message(Strings.UP_TO_DATE_TITLE,
-                    Strings.UP_TO_DATE_MESSAGE(update.Current)));
+                var text = Strings.UP_TO_DATE_MESSAGE(update.Current);
+                ShowMessage?.Invoke(new Message(Strings.UP_TO_DATE_TITLE, text));
             }
 
             return;

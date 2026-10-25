@@ -45,11 +45,11 @@ public sealed class Settings
 
     [JsonIgnore] public string EffectiveEnginePath => EnginePath ?? DefaultEnginePath;
 
-    /// <summary>Beside the engine, which is where keys.json is.</summary>
+    /// <summary>Where keys.json is, and where a relative output folder belongs.</summary>
     [JsonIgnore]
-    public string RecoveredKeysPath =>
-        Path.Combine(Path.GetDirectoryName(EffectiveEnginePath) ?? AppContext.BaseDirectory,
-            "recovered_keys.json");
+    public string EngineFolder => Path.GetDirectoryName(EffectiveEnginePath) ?? AppContext.BaseDirectory;
+
+    [JsonIgnore] public string RecoveredKeysPath => Path.Combine(EngineFolder, "recovered_keys.json");
 
     // The message is built only when asked for, because the file is read before the language is
     // chosen.
