@@ -23,7 +23,15 @@
         <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding LoadFromGameCommand}" />
         <KeyBinding Key="O" Modifiers="Ctrl+Shift" Command="{Binding BrowseFilesCommand}" />
         <KeyBinding Key="OemComma" Modifiers="Ctrl" Command="{Binding EditSettingsCommand}" />
+        <KeyBinding Key="A" Modifiers="Ctrl" Command="{Binding CheckAllCommand}" />
+        <KeyBinding Key="Return" Modifiers="Ctrl" Command="{Binding StartCommand}" />
+        <KeyBinding Key="Escape" Command="{Binding CancelCommand}" />
     </Window.InputBindings>
+
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo ProgressState="{Binding TaskbarState}"
+                         ProgressValue="{Binding TaskbarProgress}" />
+    </Window.TaskbarItemInfo>
 
     <Grid x:Name="Root" Background="{StaticResource WindowBrush}">
         <Grid.RowDefinitions>
@@ -86,7 +94,7 @@
                     </Button>
                     <Button Style="{StaticResource ToolbarIconButton}"
                             Command="{Binding EditSettingsCommand}"
-                            ToolTip="Ctrl+,">
+                            ToolTip="{x:Static local:Strings.SETTINGS_TIP}">
                         <Path Style="{StaticResource Icon}" Data="{StaticResource GearIcon}" />
                     </Button>
                     <Button x:Name="MoreButton" Style="{StaticResource ToolbarIconButton}"
@@ -132,7 +140,7 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="QueueArea" Grid.Row="1">
             <!-- Fluent's DataGrid leaves the corner above its scrollbar empty. The header band is
                  painted here instead, behind the transparent grid and across the full width. The
                  grid's own header fill and lines are cleared, because both brushes are translucent
@@ -149,12 +157,20 @@
                       ColumnHeaderStyle="{StaticResource QueueHeader}"
                       RowStyle="{StaticResource QueueRow}" CellStyle="{StaticResource QueueCell}"
                       VirtualizingPanel.VirtualizationMode="Recycling"
-                      FontSize="13" RowHeight="42" BorderThickness="0" Background="Transparent"
-                      PreviewMouseLeftButtonDown="Queue_PreviewMouseLeftButtonDown">
+                      FontSize="13" RowHeight="38" BorderThickness="0" Background="Transparent"
+                      PreviewMouseLeftButtonDown="Queue_PreviewMouseLeftButtonDown"
+                      PreviewMouseRightButtonDown="Queue_PreviewMouseRightButtonDown">
 
                 <DataGrid.Resources>
                     <SolidColorBrush x:Key="DataGridHeaderBackground" Color="Transparent" />
                 </DataGrid.Resources>
+
+                <!-- The grid's own Ctrl+A and Enter handling swallows these keys before the
+                     window's bindings see them. -->
+                <DataGrid.InputBindings>
+                    <KeyBinding Key="A" Modifiers="Ctrl" Command="{Binding CheckAllCommand}" />
+                    <KeyBinding Key="Return" Modifiers="Ctrl" Command="{Binding StartCommand}" />
+                </DataGrid.InputBindings>
 
                 <DataGrid.ContextMenu>
                     <ContextMenu>
@@ -233,7 +249,8 @@
         <Border Grid.Row="2" Background="{StaticResource LayerBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
             <StackPanel>
-                <ToggleButton Style="{StaticResource LogToggle}" IsChecked="{Binding IsLogOpen}">
+                <ToggleButton Style="{StaticResource LogToggle}" IsChecked="{Binding IsLogOpen}"
+                              Checked="LogToggle_Checked" Unchecked="LogToggle_Unchecked">
                     <StackPanel Orientation="Horizontal">
                         <Path Style="{StaticResource LogChevron}"
                               Data="{StaticResource ChevronDownIcon}" />
@@ -241,8 +258,8 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </ToggleButton>
-                <Border Style="{StaticResource LogPane}">
-                    <ListBox x:Name="LogList" ItemsSource="{Binding Log}" Height="120"
+                <Border x:Name="LogPane" Height="0" ClipToBounds="True">
+                    <ListBox x:Name="LogList" ItemsSource="{Binding Log}"
                              Margin="8,0,8,8"
                              VerticalAlignment="Top" BorderThickness="0" Background="Transparent"
                              Padding="0"
@@ -283,11 +300,13 @@
             </StackPanel>
         </Border>
 
+        <Thumb Grid.Row="2" Style="{StaticResource LogGrip}" DragDelta="LogGrip_DragDelta" />
+
         <Border Grid.Row="3" Height="56" BorderBrush="{StaticResource LineBrush}"
                 BorderThickness="0,1,0,0">
             <DockPanel Margin="12,0" LastChildFill="True">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Command="{Binding StartCommand}">
+                    <Button Command="{Binding StartCommand}" ToolTip="Ctrl+Enter">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                                 <Style.Triggers>
@@ -323,7 +342,7 @@
                                 Command="{Binding SkipCommand}"
                                 ToolTip="{x:Static local:Strings.SKIP_FILE_TIP}" />
                         <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}"
-                                Margin="8,0,0,0" />
+                                Margin="8,0,0,0" ToolTip="Esc" />
                     </StackPanel>
                 </StackPanel>
 

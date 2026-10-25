@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows.Shell;
 using MonsieurVerite.ViewModels;
 using Xunit.Abstractions;
 
@@ -268,6 +269,103 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
 
         viewModel.ToggleAllCommand.Execute(null);
         Assert.All(viewModel.Items, item => Assert.False(item.IsChecked));
+    }
+
+    [Fact]
+    public void CheckAllLeavesEveryRowCheckedEvenWhenTheyAlreadyAre()
+    {
+        var viewModel = NewViewModel();
+        Add(viewModel, "a.usm").IsChecked = true;
+        Add(viewModel, "b.usm");
+
+        viewModel.CheckAllCommand.Execute(null);
+        Assert.True(viewModel.Items.AllChecked);
+
+        viewModel.CheckAllCommand.Execute(null);
+        Assert.True(viewModel.Items.AllChecked);
+    }
+
+    [Fact]
+    public void ARangeFollowsTheSortedRowsAndTakesTheClickedRowsNewState()
+    {
+        var viewModel = NewViewModel();
+        var a = Add(viewModel, "a.usm");
+        var b = Add(viewModel, "b.usm");
+        var c = Add(viewModel, "c.usm");
+        var d = Add(viewModel, "d.usm");
+        QueueItem[] sortedDescending = [d, c, b, a];
+
+        MainViewModel.CheckRange(sortedDescending, c, a);
+        Assert.Equal([false, true, true, true], sortedDescending.Select(item => item.IsChecked));
+
+        MainViewModel.CheckRange(sortedDescending, a, b);
+        Assert.Equal([false, true, false, false], sortedDescending.Select(item => item.IsChecked));
+    }
+
+    [Fact]
+    public void ARangeFromARemovedRowTogglesOnlyTheClickedOne()
+    {
+        var viewModel = NewViewModel();
+        var a = Add(viewModel, "a.usm");
+        var b = Add(viewModel, "b.usm");
+        var c = Add(viewModel, "c.usm");
+        viewModel.Items.Remove(b);
+
+        MainViewModel.CheckRange([.. viewModel.Items], b, c);
+
+        Assert.False(a.IsChecked);
+        Assert.True(c.IsChecked);
+    }
+
+    [Fact]
+    public void CheckOnlyUnchecksEveryOtherRow()
+    {
+        var viewModel = NewViewModel();
+        Add(viewModel, "a.usm").IsChecked = true;
+        var b = Add(viewModel, "b.usm");
+
+        viewModel.CheckOnly(b);
+
+        Assert.Equal([b], viewModel.Items.Checked);
+    }
+
+    [Fact]
+    public async Task OnlyAFileRunShowsOnTheTaskbarAndFlashesWhenItEnds()
+    {
+        var viewModel = NewViewModel(FakeEngine("@ping -n 60 127.0.0.1 >nul"));
+        var flashes = 0;
+        viewModel.FlashWindow = () => flashes++;
+        var notified = new List<string?>();
+        // Read on notification, because that is the only time the taskbar reads it.
+        var shown = TaskbarItemProgressState.None;
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            notified.Add(e.PropertyName);
+            if (e.PropertyName == nameof(MainViewModel.TaskbarState))
+            {
+                shown = viewModel.TaskbarState;
+            }
+        };
+        var item = Add(viewModel, "a.usm");
+
+        var check = viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
+        Assert.Equal(TaskbarItemProgressState.None, shown);
+        viewModel.CancelCommand.Execute(null);
+        viewModel.CancelCommand.Execute(null);
+        await check.WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(0, flashes);
+
+        var start = viewModel.StartCommand.ExecuteAsync(null);
+        Assert.Equal(TaskbarItemProgressState.Normal, shown);
+        Assert.Equal(0, viewModel.TaskbarProgress);
+        notified.Clear();
+        item.Progress = 50;
+        Assert.Contains(nameof(MainViewModel.TaskbarProgress), notified);
+        viewModel.CancelCommand.Execute(null);
+        viewModel.CancelCommand.Execute(null);
+        await start.WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(TaskbarItemProgressState.None, shown);
+        Assert.Equal(1, flashes);
     }
 
     [Fact]

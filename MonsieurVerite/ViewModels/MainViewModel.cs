@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Windows.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -63,6 +64,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public Action? CloseWindow { get; set; }
 
+    public Action? FlashWindow { get; set; }
+
     public string RecoveredKeysPath => settings.RecoveredKeysPath;
 
     [ObservableProperty]
@@ -111,6 +114,21 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     public bool CanRunEngine => HasEngine && !IsRunning;
+
+    public TaskbarItemProgressState TaskbarState
+    {
+        get
+        {
+            if (run is not { OpensJobs: true } fileRun)
+            {
+                return TaskbarItemProgressState.None;
+            }
+
+            return fileRun.AnyFailed ? TaskbarItemProgressState.Error : TaskbarItemProgressState.Normal;
+        }
+    }
+
+    public double TaskbarProgress => run?.Completion ?? 0;
 
     /// <summary>
     /// Started by a language restart. The previous instance handed over its queue and already
@@ -196,7 +214,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (HasEngine)
         {
             var (folder, files) = EngineFiles(added);
-            await RunEngineAsync(["--probe", .. files], opensJobs: false, folder).ConfigureAwait(true);
+            await RunEngineAsync(["--probe", .. files], jobs: [], folder).ConfigureAwait(true);
         }
     }
 
@@ -361,11 +379,46 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void CheckAll()
+    {
+        foreach (var item in Items)
+        {
+            item.IsChecked = true;
+        }
+    }
+
+    [RelayCommand]
     private void UncheckAll()
     {
         foreach (var item in Items)
         {
             item.IsChecked = false;
+        }
+    }
+
+    /// <summary>Gives every row from the anchor to the clicked one the clicked row's new state.</summary>
+    public static void CheckRange(IList<QueueItem> rows, QueueItem anchor, QueueItem clicked)
+    {
+        var target = !clicked.IsChecked;
+        var from = rows.IndexOf(anchor);
+        var to = rows.IndexOf(clicked);
+        if (from < 0)
+        {
+            clicked.IsChecked = target;
+            return;
+        }
+
+        for (var i = Math.Min(from, to); i <= Math.Max(from, to); i++)
+        {
+            rows[i].IsChecked = target;
+        }
+    }
+
+    public void CheckOnly(QueueItem only)
+    {
+        foreach (var item in Items)
+        {
+            item.IsChecked = item == only;
         }
     }
 
@@ -490,7 +543,7 @@ public sealed partial class MainViewModel : ObservableObject
         var (folder, files) = EngineFiles(targets);
         await RunEngineAsync(
             ["--output", output, .. Options.ToArguments(), .. extraArguments, .. files],
-            opensJobs: true,
+            targets,
             folder).ConfigureAwait(true);
     }
 
@@ -510,7 +563,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         var (folder, files) = EngineFiles(targets);
-        await RunEngineAsync(["--crack", .. files], opensJobs: true, folder).ConfigureAwait(true);
+        await RunEngineAsync(["--crack", .. files], targets, folder).ConfigureAwait(true);
     }
 
     private bool CanRecoverKeys() => CanRunEngine && Items.Any(IsRecoverable);
@@ -585,7 +638,7 @@ public sealed partial class MainViewModel : ObservableObject
     // otherwise meet a dialog every time.
     private async Task UpdateAsync(bool quiet)
     {
-        var check = await RunEngineAsync(["--update"], opensJobs: false).ConfigureAwait(true);
+        var check = await RunEngineAsync(["--update"], jobs: []).ConfigureAwait(true);
         if (check.Update is not { } update)
         {
             AppendLog(Strings.NO_UPDATE_RESULT_LOG, warning: true);
@@ -653,7 +706,8 @@ public sealed partial class MainViewModel : ObservableObject
     /// run.
     /// </summary>
     private async Task<EngineRun> RunEngineAsync(
-        IReadOnlyList<string> arguments, bool opensJobs, string? workingDirectory = null)
+        IReadOnlyList<string> arguments, IReadOnlyList<QueueItem> jobs,
+        string? workingDirectory = null)
     {
         if (Engine is not { } engine)
         {
@@ -665,7 +719,7 @@ public sealed partial class MainViewModel : ObservableObject
             throw new InvalidOperationException("A run is already in progress.");
         }
 
-        var engineRun = new EngineRun(this, engine, opensJobs);
+        var engineRun = new EngineRun(this, engine, jobs);
         using var source = new CancellationTokenSource();
         cancellation = source;
         run = engineRun;
@@ -681,6 +735,11 @@ public sealed partial class MainViewModel : ObservableObject
             CanForceStop = false;
             IsStopping = false;
             IsRunning = false;
+        }
+
+        if (engineRun.OpensJobs)
+        {
+            FlashWindow?.Invoke();
         }
 
         return engineRun;
@@ -702,14 +761,23 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnEngineChanged(string? value) => RefreshCommands();
 
-    partial void OnIsRunningChanged(bool value) => RefreshCommands();
+    partial void OnIsRunningChanged(bool value)
+    {
+        RefreshCommands();
+        RefreshTaskbar();
+    }
 
     partial void OnIsStoppingChanged(bool value) => RefreshCommands();
 
-    // The skipped properties change on every progress and stage event, and nothing refreshed here
-    // reads them.
     private void OnRowChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(QueueItem.Progress) or nameof(QueueItem.Status))
+        {
+            RefreshTaskbar();
+        }
+
+        // RefreshQueue skips these because they change on every progress and stage event, and
+        // nothing it updates reads them.
         if (e.PropertyName is not (nameof(QueueItem.Progress) or nameof(QueueItem.Detail)
             or nameof(QueueItem.StatusLabel)))
         {
@@ -722,6 +790,12 @@ public sealed partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(CheckState));
         OnPropertyChanged(nameof(StartLabel));
         RefreshCommands();
+    }
+
+    private void RefreshTaskbar()
+    {
+        OnPropertyChanged(nameof(TaskbarState));
+        OnPropertyChanged(nameof(TaskbarProgress));
     }
 
     private void RefreshCommands()

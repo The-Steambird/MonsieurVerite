@@ -16,12 +16,16 @@ namespace MonsieurVerite.Views;
 
 public partial class MainWindow : Window
 {
+    private const double LogMinHeight = 60;
+    private const double QueueMinHeight = 160;
     private static readonly Duration OverlayFade = new(TimeSpan.FromMilliseconds(150));
     private readonly MainViewModel viewModel;
     private readonly TaskCompletionSource shown =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private ScrollViewer? logScroller;
     private int dragDepth;
+    private QueueItem? anchor;
+    private double logHeight;
 
     public MainWindow(Settings settings, bool restart)
     {
@@ -41,7 +45,9 @@ public partial class MainWindow : Window
             CopyText = CopyToClipboard,
             ShowMessage = message => MessageDialog.Show(this, message),
             CloseWindow = Close,
+            FlashWindow = FlashIfInactive,
         };
+        ResizeLog(132);
         DataContext = viewModel;
         LogList.ItemContainerGenerator.ItemsChanged += OnLogChanged;
 
@@ -185,20 +191,51 @@ public partial class MainWindow : Window
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
+    private void FlashIfInactive()
+    {
+        if (!IsActive)
+        {
+            Chrome.Flash(this);
+        }
+    }
+
     private void About_Click(object sender, RoutedEventArgs e) =>
         new AboutDialog(viewModel.HasEngine, viewModel.EngineVersion) { Owner = this }.ShowDialog();
 
+    // Shift+click follows the sorted view, because the range the user sees is the one they mean.
     private void Queue_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is not DependencyObject source
-            || FindAncestor<CheckBox>(source) is not null
             || FindAncestor<DataGridRow>(source) is not { DataContext: QueueItem item })
         {
             return;
         }
 
-        item.IsChecked = !item.IsChecked;
-        e.Handled = true;
+        if (Keyboard.Modifiers == ModifierKeys.Shift && anchor is not null)
+        {
+            var rows = Queue.Items.Cast<QueueItem>().ToList();
+            MainViewModel.CheckRange(rows, anchor, item);
+            e.Handled = true;
+        }
+        else if (FindAncestor<CheckBox>(source) is null)
+        {
+            item.IsChecked = !item.IsChecked;
+            e.Handled = true;
+        }
+
+        anchor = item;
+    }
+
+    // The menu acts on the checked rows. Right-clicking a row outside them makes it the only one,
+    // as Explorer does with a selection.
+    private void Queue_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source
+            && FindAncestor<DataGridRow>(source) is { DataContext: QueueItem { IsChecked: false } item })
+        {
+            viewModel.CheckOnly(item);
+            anchor = item;
+        }
     }
 
     private static T? FindAncestor<T>(DependencyObject start) where T : DependencyObject
@@ -277,6 +314,35 @@ public partial class MainWindow : Window
         {
             await viewModel.AddFilesAsync(dropped);
         }
+    }
+
+    private void LogToggle_Checked(object sender, RoutedEventArgs e) => SlideLog(logHeight, 200);
+
+    private void LogToggle_Unchecked(object sender, RoutedEventArgs e) => SlideLog(0, 180);
+
+    private void SlideLog(double height, double milliseconds)
+    {
+        var slide = new DoubleAnimation(height, TimeSpan.FromMilliseconds(milliseconds))
+        {
+            EasingFunction = (IEasingFunction)FindResource("EaseOut"),
+        };
+        LogPane.BeginAnimation(HeightProperty, slide);
+    }
+
+    private void LogGrip_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        var tallest = Math.Max(LogMinHeight, logHeight + QueueArea.ActualHeight - QueueMinHeight);
+        ResizeLog(Math.Clamp(logHeight - e.VerticalChange, LogMinHeight, tallest));
+        LogPane.BeginAnimation(HeightProperty, null);
+        LogPane.Height = logHeight;
+    }
+
+    // The list keeps its own height while the pane slides. The slide then reveals its lines
+    // instead of reflowing them.
+    private void ResizeLog(double height)
+    {
+        logHeight = height;
+        LogList.Height = height - 12;
     }
 
     private void CopyLog_Click(object sender, RoutedEventArgs e)
