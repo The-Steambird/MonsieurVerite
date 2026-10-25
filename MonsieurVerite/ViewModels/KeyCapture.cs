@@ -8,9 +8,8 @@ using MonsieurVerite.Engine;
 namespace MonsieurVerite.ViewModels;
 
 /// <summary>
-/// The capture dialog's state. Every key the engine reports is kept, and the "only new" filter
-/// decides what <see cref="Text"/> shows, which lets it change after a capture without running
-/// another.
+/// The capture dialog's state. Every key the engine reports is kept, because the "only new"
+/// filter can still change after the capture has ended.
 /// </summary>
 public sealed partial class KeyCapture : ObservableObject
 {
@@ -29,7 +28,7 @@ public sealed partial class KeyCapture : ObservableObject
 
     public Action<string>? CopyText { get; set; }
 
-    /// <summary>The main window's log, which keeps every line the status shows only until the next.</summary>
+    /// <summary>The main window's log keeps every line, and the status only the latest.</summary>
     public Action<LogLine>? AppendLog { get; set; }
 
     public bool NewKeysOnly
@@ -75,16 +74,16 @@ public sealed partial class KeyCapture : ObservableObject
     }
 
     /// <summary>
-    /// The engine's latest line. The engine sends whatever went wrong after its summary, which
-    /// leaves the problem showing when a capture ends with one.
+    /// The engine's latest line. A capture that went wrong ends with the problem showing, because
+    /// the engine sends it after its summary.
     /// </summary>
     [ObservableProperty] public partial LogLine Status { get; private set; }
 
     /// <summary>The shown keys as keys.json groups, joined so they paste into a videoGroups list.</summary>
     [ObservableProperty] public partial string Text { get; private set; }
 
-    // The Start click's execution lasts the whole capture, and the toolkit disables a command that
-    // is still running unless it allows concurrent executions, which would grey out Stop.
+    // The Start click's execution lasts the whole capture. Without concurrent executions the
+    // toolkit would disable the command while it runs and grey out Stop.
     [RelayCommand(CanExecute = nameof(CanToggle), AllowConcurrentExecutions = true)]
     private async Task ToggleAsync()
     {
@@ -171,7 +170,7 @@ public sealed partial class KeyCapture : ObservableObject
         Text = string.Join(",\n", shown.Select(Group));
     }
 
-    /// <summary>One key in the field order keys.json uses, which is what makes it paste cleanly.</summary>
+    /// <summary>One key in keys.json's own field order, because it is pasted there.</summary>
     internal static string Group(CaptureKeyEvent key)
     {
         using var stream = new MemoryStream();

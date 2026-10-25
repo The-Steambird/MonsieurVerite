@@ -69,8 +69,7 @@ public static partial class Strings
     private static string Text(string key) =>
         translation?.GetValueOrDefault(key) is { Length: > 0 } text ? text : English[key];
 
-    // Placeholders are replaced in one pass, which leaves a value such as a file name alone even
-    // when it contains "{name}".
+    // One pass leaves a value such as a file name alone even when it contains "{name}".
     private static string Fill(string key, params (string Name, object? Value)[] values) =>
         Placeholder().Replace(Text(key), match =>
         {

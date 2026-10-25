@@ -7,8 +7,7 @@ namespace MonsieurVerite;
 
 public static class RecoveredKeys
 {
-    private static readonly JsonSerializerOptions
-        SerializerOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
 
     /// <returns>Where an unreadable file was moved aside, or null.</returns>
     public static string? Add(string path, string stem, ulong videoKey)
@@ -30,8 +29,8 @@ public static class RecoveredKeys
 
             videos.RemoveAll(video =>
                 video is JsonValue text && text.TryGetValue<string>(out var name) && name == stem);
-            if (entry["videoKey"] is JsonValue value && value.TryGetValue<ulong>(out var key) &&
-                key == videoKey)
+            if (entry["videoKey"] is JsonValue value && value.TryGetValue<ulong>(out var key)
+                && key == videoKey)
             {
                 target = videos;
             }
@@ -72,8 +71,7 @@ public static class RecoveredKeys
         }
 
         var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-        var setAside = Path.Combine(Path.GetDirectoryName(path) ?? "",
-            $"{Path.GetFileNameWithoutExtension(path)}.unreadable-{stamp}{Path.GetExtension(path)}");
+        var setAside = Path.ChangeExtension(path, $"unreadable-{stamp}{Path.GetExtension(path)}");
         File.Move(path, setAside);
         return ([], setAside);
     }

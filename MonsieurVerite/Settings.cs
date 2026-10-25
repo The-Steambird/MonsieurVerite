@@ -7,8 +7,7 @@ namespace MonsieurVerite;
 
 public sealed class Settings
 {
-    private static readonly JsonSerializerOptions
-        SerializerOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions SerializerOptions = new() { WriteIndented = true };
 
     public static string DefaultEnginePath { get; } =
         Path.Combine(AppContext.BaseDirectory, "charlotte-cli.exe");
@@ -23,11 +22,12 @@ public sealed class Settings
     public string? EnginePath
     {
         get;
-        set => field = string.IsNullOrWhiteSpace(value)
-                       || string.Equals(value, DefaultEnginePath,
-                           StringComparison.OrdinalIgnoreCase)
-            ? null
-            : value;
+        set
+        {
+            var isDefault = string.IsNullOrWhiteSpace(value)
+                            || string.Equals(value, DefaultEnginePath, StringComparison.OrdinalIgnoreCase);
+            field = isDefault ? null : value;
+        }
     }
 
     public bool CheckForUpdatesOnStartup { get; set; } = true;
@@ -51,8 +51,8 @@ public sealed class Settings
         Path.Combine(Path.GetDirectoryName(EffectiveEnginePath) ?? AppContext.BaseDirectory,
             "recovered_keys.json");
 
-    // The file is read before the language is chosen, which is why the message is built only when
-    // asked for.
+    // The message is built only when asked for, because the file is read before the language is
+    // chosen.
     private (string Path, string Reason)? loadFailure;
 
     /// <summary>Why the file on disk was not used, when it was there but unreadable.</summary>
@@ -68,21 +68,20 @@ public sealed class Settings
 
     public static Settings Load(string path)
     {
+        if (!File.Exists(path))
+        {
+            return new Settings();
+        }
+
         try
         {
-            if (File.Exists(path))
-            {
-                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(path),
-                           SerializerOptions)
-                       ?? new Settings();
-            }
+            var text = File.ReadAllText(path);
+            return JsonSerializer.Deserialize<Settings>(text, SerializerOptions) ?? new Settings();
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
         {
             return new Settings { loadFailure = (path, e.Message) };
         }
-
-        return new Settings();
     }
 
     public void Save() => Save(FilePath);

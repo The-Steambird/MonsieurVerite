@@ -87,14 +87,17 @@ public sealed partial class RunOptions : ObservableObject
 
     [JsonIgnore] public bool Reencodes => UseVapourSynth || HardSub;
 
-    /// <summary>Null means the default. The default spelled out is stored as null too, because a
-    /// stored value would keep an install on an old default after a release changes it.</summary>
+    /// <summary>
+    /// Null means the default. The default spelled out is stored as null too, because a stored
+    /// value would keep an install on an old default after a release changes it.
+    /// </summary>
     public double? Crf
     {
         get;
         set
         {
-            if (SetProperty(ref field, value == DefaultCrf ? null : value))
+            var stored = value == DefaultCrf ? null : value;
+            if (SetProperty(ref field, stored))
             {
                 OnPropertyChanged(nameof(EffectiveCrf));
             }
@@ -114,14 +117,14 @@ public sealed partial class RunOptions : ObservableObject
         get;
         set
         {
-            var previous = EffectivePreset;
-            if (!SetProperty(ref field, string.IsNullOrEmpty(value) || value == DefaultPreset ? null : value))
+            var stored = string.IsNullOrEmpty(value) || value == DefaultPreset ? null : value;
+            if (!SetProperty(ref field, stored))
             {
                 return;
             }
 
             OnPropertyChanged(nameof(EffectivePreset));
-            if (X265Params is null && DefaultX265ParamsFor(previous) != DefaultX265ParamsFor(EffectivePreset))
+            if (X265Params is null)
             {
                 OnPropertyChanged(nameof(X265ParamLines));
             }
@@ -135,7 +138,7 @@ public sealed partial class RunOptions : ObservableObject
         set => Preset = value;
     }
 
-    /// <summary>Null = built-in tuning for the preset. Empty = bare preset.</summary>
+    /// <summary>Null means the built-in tuning for the preset, and empty means the bare preset.</summary>
     [ObservableProperty] public partial string? X265Params { get; set; }
 
     [JsonIgnore]
@@ -144,8 +147,9 @@ public sealed partial class RunOptions : ObservableObject
         get => (X265Params ?? DefaultX265ParamsFor(EffectivePreset)).Replace(':', '\n');
         set
         {
-            var joined = string.Join(':',
-                value.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0));
+            var lines = value.Split('\n',
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            var joined = string.Join(':', lines);
             X265Params = joined == DefaultX265ParamsFor(EffectivePreset) ? null : joined;
         }
     }

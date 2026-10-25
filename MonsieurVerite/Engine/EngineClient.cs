@@ -26,7 +26,7 @@ public sealed class EngineClient : IAsyncDisposable
     public ChannelReader<EngineEvent> Events => events.Reader;
 
     /// <summary>
-    /// The last lines the engine wrote outside the protocol, which are final only once
+    /// The last lines the engine wrote outside the protocol. They are final only once
     /// <see cref="Start"/>'s task has completed.
     /// </summary>
     public IReadOnlyList<string> StandardErrorTail => [.. standardErrorTail];

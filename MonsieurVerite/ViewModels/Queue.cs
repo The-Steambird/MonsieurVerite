@@ -51,7 +51,6 @@ public sealed class QueueItems : ObservableCollection<QueueItem>
         base.RemoveItem(index);
     }
 
-    // Clear raises Reset without naming the removed rows, which is why they are unsubscribed here.
     protected override void ClearItems()
     {
         foreach (var item in this)
@@ -65,8 +64,11 @@ public sealed class QueueItems : ObservableCollection<QueueItem>
     private void OnRowChanged(object? sender, PropertyChangedEventArgs e) =>
         RowChanged?.Invoke(sender, e);
 
-    public void Save(string path) =>
-        AtomicFile.WriteAllText(path, JsonSerializer.Serialize(this.Select(item => item.ToSaved()).ToList()));
+    public void Save(string path)
+    {
+        var rows = this.Select(item => item.ToSaved()).ToList();
+        AtomicFile.WriteAllText(path, JsonSerializer.Serialize(rows));
+    }
 
     /// <summary>
     /// Reads a saved queue and deletes the file. A missing or unreadable one gives null, and the
@@ -277,10 +279,7 @@ public sealed partial class QueueItem : ObservableObject
     }
 }
 
-/// <summary>
-/// A row as a language restart hands it to the next instance, which shows the queue as it was
-/// instead of probing every file again. Run statuses are not kept, as on any start.
-/// </summary>
+/// <summary>A row as a language restart hands it to the next instance, without its run status.</summary>
 public sealed record SavedRow(
     string FullPath, bool IsChecked, KeyState Key, string? Version,
     IReadOnlyList<string>? Subtitles, bool StreamCipher, ulong? VideoKey);

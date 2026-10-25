@@ -6,10 +6,9 @@ using System.Threading.Channels;
 namespace MonsieurVerite.Engine;
 
 /// <summary>
-/// Runs a key capture, which needs administrator rights. The engine is started through UAC, and
-/// an elevated process cannot be handed this one's stdio, which is why its events and the stop
-/// command travel over a named pipe instead. Closing the pipe stops the capture, because an
-/// elevated engine is out of reach of the Job Object and of a kill from this process.
+/// A capture needs administrator rights, and an engine started through UAC cannot be handed this
+/// process's stdio. Its events and the stop command travel over a named pipe instead. Closing the
+/// pipe also stops it, because an elevated engine is out of reach of the job object.
 /// </summary>
 public sealed class CaptureClient : IAsyncDisposable
 {
@@ -57,8 +56,7 @@ public sealed class CaptureClient : IAsyncDisposable
 
         try
         {
-            // The call returns only once the UAC prompt is answered, which is why it runs off the
-            // UI thread.
+            // This runs off the UI thread because it returns only once the UAC prompt is answered.
             process = await Task.Run(() => Process.Start(startInfo)).ConfigureAwait(true)
                       ?? throw new InvalidOperationException($"Could not start '{executablePath}'.");
         }
@@ -67,8 +65,8 @@ public sealed class CaptureClient : IAsyncDisposable
             return Strings.CAPTURE_NEEDS_ADMIN;
         }
 
-        // An engine that fails before it reaches the pipe never connects, which is why its exit
-        // also ends the wait.
+        // The engine's exit also ends the wait, because one that fails before it reaches the pipe
+        // never connects.
         var connected = pipe.WaitForConnectionAsync();
         await Task.WhenAny(connected, process.WaitForExitAsync()).ConfigureAwait(true);
         if (!pipe.IsConnected)
