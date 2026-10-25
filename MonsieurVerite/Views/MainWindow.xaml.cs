@@ -22,7 +22,7 @@ public partial class MainWindow : Window
     private ScrollViewer? logScroller;
     private int dragDepth;
 
-    public MainWindow(Settings settings)
+    public MainWindow(Settings settings, bool restart)
     {
         InitializeComponent();
         var area = SystemParameters.WorkArea;
@@ -31,6 +31,7 @@ public partial class MainWindow : Window
 
         viewModel = new MainViewModel(settings.ResolveEngine(), settings)
         {
+            IsRestart = restart,
             PickFolder = PickFolder,
             PickFiles = PickFiles,
             ShowSettings = ShowSettings,

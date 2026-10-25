@@ -26,7 +26,7 @@ public static class Updater
         }
     }
 
-    public static void Relaunch()
+    public static void Relaunch(params string[] arguments)
     {
         if (Environment.ProcessPath is not { } exe)
         {
@@ -34,7 +34,7 @@ public static class Updater
         }
 
         var processId = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
-        var successor = new ProcessStartInfo(exe, ["--wait-for", processId])
+        var successor = new ProcessStartInfo(exe, ["--wait-for", processId, .. arguments])
         {
             WorkingDirectory = AppContext.BaseDirectory,
         };
@@ -47,7 +47,7 @@ public static class Updater
     /// </summary>
     public static void WaitForPredecessor(string[] args)
     {
-        if (args is not ["--wait-for", var text]
+        if (args is not ["--wait-for", var text, ..]
             || !int.TryParse(text, CultureInfo.InvariantCulture, out var processId))
         {
             return;

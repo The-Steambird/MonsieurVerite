@@ -1,3 +1,4 @@
+using System.IO;
 using MonsieurVerite.ViewModels;
 
 namespace MonsieurVerite.Tests;
@@ -54,5 +55,61 @@ public class QueueTests
         var item = new QueueItem("a.usm") { Version = version };
 
         Assert.Equal(expected, item.VersionOrder?.ToString());
+    }
+
+    [Fact]
+    public void ASavedQueueComesBackOnceWithItsProbeResults()
+    {
+        using var scratch = new ScratchFolder();
+        var path = scratch.File("queue.json");
+        var queue = new QueueItems
+        {
+            new QueueItem(scratch.File("a.usm"))
+            {
+                IsChecked = true, Key = KeyState.Recovered, Version = "6.1", Subtitles = ["EN", "JP"],
+                StreamCipher = true, VideoKey = 6542161829131848,
+            },
+            new QueueItem(scratch.File("b.usm")) { Key = KeyState.Missing },
+        };
+
+        queue.Save(path);
+        var rows = QueueItems.TakeSaved(path);
+
+        Assert.NotNull(rows);
+        var restored = rows.Select(QueueItem.Restore).ToList();
+        Assert.Equal([scratch.File("a.usm"), scratch.File("b.usm")], restored.Select(item => item.FullPath));
+        var first = restored[0];
+        Assert.True(first.IsChecked);
+        Assert.Equal(KeyState.Recovered, first.Key);
+        Assert.Equal("6.1", first.Version);
+        Assert.Equal(["EN", "JP"], first.Subtitles!);
+        Assert.True(first.StreamCipher);
+        Assert.Equal(6542161829131848UL, first.VideoKey);
+        Assert.Equal(KeyState.Missing, restored[1].Key);
+        Assert.Null(restored[1].Subtitles);
+        Assert.False(File.Exists(path));
+        Assert.Null(QueueItems.TakeSaved(path));
+    }
+
+    [Fact]
+    public void AnUnreadableSavedQueueIsDroppedForAProbe()
+    {
+        using var scratch = new ScratchFolder();
+        var path = scratch.File("queue.json");
+        File.WriteAllText(path, "not json");
+
+        Assert.Null(QueueItems.TakeSaved(path));
+        Assert.False(File.Exists(path));
+    }
+
+    [Theory]
+    [InlineData("5.3", KeyState.Present, "5.3")]
+    [InlineData(null, KeyState.Missing, "?")]
+    [InlineData(null, KeyState.Unknown, "")]
+    public void AnUnknownVersionShowsOnlyOnceTheProbeHasRun(string? version, KeyState key, string expected)
+    {
+        var item = new QueueItem("a.usm") { Version = version, Key = key };
+
+        Assert.Equal(expected, item.VersionText);
     }
 }

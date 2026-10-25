@@ -24,7 +24,7 @@ public partial class App
         ThemeMode = ThemeMode.Dark;
         EventManager.RegisterClassHandler(typeof(Window), UIElement.PreviewMouseDownEvent,
             new MouseButtonEventHandler(BlurOnClickOutside));
-        new MainWindow(settings).Show();
+        new MainWindow(settings, restart: e.Args.Contains("--restart")).Show();
     }
 
     // The SDK appends the commit hash to the informational version after a plus sign.

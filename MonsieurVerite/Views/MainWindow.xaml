@@ -31,10 +31,9 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Rectangle x:Name="Bleed" Grid.RowSpan="5" IsHitTestVisible="False"
+        <Rectangle x:Name="Bleed" Grid.RowSpan="4" IsHitTestVisible="False"
                    RenderOptions.BitmapScalingMode="NearestNeighbor" />
 
         <Border Grid.Row="0" Height="48" Background="{StaticResource LayerBrush}"
@@ -167,7 +166,7 @@
                 </DataGrid.ContextMenu>
 
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Width="44" CanUserResize="False" CanUserSort="False"
+                    <DataGridTemplateColumn Width="52" CanUserResize="False" CanUserSort="False"
                                             HeaderStyle="{StaticResource QueueCheckHeaderStyle}"
                                             HeaderTemplate="{StaticResource QueueCheckHeader}"
                                             CellStyle="{StaticResource QueueCheckCellStyle}"
@@ -341,29 +340,10 @@
             </DockPanel>
         </Border>
 
-        <DockPanel Grid.Row="4" Height="26" Background="{StaticResource LayerBrush}"
-                   LastChildFill="False">
-            <DockPanel.Resources>
-                <Style TargetType="TextBlock" BasedOn="{StaticResource StatusBarText}" />
-            </DockPanel.Resources>
-            <TextBlock DockPanel.Dock="Left" Margin="12,0" Text="{Binding Summary}" />
-            <TextBlock DockPanel.Dock="Right" Margin="12,0" Text="{Binding StageText}">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock" BasedOn="{StaticResource StatusBarText}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-        </DockPanel>
-
-        <Rectangle x:Name="ModalShade" Grid.RowSpan="5" Fill="{StaticResource ShadeBrush}"
+        <Rectangle x:Name="ModalShade" Grid.RowSpan="4" Fill="{StaticResource ShadeBrush}"
                    Opacity="0" IsHitTestVisible="False" />
 
-        <Grid x:Name="DropOverlay" Grid.RowSpan="5" Opacity="0" IsHitTestVisible="False">
+        <Grid x:Name="DropOverlay" Grid.RowSpan="4" Opacity="0" IsHitTestVisible="False">
             <Rectangle Fill="{StaticResource WindowBrush}" Opacity="0.7" />
             <Rectangle Margin="10" RadiusX="8" RadiusY="8" Stroke="{StaticResource AccentBrush}"
                        StrokeThickness="2" StrokeDashArray="6,4"

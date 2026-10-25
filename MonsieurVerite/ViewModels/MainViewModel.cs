@@ -10,6 +10,7 @@ namespace MonsieurVerite.ViewModels;
 public sealed partial class MainViewModel : ObservableObject
 {
     private const int LogCapacity = 2000;
+    private static readonly string SavedQueuePath = Path.Combine(AppContext.BaseDirectory, "queue.json");
     private readonly Settings settings;
     private CancellationTokenSource? cancellation;
     private EngineRun? run;
@@ -24,7 +25,6 @@ public sealed partial class MainViewModel : ObservableObject
                           ?? Path.Combine(Path.GetDirectoryName(engine) ?? AppContext.BaseDirectory,
                               "output");
         IsLogOpen = true;
-        StageText = Strings.IDLE;
 
         Items.CollectionChanged += (_, _) => RefreshQueue();
         Items.RowChanged += OnRowChanged;
@@ -94,13 +94,33 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CancelLabel))]
     public partial bool CanForceStop { get; private set; }
 
-    public string CancelLabel => CanForceStop ? Strings.FORCE_STOP : Strings.CANCEL;
+    /// <summary>The engine's job object was terminated, and the run ends once its pipes close.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CancelLabel))]
+    public partial bool IsStopping { get; private set; }
+
+    public string CancelLabel
+    {
+        get
+        {
+            if (IsStopping)
+            {
+                return Strings.STOPPING;
+            }
+
+            return CanForceStop ? Strings.FORCE_STOP : Strings.CANCEL;
+        }
+    }
 
     public bool CanRunEngine => HasEngine && !IsRunning;
 
-    [ObservableProperty] public partial bool IsLogOpen { get; set; }
+    /// <summary>
+    /// Started by a language restart, which hands over the queue and was preceded by an instance
+    /// that already checked for updates.
+    /// </summary>
+    public bool IsRestart { get; init; }
 
-    [ObservableProperty] public partial string StageText { get; set; }
+    [ObservableProperty] public partial bool IsLogOpen { get; set; }
 
     public bool? CheckState
     {
@@ -128,17 +148,6 @@ public sealed partial class MainViewModel : ObservableObject
             return checkedCount > 0 && checkedCount < Items.Count
                 ? Strings.START_CHECKED(checkedCount)
                 : Strings.START;
-        }
-    }
-
-    public string Summary
-    {
-        get
-        {
-            var done = Items.Count(item => item.Status == ItemStatus.Done);
-            var missing = Items.Count(item => item.Key == KeyState.Missing);
-            var unsubtitled = Items.Count(item => item.HasSubtitles == false);
-            return Strings.SUMMARY(Items.Count, done, missing, unsubtitled);
         }
     }
 
@@ -265,7 +274,6 @@ public sealed partial class MainViewModel : ObservableObject
         {
             SaveSettings();
             OnPropertyChanged(nameof(Options));
-            OnPropertyChanged(nameof(Summary));
             ApplyEngineSetting(previousPath);
             OfferRestartForLanguage(previousLanguage);
         }
@@ -290,11 +298,22 @@ public sealed partial class MainViewModel : ObservableObject
 
         var question = new Message(Strings.RESTART_TITLE, Strings.RESTART_MESSAGE,
             Strings.RESTART_NOW, Strings.LATER);
-        if (ShowMessage?.Invoke(question) == true)
+        if (ShowMessage?.Invoke(question) != true)
         {
-            Updater.Relaunch();
-            CloseWindow?.Invoke();
+            return;
         }
+
+        try
+        {
+            Items.Save(SavedQueuePath);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // The next instance probes the folder instead, as on any start.
+        }
+
+        Updater.Relaunch("--restart");
+        CloseWindow?.Invoke();
     }
 
     // Resolved again even when the path is unchanged, because the file may have appeared there
@@ -501,7 +520,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private static bool IsRecoverable(QueueItem item) => item.IsChecked && !item.StreamCipher;
 
-    [RelayCommand(CanExecute = nameof(IsRunning))]
+    [RelayCommand(CanExecute = nameof(CanCancel))]
     private void Cancel()
     {
         if (cancellation is not { } source)
@@ -513,13 +532,14 @@ public sealed partial class MainViewModel : ObservableObject
         {
             source.Cancel();
             CanForceStop = run is not null;
-            StageText = Strings.CANCELLING;
         }
         else if (run?.ForceStop() == true)
         {
-            StageText = Strings.STOPPING;
+            IsStopping = true;
         }
     }
+
+    private bool CanCancel() => IsRunning && !IsStopping;
 
     [RelayCommand(CanExecute = nameof(CanSkip))]
     private void Skip() => run?.Skip();
@@ -532,7 +552,16 @@ public sealed partial class MainViewModel : ObservableObject
     // dialog opened before the window is on screen would appear alone on the desktop.
     public async Task StartupAsync(Task windowShown)
     {
-        if (Directory.Exists(SourceDirectory))
+        // Taken on every start, which also clears a file left by a restart that never came up.
+        var saved = QueueItems.TakeSaved(SavedQueuePath);
+        if (IsRestart && saved is not null)
+        {
+            foreach (var row in saved)
+            {
+                Items.Add(QueueItem.Restore(row));
+            }
+        }
+        else if (Directory.Exists(SourceDirectory))
         {
             await LoadSourceAsync(SourceDirectory).ConfigureAwait(true);
         }
@@ -545,7 +574,10 @@ public sealed partial class MainViewModel : ObservableObject
                 Strings.ENGINE_MISSING_MESSAGE, Detail: detail));
         }
 
-        await CheckForUpdatesOnStartupAsync().ConfigureAwait(true);
+        if (!IsRestart)
+        {
+            await CheckForUpdatesOnStartupAsync().ConfigureAwait(true);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunEngine))]
@@ -655,8 +687,8 @@ public sealed partial class MainViewModel : ObservableObject
             cancellation = null;
             run = null;
             CanForceStop = false;
+            IsStopping = false;
             IsRunning = false;
-            StageText = Strings.IDLE;
         }
 
         return engineRun;
@@ -680,6 +712,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     partial void OnIsRunningChanged(bool value) => RefreshCommands();
 
+    partial void OnIsStoppingChanged(bool value) => RefreshCommands();
+
     // The skipped properties change on every progress and stage event, and nothing refreshed here
     // reads them.
     private void OnRowChanged(object? sender, PropertyChangedEventArgs e)
@@ -695,7 +729,6 @@ public sealed partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(CheckState));
         OnPropertyChanged(nameof(StartLabel));
-        OnPropertyChanged(nameof(Summary));
         RefreshCommands();
     }
 

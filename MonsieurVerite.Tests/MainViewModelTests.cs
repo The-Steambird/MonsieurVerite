@@ -260,17 +260,6 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
     }
 
     [Fact]
-    public void SummaryCountsDoneMissingKeysAndNoSubtitles()
-    {
-        var viewModel = NewViewModel();
-        Add(viewModel, "a.usm").MarkDone(Scratch.File("a.mkv"));
-        Add(viewModel, "b.usm").Key = KeyState.Missing;
-        Add(viewModel, "c.usm").Subtitles = [];
-
-        Assert.Equal("3 files · 1 done · 1 missing key · 1 without subtitles", viewModel.Summary);
-    }
-
-    [Fact]
     public void ToggleAllChecksEverythingThenNothing()
     {
         var viewModel = NewViewModel();

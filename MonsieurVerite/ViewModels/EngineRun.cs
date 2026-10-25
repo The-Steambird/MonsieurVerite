@@ -8,9 +8,7 @@ namespace MonsieurVerite.ViewModels;
 internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobCount)
 {
     private EngineClient? client;
-    private CancellationToken cancellation;
     private QueueItem? current;
-    private int position;
     private bool forceStopped;
 
     public UpdateEvent? Update { get; private set; }
@@ -18,7 +16,7 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
     public UpdateInstallEvent? Install { get; private set; }
 
     // jobCount is how many job_start events the run will open, which a probe and an update check
-    // never do. Zero hides the run position and disables Skip.
+    // never do. Zero disables Skip.
     public bool OpensJobs => jobCount > 0;
 
     public async Task RunAsync(
@@ -27,7 +25,6 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         await using var engine = new EngineClient(enginePath);
         using var registration = cancellationToken.Register(engine.SendCancel);
         client = engine;
-        cancellation = cancellationToken;
 
         string? failure = null;
         try
@@ -155,23 +152,16 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
                     previous.MarkPending();
                 }
 
-                position++;
                 current = items.Find(job.File);
                 current?.MarkRunning();
                 break;
 
             case StageEvent stage when stage.Status == "start":
-                ShowStage(Describe(stage.Stage, null));
                 current?.EnterStage(StageName(stage.Stage));
                 break;
 
-            case ProgressEvent progress when progress.Total > 0:
-                var percent = progress.Current * 100.0 / progress.Total;
-                ShowStage(Describe(progress.Stage, (int)percent));
-                if (current is not null)
-                {
-                    current.Progress = percent;
-                }
+            case ProgressEvent progress when progress.Total > 0 && current is not null:
+                current.Progress = progress.Current * 100.0 / progress.Total;
 
                 break;
 
@@ -252,21 +242,6 @@ internal sealed class EngineRun(MainViewModel owner, string enginePath, int jobC
         }
 
         return new Message(Strings.QUESTION_TITLE, question.Prompt, Strings.YES, Strings.NO);
-    }
-
-    private void ShowStage(string text)
-    {
-        if (!cancellation.IsCancellationRequested)
-        {
-            owner.StageText = text;
-        }
-    }
-
-    private string Describe(string stage, int? percent)
-    {
-        var name = StageName(stage);
-        var text = percent is { } value ? $"{name} · {value}%" : name;
-        return current is null || !OpensJobs ? text : $"{position}/{jobCount} · {text}";
     }
 
     private static string StageName(string stage) => stage switch

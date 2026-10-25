@@ -49,31 +49,12 @@ public class EngineRunTests : ViewModelTest
 
         run.Apply(new ProgressEvent { Stage = "demux", Current = 5, Total = 10 });
         Assert.Equal(50, item.Progress);
-        // No run position in the text, because this run was told to expect no jobs.
-        Assert.Equal("Demuxing · 50%", viewModel.StageText);
 
         var output = Scratch.File(Path.Combine("out", "a", "a.mkv"));
         run.Apply(new ResultEvent { File = "a.usm", Output = output });
         Assert.Equal(ItemStatus.Done, item.Status);
         Assert.Equal(100, item.Progress);
         Assert.Equal(output, item.OutputPath);
-    }
-
-    [Fact]
-    public void AFileRunShowsItsPositionInTheStatusBar()
-    {
-        var viewModel = NewViewModel();
-        var run = NewRun(viewModel, jobCount: 2);
-        Add(viewModel, "a.usm");
-        Add(viewModel, "b.usm");
-
-        run.Apply(new JobStartEvent { File = "a.usm" });
-        run.Apply(new StageEvent { Stage = "demux", Status = "start" });
-        Assert.Equal("1/2 · Demuxing", viewModel.StageText);
-
-        run.Apply(new JobStartEvent { File = "b.usm" });
-        run.Apply(new ProgressEvent { Stage = "demux", Current = 5, Total = 10 });
-        Assert.Equal("2/2 · Demuxing · 50%", viewModel.StageText);
     }
 
     [Fact]
@@ -215,7 +196,7 @@ public class EngineRunTests : ViewModelTest
     }
 
     [Fact]
-    public void ProgressOutsideAnyJobStillDrivesTheStatusBar()
+    public void ProgressOutsideAnyJobLeavesTheRowsAlone()
     {
         var viewModel = NewViewModel();
         var run = NewRun(viewModel);
@@ -224,7 +205,7 @@ public class EngineRunTests : ViewModelTest
         run.Apply(new StageEvent { Stage = "subtitles", Status = "start" });
         run.Apply(new ProgressEvent { Stage = "subtitles", Current = 1, Total = 4 });
 
-        Assert.Equal("Updating subtitles · 25%", viewModel.StageText);
+        Assert.Equal("", item.Detail);
         Assert.Equal(0, item.Progress);
         Assert.Equal(ItemStatus.Pending, item.Status);
     }
@@ -239,7 +220,6 @@ public class EngineRunTests : ViewModelTest
         await viewModel.StartCommand.ExecuteAsync(null);
 
         Assert.False(viewModel.IsRunning);
-        Assert.Equal("Idle", viewModel.StageText);
         Assert.Contains(viewModel.Log, line => line.Text.Contains("Could not start the engine", StringComparison.Ordinal));
         Assert.Equal(ItemStatus.Pending, first.Status);
         Assert.Equal(ItemStatus.Pending, second.Status);
@@ -336,6 +316,7 @@ public class EngineRunTests : ViewModelTest
         viewModel.CancelCommand.Execute(null);
         Assert.Equal("Force stop", viewModel.CancelLabel);
         viewModel.CancelCommand.Execute(null);
+        Assert.Equal("Stopping…", viewModel.CancelLabel);
         await run.WaitAsync(TimeSpan.FromSeconds(30));
 
         Assert.False(viewModel.IsRunning);

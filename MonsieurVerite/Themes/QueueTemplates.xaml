@@ -90,7 +90,8 @@
 
     <Style x:Key="QueueCheckHeaderStyle" TargetType="DataGridColumnHeader"
            BasedOn="{StaticResource QueueHeader}">
-        <Setter Property="Padding" Value="0" />
+        <!-- Keeps the checkbox clear of the window's resize border. -->
+        <Setter Property="Padding" Value="8,0,0,0" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
     </Style>
 
@@ -113,7 +114,7 @@
 
     <Style x:Key="QueueCheckCellStyle" TargetType="DataGridCell"
            BasedOn="{StaticResource QueueCell}">
-        <Setter Property="Padding" Value="0" />
+        <Setter Property="Padding" Value="8,0,0,0" />
     </Style>
 
     <Style x:Key="QueueRow" TargetType="DataGridRow"
@@ -241,9 +242,16 @@
         </Style.Triggers>
     </Style>
 
-    <Storyboard x:Key="PillFadeIn">
-        <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25" />
-    </Storyboard>
+    <Style x:Key="KeyMissingGlyph" TargetType="Path" BasedOn="{StaticResource StateGlyph}">
+        <Setter Property="Data" Value="{StaticResource CrossIcon}" />
+        <Setter Property="Stroke" Value="{StaticResource FaintBrush}" />
+        <Setter Property="ToolTip" Value="{x:Static local:Strings.KEY_MISSING_TIP}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Key}" Value="Missing">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
 
     <Style x:Key="KeyPill" TargetType="Border">
         <Setter Property="CornerRadius" Value="10" />
@@ -251,15 +259,8 @@
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Visibility" Value="Collapsed" />
-        <Setter Property="Tag" Value="{Binding Key, NotifyOnTargetUpdated=True}" />
+        <Setter Property="themes:Motion.FadeOn" Value="{Binding Key}" />
         <Style.Triggers>
-            <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-            </EventTrigger>
-            <DataTrigger Binding="{Binding Key}" Value="Missing">
-                <Setter Property="Visibility" Value="Visible" />
-                <Setter Property="Background" Value="{StaticResource WarnSoftBrush}" />
-            </DataTrigger>
             <DataTrigger Binding="{Binding Key}" Value="Recovered">
                 <Setter Property="Visibility" Value="Visible" />
                 <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
@@ -272,10 +273,6 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FontSize" Value="11.5" />
         <Style.Triggers>
-            <DataTrigger Binding="{Binding Key}" Value="Missing">
-                <Setter Property="Text" Value="{x:Static local:Strings.KEY_MISSING}" />
-                <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
-            </DataTrigger>
             <DataTrigger Binding="{Binding Key}" Value="Recovered">
                 <Setter Property="Text" Value="{x:Static local:Strings.KEY_RECOVERED}" />
                 <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
@@ -286,6 +283,7 @@
     <DataTemplate x:Key="QueueKeyCell">
         <StackPanel Orientation="Horizontal">
             <Path Style="{StaticResource KeyPresentGlyph}" />
+            <Path Style="{StaticResource KeyMissingGlyph}" />
             <Border Style="{StaticResource KeyPill}">
                 <TextBlock Style="{StaticResource KeyStateText}" />
             </Border>
@@ -341,7 +339,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="QueueVersionCell">
-        <TextBlock Text="{Binding Version}" FontSize="12" Foreground="{StaticResource DimBrush}"
+        <TextBlock Text="{Binding VersionText}" FontSize="12" Foreground="{StaticResource DimBrush}"
                    VerticalAlignment="Center" />
     </DataTemplate>
 
@@ -352,11 +350,8 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Background" Value="{StaticResource HoverBrush}" />
         <Setter Property="ToolTip" Value="{Binding Detail}" />
-        <Setter Property="Tag" Value="{Binding Status, NotifyOnTargetUpdated=True}" />
+        <Setter Property="themes:Motion.FadeOn" Value="{Binding Status}" />
         <Style.Triggers>
-            <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                <BeginStoryboard Storyboard="{StaticResource PillFadeIn}" />
-            </EventTrigger>
             <DataTrigger Binding="{Binding Detail}" Value="">
                 <Setter Property="ToolTipService.IsEnabled" Value="False" />
             </DataTrigger>

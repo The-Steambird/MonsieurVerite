@@ -371,12 +371,6 @@
         <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
     </Style>
 
-    <Style x:Key="StatusBarText" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11" />
-        <Setter Property="Foreground" Value="{StaticResource FaintBrush}" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-
     <Style x:Key="OptionCheck" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
         <Setter Property="Margin" Value="0,0,0,8" />
         <Setter Property="FontSize" Value="13" />

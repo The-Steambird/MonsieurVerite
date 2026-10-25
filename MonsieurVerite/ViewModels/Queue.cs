@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MonsieurVerite.Engine;
 
@@ -63,6 +64,41 @@ public sealed class QueueItems : ObservableCollection<QueueItem>
 
     private void OnRowChanged(object? sender, PropertyChangedEventArgs e) =>
         RowChanged?.Invoke(sender, e);
+
+    public void Save(string path) =>
+        AtomicFile.WriteAllText(path, JsonSerializer.Serialize(this.Select(item => item.ToSaved()).ToList()));
+
+    /// <summary>
+    /// Reads a saved queue and deletes the file. A missing or unreadable one gives null, and the
+    /// folder is probed as on any start.
+    /// </summary>
+    public static List<SavedRow>? TakeSaved(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        string text;
+        try
+        {
+            text = File.ReadAllText(path);
+            File.Delete(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<SavedRow>>(text);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 }
 
 public sealed partial class QueueItem : ObservableObject
@@ -94,11 +130,27 @@ public sealed partial class QueueItem : ObservableObject
 
     [ObservableProperty] public partial bool IsChecked { get; set; }
 
-    [ObservableProperty] public partial KeyState Key { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(VersionText))]
+    public partial KeyState Key { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(VersionOrder))]
+    [NotifyPropertyChangedFor(nameof(VersionOrder), nameof(VersionText))]
     public partial string? Version { get; set; }
+
+    /// <summary>Blank until the probe has run, then "?" for a file keys.json has no version for.</summary>
+    public string VersionText
+    {
+        get
+        {
+            if (Version is not null)
+            {
+                return Version;
+            }
+
+            return Key == KeyState.Unknown ? "" : "?";
+        }
+    }
 
     public System.Version? VersionOrder
     {
@@ -205,6 +257,18 @@ public sealed partial class QueueItem : ObservableObject
         }
     }
 
+    public SavedRow ToSaved() => new(FullPath, IsChecked, Key, Version, Subtitles, StreamCipher, VideoKey);
+
+    public static QueueItem Restore(SavedRow row) => new(row.FullPath)
+    {
+        IsChecked = row.IsChecked,
+        Key = row.Key,
+        Version = row.Version,
+        Subtitles = row.Subtitles,
+        StreamCipher = row.StreamCipher,
+        VideoKey = row.VideoKey,
+    };
+
     private void SetState(ItemStatus status, string detail, double progress)
     {
         Status = status;
@@ -212,3 +276,11 @@ public sealed partial class QueueItem : ObservableObject
         Progress = progress;
     }
 }
+
+/// <summary>
+/// A row as a language restart hands it to the next instance, which shows the queue as it was
+/// instead of probing every file again. Run statuses are not kept, as on any start.
+/// </summary>
+public sealed record SavedRow(
+    string FullPath, bool IsChecked, KeyState Key, string? Version,
+    IReadOnlyList<string>? Subtitles, bool StreamCipher, ulong? VideoKey);
