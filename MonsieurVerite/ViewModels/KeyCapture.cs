@@ -28,7 +28,7 @@ public sealed partial class KeyCapture : ObservableObject
 
     public Action<string>? CopyText { get; set; }
 
-    /// <summary>The main window's log keeps every line, and the status only the latest.</summary>
+    /// <summary>The engine's lines go only to the main window's log.</summary>
     public Action<LogLine>? AppendLog { get; set; }
 
     public bool NewKeysOnly
@@ -73,10 +73,7 @@ public sealed partial class KeyCapture : ObservableObject
         }
     }
 
-    /// <summary>
-    /// The engine's latest line. A capture that went wrong ends with the problem showing, because
-    /// the engine sends it after its summary.
-    /// </summary>
+    /// <summary>What the capture is doing, or the failure that ended it.</summary>
     [ObservableProperty] public partial LogLine Status { get; private set; }
 
     /// <summary>The shown keys as keys.json groups, joined so they paste into a videoGroups list.</summary>
@@ -90,6 +87,7 @@ public sealed partial class KeyCapture : ObservableObject
         if (IsCapturing)
         {
             IsStopping = true;
+            Status = new LogLine(Strings.STOPPING);
             client?.SendCancel();
             return;
         }
@@ -126,6 +124,7 @@ public sealed partial class KeyCapture : ObservableObject
                 return;
             }
 
+            Status = new LogLine(Strings.CAPTURE_RUNNING);
             await foreach (var evt in started.Events.ReadAllAsync().ConfigureAwait(true))
             {
                 Apply(evt);
@@ -133,6 +132,11 @@ public sealed partial class KeyCapture : ObservableObject
         }
         finally
         {
+            if (!Status.IsWarning)
+            {
+                Status = new LogLine(Strings.CAPTURE_STOPPED);
+            }
+
             client = null;
             IsStarting = false;
             IsCapturing = false;
@@ -150,18 +154,13 @@ public sealed partial class KeyCapture : ObservableObject
                 Render();
                 break;
             case LogEvent log:
-                ShowStatus(LogLine.From(log));
+                AppendLog?.Invoke(LogLine.From(log));
                 break;
             case ErrorEvent error:
-                ShowStatus(new LogLine(error.Message, IsWarning: true));
+                Status = new LogLine(error.Message, IsWarning: true);
+                AppendLog?.Invoke(Status);
                 break;
         }
-    }
-
-    private void ShowStatus(LogLine line)
-    {
-        Status = line;
-        AppendLog?.Invoke(line);
     }
 
     private void Render()

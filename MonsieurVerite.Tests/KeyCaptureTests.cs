@@ -62,29 +62,23 @@ public class KeyCaptureTests
         Assert.Equal($"{KeyCapture.Group(Old)},\n{KeyCapture.Group(Unlisted)}", capture.Text);
     }
 
-    /// <summary>A login after "log in again" has to clear that warning, as the user did what it said.</summary>
+    /// <summary>
+    /// The status says what the capture is doing, and a login of known keys logs a line for each.
+    /// charlotte sends an error only as an event, without a log line of the same text.
+    /// </summary>
     [Fact]
-    public void TheStatusIsTheLatestLineAndALaterOneClearsAWarning()
-    {
-        var capture = NewCapture(newKeysOnly: true);
-        capture.Apply(new LogEvent { Type = "log", Level = "warning", Message = "Log in again." });
-        Assert.Equal(new LogLine("Log in again.", IsWarning: true), capture.Status);
-
-        capture.Apply(new LogEvent { Type = "log", Level = "info", Message = "Login seen." });
-        Assert.Equal(new LogLine("Login seen."), capture.Status);
-    }
-
-    /// <summary>charlotte sends an error only as an event, without a log line of the same text.</summary>
-    [Fact]
-    public void LogLinesAndErrorsReachTheStatusAndTheMainLog()
+    public void LogLinesReachOnlyTheMainLogAndErrorsTheStatusToo()
     {
         var log = new List<LogLine>();
         var capture = NewCapture(newKeysOnly: true);
         capture.AppendLog = log.Add;
-        capture.Apply(new LogEvent { Type = "log", Level = "info", Message = "Login seen." });
-        capture.Apply(new ErrorEvent { Type = "error", Message = "boom" });
+        capture.Apply(new LogEvent { Type = "log", Level = "info", Message = "Key for parent quest 602 already exists." });
+        Assert.Equal(new LogLine(""), capture.Status);
 
-        Assert.Equal([new LogLine("Login seen."), new LogLine("boom", IsWarning: true)], log);
+        capture.Apply(new ErrorEvent { Type = "error", Message = "boom" });
+        Assert.Equal(
+            [new LogLine("Key for parent quest 602 already exists."), new LogLine("boom", IsWarning: true)],
+            log);
         Assert.Equal(new LogLine("boom", IsWarning: true), capture.Status);
     }
 

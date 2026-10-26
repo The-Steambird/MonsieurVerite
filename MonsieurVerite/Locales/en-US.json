@@ -182,6 +182,8 @@
   "CAPTURE_NEW_ONLY": "Show only new keys",
   "CAPTURE_NEW_ONLY_TIP": "Hide keys that are already in keys.json.",
   "CAPTURE_STARTING": "Starting…",
+  "CAPTURE_RUNNING": "Capturing…",
+  "CAPTURE_STOPPED": "Capture stopped.",
   "CAPTURE_NEEDS_ADMIN": "Capturing keys needs administrator rights.",
   "CAPTURE_ENGINE_STOPPED": "The capture stopped before it started.",
   "STOP": "Stop",
