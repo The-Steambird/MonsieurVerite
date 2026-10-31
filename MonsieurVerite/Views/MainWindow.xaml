@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:MonsieurVerite.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="charlotte" Height="802" Width="1120" MinHeight="520" MinWidth="860"
+        Title="charlotte" Height="802" Width="1120" MinHeight="520" MinWidth="960"
         FontFamily="{StaticResource UiFont}" FontSize="13"
         UseLayoutRounding="True"
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver"
@@ -199,7 +199,7 @@
                                             CellStyle="{StaticResource QueueCheckCellStyle}"
                                             CellTemplate="{StaticResource QueueCheckCell}" />
                     <DataGridTemplateColumn Header="{x:Static local:Strings.COLUMN_NAME}"
-                                            Width="*" MinWidth="250"
+                                            Width="*" MinWidth="180"
                                             SortMemberPath="FileName"
                                             CellTemplate="{StaticResource QueueNameCell}" />
                     <DataGridTemplateColumn Header="{x:Static local:Strings.COLUMN_SIZE}"
