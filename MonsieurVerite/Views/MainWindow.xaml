@@ -211,19 +211,19 @@
                                             SortMemberPath="VersionOrder"
                                             CellTemplate="{StaticResource QueueVersionCell}" />
                     <DataGridTemplateColumn Header="{x:Static local:Strings.COLUMN_KEY}"
-                                            Width="90" MinWidth="80"
+                                            Width="105" MinWidth="80"
                                             SortMemberPath="Key"
                                             CellTemplate="{StaticResource QueueKeyCell}" />
                     <DataGridTemplateColumn Header="{x:Static local:Strings.COLUMN_SUBTITLES}"
-                                            Width="90" MinWidth="60"
+                                            Width="100" MinWidth="60"
                                             SortMemberPath="HasSubtitles"
                                             CellTemplate="{StaticResource QueueSubtitlesCell}" />
                     <DataGridTemplateColumn Header="{x:Static local:Strings.COLUMN_STATUS}"
-                                            Width="90" MinWidth="80"
+                                            Width="140" MinWidth="80"
                                             SortMemberPath="Status"
                                             CellTemplate="{StaticResource QueueStatusCell}" />
                     <DataGridTemplateColumn Header="{x:Static local:Strings.COLUMN_PROGRESS}"
-                                            Width="230" MinWidth="150"
+                                            Width="180" MinWidth="150"
                                             SortMemberPath="Progress"
                                             CellTemplate="{StaticResource QueueProgressCell}" />
                 </DataGrid.Columns>

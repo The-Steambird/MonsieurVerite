@@ -191,7 +191,7 @@ public sealed partial class QueueItem : ObservableObject
     public partial string Detail { get; set; }
 
     public bool HasProgress =>
-        Status is ItemStatus.Running or ItemStatus.Done or ItemStatus.Error or ItemStatus.Cancelled;
+        Status is ItemStatus.Running or ItemStatus.Done or ItemStatus.Error;
 
     public string StatusLabel => Status switch
     {
@@ -234,7 +234,7 @@ public sealed partial class QueueItem : ObservableObject
 
     public void MarkSkipped(string reason) => SetState(ItemStatus.Skipped, reason, Progress);
 
-    public void MarkCancelled() => SetState(ItemStatus.Cancelled, "", Progress);
+    public void MarkCancelled() => SetState(ItemStatus.Cancelled, "", 0);
 
     public void ApplyProbe(ProbeEvent probe)
     {
