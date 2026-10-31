@@ -37,7 +37,7 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
-                <Button x:Name="OkButton" Content="{x:Static local:Strings.CONVERT}"
+                <Button x:Name="OkButton" Content="{x:Static local:Strings.START}"
                         Style="{StaticResource PrimaryButton}"
                         IsDefault="True" IsEnabled="False" Click="Ok_Click" />
                 <Button Content="{x:Static local:Strings.CANCEL}"

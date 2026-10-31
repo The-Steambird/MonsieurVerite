@@ -41,8 +41,7 @@
                         Margin="8,0,0,8" VerticalAlignment="Top" Click="Browse_Click" />
                 <CheckBox x:Name="UpdateCheck" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                           Style="{StaticResource OptionCheck}"
-                          Content="{x:Static local:Strings.CHECK_FOR_UPDATES_ON_STARTUP}"
-                          ToolTip="{x:Static local:Strings.CHECK_FOR_UPDATES_ON_STARTUP_TIP}" />
+                          Content="{x:Static local:Strings.CHECK_FOR_UPDATES_ON_STARTUP}" />
                 <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
                     <Path Style="{StaticResource Icon}" Data="{StaticResource LanguagesIcon}"
                           TextElement.Foreground="{StaticResource DimBrush}" Margin="0,0,6,8" />

@@ -306,14 +306,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (dropped is [var only] && Directory.Exists(only))
-        {
-            await viewModel.LoadSourceAsync(only);
-        }
-        else
-        {
-            await viewModel.AddFilesAsync(dropped);
-        }
+        await viewModel.AddFilesAsync(dropped);
     }
 
     private void LogToggle_Checked(object sender, RoutedEventArgs e) => SlideLog(logHeight, 200);

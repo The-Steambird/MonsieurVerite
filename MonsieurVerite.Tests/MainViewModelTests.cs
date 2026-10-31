@@ -12,7 +12,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         """@echo {"type":"question","id":"q0","prompt":"Download and install 1.1 now?","default":false}""";
 
     [Theory]
-    [InlineData("\"available\":true", true, "Charlotte 1.1 is available (running 1.0).")]
+    [InlineData("\"available\":true", true, "Charlotte 1.1 is available (currently 1.0).")]
     [InlineData("\"available\":false", false, "Charlotte 1.0 is up to date.")]
     [InlineData("\"available\":false,\"reason\":\"offline\"", false, "Update check failed: offline")]
     public async Task StartupCheckLogsTheResultAndAsksOnlyWhenAReleaseIsOut(
@@ -92,7 +92,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         viewModel.OfferRestartForLanguage("ja-JP");
 
         Assert.Empty(shown);
-        Assert.Contains(new LogLine(Strings.LANGUAGE_CHANGED_LOG), viewModel.Log);
+        Assert.Contains(new LogLine(Strings.RESTART_MESSAGE), viewModel.Log);
     }
 
     [Fact]
@@ -394,7 +394,7 @@ public class MainViewModelTests(ITestOutputHelper output) : ViewModelTest
         Assert.False(viewModel.RecoverKeysCommand.CanExecute(null));
         Assert.False(viewModel.CheckForUpdatesCommand.CanExecute(null));
         Assert.True(viewModel.RemoveCheckedCommand.CanExecute(null));
-        Assert.Contains(viewModel.Log, line => line.Text.Contains("No engine", StringComparison.Ordinal));
+        Assert.Contains(viewModel.Log, line => line.Text.Contains(Strings.ENGINE_MISSING_MESSAGE, StringComparison.Ordinal));
     }
 
     [Fact]

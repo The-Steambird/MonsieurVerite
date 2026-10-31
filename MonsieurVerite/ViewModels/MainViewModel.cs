@@ -39,7 +39,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    private string NoEngineMessage => Strings.NO_ENGINE_LOG(EnginePath);
+    private string NoEngineMessage =>
+        $"{Strings.ENGINE_MISSING_MESSAGE} {Strings.ENGINE_MISSING_DETAIL(EnginePath)}";
 
     public QueueItems Items { get; } = [];
 
@@ -308,7 +309,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (IsRunning)
         {
-            AppendLog(Strings.LANGUAGE_CHANGED_LOG);
+            AppendLog(Strings.RESTART_MESSAGE);
             return;
         }
 
