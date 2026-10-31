@@ -75,7 +75,7 @@ internal sealed class EngineRun(
             else if (exitCode != 0)
             {
                 failure = Strings.ENGINE_EXITED_DETAIL(exitCode);
-                owner.AppendLog(Strings.ENGINE_EXITED_LOG(exitCode), warning: true);
+                owner.AppendLog(failure, warning: true);
 
                 // The engine exits 1 after a batch in which any file failed, and those rows
                 // already carry the error events. The stderr tail is for a run that never opened
@@ -159,7 +159,8 @@ internal sealed class EngineRun(
                 owner.EngineVersion = session.Version;
                 if (session.Version != App.Version)
                 {
-                    owner.AppendLog(Strings.VERSION_MISMATCH_LOG, warning: true);
+                    var mismatch = Strings.VERSION_MISMATCH_LOG(session.Version, App.Version);
+                    owner.AppendLog(mismatch, warning: true);
                 }
 
                 break;
@@ -265,7 +266,7 @@ internal sealed class EngineRun(
                 Notes: update.Notes, NotesUrl: update.Url);
         }
 
-        return new Message(Strings.QUESTION_TITLE, question.Prompt, Strings.YES, Strings.NO);
+        return new Message("Charlotte", question.Prompt, Strings.YES, Strings.NO);
     }
 
     private static string StageName(string stage) => stage switch
@@ -281,7 +282,7 @@ internal sealed class EngineRun(
     private static string SkipReason(string reason) => reason switch
     {
         "exists" => Strings.SKIP_EXISTS_DETAIL,
-        "no_key" => Strings.SKIP_NO_KEY_DETAIL,
+        "no_key" => Strings.KEY_MISSING_TIP,
         "requested" => Strings.SKIP_REQUESTED_DETAIL,
         _ => reason,
     };

@@ -659,10 +659,10 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (!update.Available)
         {
-            AppendLog(Strings.UP_TO_DATE_LOG(update.Current));
+            var text = Strings.UP_TO_DATE_MESSAGE(update.Current);
+            AppendLog(text);
             if (!quiet)
             {
-                var text = Strings.UP_TO_DATE_MESSAGE(update.Current);
                 ShowMessage?.Invoke(new Message(Strings.UP_TO_DATE_TITLE, text));
             }
 

@@ -180,9 +180,9 @@ public class EngineRunTests : ViewModelTest
     }
 
     [Theory]
-    [InlineData("exists", "Already exists")]
-    [InlineData("no_key", "No key")]
-    [InlineData("requested", "Skipped on request")]
+    [InlineData("exists", "The .mkv already exists")]
+    [InlineData("no_key", "Key is not in keys.json")]
+    [InlineData("requested", "Skipped manually")]
     public void SkipReasonsBecomeReadableDetail(string reason, string expected)
     {
         var viewModel = NewViewModel();

@@ -28,10 +28,14 @@ public partial class AboutDialog : DialogWindow
             ("ffmpeg", Link("ffmpeg", "https://ffmpeg.org")),
             ("vapoursynth", Link("VapourSynth", "https://www.vapoursynth.com")),
             ("gi_cutscenes", Link("GI‑cutscenes", "https://github.com/ToaHartor/GI-cutscenes")),
-            ("usm_diviner", Link("UsmDiviner", "https://github.com/Senkin219/UsmDiviner")));
+            ("usm_diviner", Link("UsmDiviner", "https://github.com/Senkin219/UsmDiviner")),
+            ("irminsul", Link("Irminsul", "https://github.com/konkers/irminsul")),
+            ("dimbreath", Link("Dimbreath", "https://gitlab.com/Dimbreath/animegamedata2"))
+        );
+
         SponsorText.Inlines.Add(" ");
         AppendFormat(SponsorText, nameof(Strings.SPONSOR_PROMPT),
-            ("link", Link(Strings.SPONSOR_LINK, "https://github.com/sponsors/lunarmint")));
+            ("link", Link(Strings.SPONSOR_LINK, "https://ko-fi.com/lunarmint")));
     }
 
     private static Hyperlink Link(string text, string uri) =>

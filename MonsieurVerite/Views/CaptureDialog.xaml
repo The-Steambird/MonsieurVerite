@@ -8,12 +8,12 @@
                     xmlns:vm="clr-namespace:MonsieurVerite.ViewModels"
                     mc:Ignorable="d"
                     d:DataContext="{d:DesignInstance Type=vm:KeyCapture}"
-                    Title="{x:Static local:Strings.CAPTURE_TITLE}" Width="620">
+                    Title="{x:Static local:Strings.CAPTURE_KEYS}" Width="620">
 
     <Grid>
         <StackPanel Style="{StaticResource DialogRoot}">
             <TextBlock Style="{StaticResource DialogTitle}"
-                       Text="{x:Static local:Strings.CAPTURE_TITLE}" />
+                       Text="{x:Static local:Strings.CAPTURE_KEYS}" />
             <TextBlock Style="{StaticResource DialogBody}" Margin="0,0,0,14"
                        Text="{x:Static local:Strings.CAPTURE_INSTRUCTIONS}" />
 

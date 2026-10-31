@@ -29,7 +29,7 @@
 
             <StackPanel x:Name="AesKeyPanel">
                 <TextBlock Style="{StaticResource OptionLabel}"
-                           Text="{x:Static local:Strings.VIDEO_KEY}" Margin="0,0,0,4" />
+                           Text="{x:Static local:Strings.AES_KEY}" Margin="0,0,0,4" />
                 <TextBox x:Name="AesKeyBox" Style="{StaticResource KeyField}"
                          TextChanged="KeyBox_TextChanged" />
                 <TextBlock Style="{StaticResource DialogCaption}" Margin="0,0,0,16"

@@ -138,7 +138,7 @@ public partial class MainWindow : Window
 
         if (viewModel.IsRunning)
         {
-            var question = new Message(Strings.QUIT_TITLE, Strings.QUIT_MESSAGE, Strings.QUIT,
+            var question = new Message(Strings.QUIT_TITLE, Strings.QUIT_MESSAGE, Strings.EXIT,
                 Strings.KEEP_RUNNING);
             if (!MessageDialog.Show(this, question))
             {

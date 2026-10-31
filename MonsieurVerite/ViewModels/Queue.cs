@@ -196,7 +196,6 @@ public sealed partial class QueueItem : ObservableObject
     public string StatusLabel => Status switch
     {
         ItemStatus.Running when Detail.Length > 0 => Detail,
-        ItemStatus.Pending => Strings.STATUS_PENDING,
         ItemStatus.Queued => Strings.STATUS_QUEUED,
         ItemStatus.Running => Strings.STATUS_RUNNING,
         ItemStatus.Done => Strings.STATUS_DONE,
