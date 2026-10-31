@@ -58,10 +58,10 @@ internal static partial class ReleaseNotes
     private static TextBlock Heading(HeadingBlock heading)
     {
         var block = Text(Inlines(heading.Inline));
-        block.FontSize = heading.Level <= 2 ? 15 : 13;
+        block.FontSize = heading.Level <= 2 ? 17 : 15;
         block.FontWeight = FontWeights.SemiBold;
         block.SetResourceReference(TextBlock.ForegroundProperty, "TextBrush");
-        block.Margin = new Thickness(0, 10, 0, 6);
+        block.Margin = new Thickness(0, 18, 0, 8);
         return block;
     }
 
@@ -73,7 +73,7 @@ internal static partial class ReleaseNotes
         }
 
         var block = Text(Inlines(paragraph.Inline));
-        block.Margin = new Thickness(0, 0, 0, 10);
+        block.Margin = new Thickness(0, 0, 0, 14);
         block.SetResourceReference(TextBlock.ForegroundProperty, "DimBrush");
         return [block];
     }
@@ -131,7 +131,7 @@ internal static partial class ReleaseNotes
 
     private static StackPanel Items(ListBlock list)
     {
-        var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+        var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
         var number = 1;
         if (int.TryParse(list.OrderedStart, out var start))
         {
@@ -170,7 +170,7 @@ internal static partial class ReleaseNotes
             content.Children.Add(block);
         }
 
-        var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 8) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.Children.Add(bullet);
@@ -191,7 +191,7 @@ internal static partial class ReleaseNotes
         {
             BorderThickness = new Thickness(3, 0, 0, 0),
             Padding = new Thickness(12, 0, 0, 0),
-            Margin = new Thickness(0, 0, 0, 10),
+            Margin = new Thickness(0, 0, 0, 14),
             Child = content,
         };
         border.SetResourceReference(Border.BorderBrushProperty, "LineStrongBrush");
@@ -218,7 +218,7 @@ internal static partial class ReleaseNotes
         if (text.Length > 0)
         {
             var block = Text([new Run(text)]);
-            block.Margin = new Thickness(0, 0, 0, 10);
+            block.Margin = new Thickness(0, 0, 0, 14);
             block.SetResourceReference(TextBlock.ForegroundProperty, "DimBrush");
             blocks.Add(block);
         }
@@ -232,7 +232,7 @@ internal static partial class ReleaseNotes
         {
             Text = code.Lines.ToString(),
             TextWrapping = TextWrapping.Wrap,
-            FontSize = 12,
+            FontSize = 13,
         };
         text.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
         text.SetResourceReference(TextBlock.ForegroundProperty, "DimBrush");
@@ -241,7 +241,7 @@ internal static partial class ReleaseNotes
         {
             Padding = new Thickness(10, 8, 10, 8),
             CornerRadius = new CornerRadius(4),
-            Margin = new Thickness(0, 0, 0, 10),
+            Margin = new Thickness(0, 0, 0, 14),
             Child = text,
         };
         border.SetResourceReference(Border.BackgroundProperty, "LayerBrush");
@@ -265,9 +265,9 @@ internal static partial class ReleaseNotes
         var image = new Image
         {
             Stretch = Stretch.Uniform,
-            MaxHeight = 280,
+            MaxHeight = 420,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 12),
+            Margin = new Thickness(0, 0, 0, 16),
         };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         _ = LoadAsync(image, uri);
@@ -309,7 +309,7 @@ internal static partial class ReleaseNotes
 
     private static TextBlock Text(List<Inline> inlines)
     {
-        var block = new TextBlock { TextWrapping = TextWrapping.Wrap, LineHeight = 20 };
+        var block = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 14, LineHeight = 22 };
         block.Inlines.AddRange(inlines);
         return block;
     }

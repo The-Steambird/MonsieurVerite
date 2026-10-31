@@ -8,6 +8,9 @@
 
     <Grid>
         <Grid Style="{StaticResource DialogRoot}">
+            <Grid.Resources>
+                <Style TargetType="Hyperlink" BasedOn="{StaticResource QuietLink}" />
+            </Grid.Resources>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -31,33 +34,27 @@
             </Border>
 
             <StackPanel x:Name="NotesPanel" Grid.Row="3" Margin="0,18,0,0" Visibility="Collapsed">
-                <StackPanel.Resources>
-                    <Style TargetType="Hyperlink" BasedOn="{StaticResource QuietLink}" />
-                </StackPanel.Resources>
-                <DockPanel Margin="0,0,0,10">
-                    <TextBlock x:Name="NotesLinkText" DockPanel.Dock="Right" FontSize="11"
-                               Visibility="Collapsed">
-                        <Hyperlink x:Name="NotesLink">
-                            <Run Text="{x:Static local:Strings.VIEW_ON_GITHUB}" />
-                        </Hyperlink>
-                    </TextBlock>
-                    <TextBlock Style="{StaticResource SectionLabel}" Margin="0"
-                               Text="{x:Static local:Strings.WHATS_NEW}" />
-                </DockPanel>
-                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="NotesContent" Margin="0,0,14,0" />
+                <Border Height="1" Margin="-24,0" Background="{StaticResource LineBrush}" />
+                <ScrollViewer x:Name="NotesScroll" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="NotesContent" Margin="0,16,14,6" />
                 </ScrollViewer>
                 <Border Height="1" Margin="-24,0" Background="{StaticResource LineBrush}" />
             </StackPanel>
 
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
-                        Margin="0,22,0,0">
-                <Button x:Name="PrimaryButton" Style="{StaticResource PrimaryButton}"
-                        IsDefault="True" Click="Primary_Click" />
-                <Button x:Name="SecondaryButton" Style="{StaticResource ActionButton}"
-                        IsCancel="True"
-                        Margin="8,0,0,0" Visibility="Collapsed" />
-            </StackPanel>
+            <DockPanel Grid.Row="4" Margin="0,20,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="PrimaryButton" Style="{StaticResource PrimaryButton}"
+                            IsDefault="True" Click="Primary_Click" />
+                    <Button x:Name="SecondaryButton" Style="{StaticResource ActionButton}"
+                            IsCancel="True"
+                            Margin="8,0,0,0" Visibility="Collapsed" />
+                </StackPanel>
+                <TextBlock x:Name="NotesLinkText" VerticalAlignment="Center" Visibility="Collapsed">
+                    <Hyperlink x:Name="NotesLink">
+                        <Run Text="{x:Static local:Strings.VIEW_ON_GITHUB}" />
+                    </Hyperlink>
+                </TextBlock>
+            </DockPanel>
         </Grid>
         <Button Style="{StaticResource DialogCloseButton}" Content="&#xE8BB;" Click="Dismiss" />
     </Grid>

@@ -39,7 +39,8 @@ public partial class MessageDialog : DialogWindow
             }
 
             dialog.NotesPanel.Visibility = Visibility.Visible;
-            dialog.Width = 560;
+            dialog.Width = 720;
+            dialog.NotesScroll.MaxHeight = Math.Max(320, owner.ActualHeight - 320);
         }
 
         if (ReleaseNotes.WebLink(message.NotesUrl) is { } link)
