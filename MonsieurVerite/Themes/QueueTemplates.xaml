@@ -252,11 +252,16 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="KeyPill" TargetType="Border">
+    <Style x:Key="Pill" TargetType="Border">
         <Setter Property="CornerRadius" Value="10" />
         <Setter Property="Padding" Value="9,3" />
+        <!-- Align the pill text with the header rather than the pill itself. -->
+        <Setter Property="Margin" Value="-9,0,0,0" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="KeyPill" TargetType="Border" BasedOn="{StaticResource Pill}">
         <Setter Property="Visibility" Value="Collapsed" />
         <Setter Property="themes:Motion.FadeOn" Value="{Binding Key}" />
         <Style.Triggers>
@@ -341,11 +346,7 @@
                    VerticalAlignment="Center" />
     </DataTemplate>
 
-    <Style x:Key="StatusPill" TargetType="Border">
-        <Setter Property="CornerRadius" Value="10" />
-        <Setter Property="Padding" Value="9,3" />
-        <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="VerticalAlignment" Value="Center" />
+    <Style x:Key="StatusPill" TargetType="Border" BasedOn="{StaticResource Pill}">
         <Setter Property="Background" Value="{StaticResource HoverBrush}" />
         <Setter Property="ToolTip" Value="{Binding Detail}" />
         <Setter Property="themes:Motion.FadeOn" Value="{Binding Status}" />
@@ -377,6 +378,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{StaticResource DimBrush}" />
         <Setter Property="Text" Value="{Binding StatusLabel}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Status}" Value="Running">
                 <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
@@ -420,10 +422,10 @@
 
     <DataTemplate x:Key="QueueStatusCell">
         <Border Style="{StaticResource StatusPill}">
-            <StackPanel Orientation="Horizontal">
+            <DockPanel>
                 <Ellipse Style="{StaticResource RunningDot}" />
                 <TextBlock Style="{StaticResource StatusPillText}" />
-            </StackPanel>
+            </DockPanel>
         </Border>
     </DataTemplate>
 
@@ -457,9 +459,6 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding Status}" Value="Error">
                 <Setter Property="Foreground" Value="{StaticResource BadBrush}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Status}" Value="Cancelled">
-                <Setter Property="Foreground" Value="{StaticResource WarnBrush}" />
             </DataTrigger>
         </Style.Triggers>
     </Style>
