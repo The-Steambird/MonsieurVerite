@@ -312,6 +312,34 @@ public class EngineRunTests : ViewModelTest
     }
 
     [Fact]
+    public async Task TheFirstCancelAsksTheEngineOverStdin()
+    {
+        // set /p reads one line of the script's stdin, where the engine takes its commands.
+        var engine = FakeEngine(
+            """@echo {"type":"job_start","file":"a.usm","stem":"a"}""",
+            "@set /p command=",
+            """@echo %command%>"%~dp0command.txt" """);
+        var viewModel = NewViewModel(engine);
+        var running = Add(viewModel, "a.usm");
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        running.PropertyChanged += (_, _) =>
+        {
+            if (running.Status == ItemStatus.Running)
+            {
+                started.TrySetResult();
+            }
+        };
+
+        var run = viewModel.StartCommand.ExecuteAsync(null);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        viewModel.CancelCommand.Execute(null);
+        await run.WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Equal("""{"type":"cancel"}""", File.ReadAllText(Scratch.File("command.txt")).Trim());
+        Assert.Equal(ItemStatus.Pending, running.Status);
+    }
+
+    [Fact]
     public async Task ASecondCancelKillsAnEngineThatIgnoresTheFirst()
     {
         // The cancel goes unanswered because cmd never reads stdin, and ping is a child the kill

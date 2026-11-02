@@ -13,7 +13,6 @@ public sealed partial class MainViewModel : ObservableObject
     private const int LogCapacity = 2000;
     private static readonly string SavedQueuePath = Path.Combine(AppContext.BaseDirectory, "queue.json");
     private readonly Settings settings;
-    private CancellationTokenSource? cancellation;
     private EngineRun? run;
 
     public MainViewModel(string? engine, Settings settings)
@@ -46,8 +45,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ObservableCollection<LogLine> Log { get; } = [];
 
-    public RunOptions Options => settings.Options;
-
     public Func<string, string?>? PickFolder { get; set; }
 
     public Func<string, IReadOnlyList<string>?>? PickFiles { get; set; }
@@ -69,9 +66,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public string RecoveredKeysPath => settings.RecoveredKeysPath;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasEngine), nameof(CanRunEngine))]
-    public partial string? Engine { get; private set; }
+    [ObservableProperty] public partial string? Engine { get; private set; }
 
     public bool HasEngine => Engine is not null;
 
@@ -85,9 +80,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] public partial string OutputDirectory { get; set; }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsIdle), nameof(CanRunEngine))]
-    public partial bool IsRunning { get; internal set; }
+    [ObservableProperty] public partial bool IsRunning { get; internal set; }
 
     public bool IsIdle => !IsRunning;
 
@@ -290,7 +283,6 @@ public sealed partial class MainViewModel : ObservableObject
         if (ShowSettings?.Invoke(settings) ?? false)
         {
             SaveSettings();
-            OnPropertyChanged(nameof(Options));
             ApplyEngineSetting(previousPath);
             OfferRestartForLanguage(previousLanguage);
         }
@@ -370,30 +362,19 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ToggleAll()
+    private void ToggleAll() => SetAllChecked(!Items.AllChecked);
+
+    [RelayCommand]
+    private void CheckAll() => SetAllChecked(true);
+
+    [RelayCommand]
+    private void UncheckAll() => SetAllChecked(false);
+
+    private void SetAllChecked(bool target)
     {
-        var target = !Items.AllChecked;
         foreach (var item in Items)
         {
             item.IsChecked = target;
-        }
-    }
-
-    [RelayCommand]
-    private void CheckAll()
-    {
-        foreach (var item in Items)
-        {
-            item.IsChecked = true;
-        }
-    }
-
-    [RelayCommand]
-    private void UncheckAll()
-    {
-        foreach (var item in Items)
-        {
-            item.IsChecked = false;
         }
     }
 
@@ -543,7 +524,7 @@ public sealed partial class MainViewModel : ObservableObject
         var output = Path.GetFullPath(OutputDirectory, settings.EngineFolder);
         var (folder, files) = EngineFiles(targets);
         await RunEngineAsync(
-            ["--output", output, .. Options.ToArguments(), .. extraArguments, .. files],
+            ["--output", output, .. settings.Options.ToArguments(), .. extraArguments, .. files],
             targets,
             folder).ConfigureAwait(true);
     }
@@ -576,7 +557,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (!CanForceStop)
         {
-            cancellation?.Cancel();
+            run?.Cancel();
             CanForceStop = true;
         }
         else
@@ -593,7 +574,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private bool CanSkip() => run is { OpensJobs: true };
 
-    public void Shutdown() => cancellation?.Cancel();
+    public void Shutdown() => run?.Cancel();
 
     // The folder loads before the first frame to keep the empty queue from flashing. The dialogs
     // wait for the window, because one opened earlier would appear alone on the desktop.
@@ -702,10 +683,7 @@ public sealed partial class MainViewModel : ObservableObject
         return (folder, files);
     }
 
-    /// <summary>
-    /// This is the one owner of <see cref="IsRunning"/>, the cancellation source and the current
-    /// run.
-    /// </summary>
+    /// <summary>This is the one owner of <see cref="IsRunning"/> and the current run.</summary>
     private async Task<EngineRun> RunEngineAsync(
         IReadOnlyList<string> arguments, IReadOnlyList<QueueItem> jobs,
         string? workingDirectory = null)
@@ -721,17 +699,14 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         var engineRun = new EngineRun(this, engine, jobs);
-        using var source = new CancellationTokenSource();
-        cancellation = source;
         run = engineRun;
         IsRunning = true;
         try
         {
-            await engineRun.RunAsync(arguments, workingDirectory, source.Token).ConfigureAwait(true);
+            await engineRun.RunAsync(arguments, workingDirectory).ConfigureAwait(true);
         }
         finally
         {
-            cancellation = null;
             run = null;
             CanForceStop = false;
             IsStopping = false;

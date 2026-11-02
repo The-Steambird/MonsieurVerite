@@ -49,20 +49,16 @@ internal sealed class EngineRun(
         }
     }
 
-    public async Task RunAsync(
-        IReadOnlyList<string> arguments, string? workingDirectory, CancellationToken cancellationToken)
+    public async Task RunAsync(IReadOnlyList<string> arguments, string? workingDirectory)
     {
         await using var engine = new EngineClient(enginePath);
-        using var registration = cancellationToken.Register(engine.SendCancel);
         client = engine;
 
         string? failure = null;
         try
         {
             var exit = engine.Start(["--json", .. arguments], workingDirectory);
-            // The token only asks the engine to stop, and its events are read until it has.
-            await foreach (var evt in engine.Events.ReadAllAsync(CancellationToken.None)
-                               .ConfigureAwait(true))
+            await foreach (var evt in engine.Events.ReadAllAsync().ConfigureAwait(true))
             {
                 Apply(evt);
             }
@@ -107,6 +103,9 @@ internal sealed class EngineRun(
             Settle(failure);
         }
     }
+
+    /// <summary>Asks the engine to stop at its next checkpoint.</summary>
+    public void Cancel() => client?.SendCancel();
 
     // The skip names the file so the engine can drop it if that job already finished by the
     // time the command arrives, instead of skipping whichever file started next.
