@@ -263,25 +263,21 @@
 
     <Style x:Key="KeyPill" TargetType="Border" BasedOn="{StaticResource Pill}">
         <Setter Property="Visibility" Value="Collapsed" />
+        <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
+        <Setter Property="ToolTip" Value="{Binding VideoKey, StringFormat='videoKey={0}'}" />
         <Setter Property="themes:Motion.FadeOn" Value="{Binding Key}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Key}" Value="Recovered">
                 <Setter Property="Visibility" Value="Visible" />
-                <Setter Property="Background" Value="{StaticResource AccentSoftBrush}" />
-                <Setter Property="ToolTip" Value="{Binding VideoKey, StringFormat='videoKey={0}'}" />
             </DataTrigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="KeyStateText" TargetType="TextBlock">
+        <Setter Property="Text" Value="{x:Static local:Strings.KEY_RECOVERED}" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FontSize" Value="11.5" />
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding Key}" Value="Recovered">
-                <Setter Property="Text" Value="{x:Static local:Strings.KEY_RECOVERED}" />
-                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
-            </DataTrigger>
-        </Style.Triggers>
     </Style>
 
     <DataTemplate x:Key="QueueKeyCell">
