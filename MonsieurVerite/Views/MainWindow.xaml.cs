@@ -148,7 +148,6 @@ public partial class MainWindow : Window
         }
 
         viewModel.SaveSettings();
-        viewModel.Shutdown();
     }
 
     private void More_Click(object sender, RoutedEventArgs e) => MoreMenu.IsOpen = true;
@@ -253,10 +252,17 @@ public partial class MainWindow : Window
 
     private void OutputBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && sender is TextBox box)
+        if (e.Key != Key.Enter || sender is not TextBox box)
+        {
+            return;
+        }
+
+        box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        // Ctrl+Enter goes on to the window's Start shortcut, and the run gets the path committed
+        // above.
+        if (Keyboard.Modifiers != ModifierKeys.Control)
         {
             e.Handled = true;
-            box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
             Queue.Focus();
         }
     }
