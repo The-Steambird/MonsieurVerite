@@ -574,8 +574,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     private bool CanSkip() => run is { OpensJobs: true };
 
-    public void Shutdown() => run?.Cancel();
-
     // The folder loads before the first frame to keep the empty queue from flashing. The dialogs
     // wait for the window, because one opened earlier would appear alone on the desktop.
     public async Task StartupAsync(Task windowShown)
